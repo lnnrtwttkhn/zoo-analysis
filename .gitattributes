@@ -4,3 +4,4 @@ CHANGELOG.md annex.largefiles=nothing
 README.md annex.largefiles=nothing
 .gitignore annex.largefiles=nothing
 zoo-analysis.Rproj annex.largefiles=nothing
+.codespellrc annex.largefiles=nothing
