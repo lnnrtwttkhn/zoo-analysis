@@ -5,3 +5,6 @@ README.md annex.largefiles=nothing
 .gitignore annex.largefiles=nothing
 zoo-analysis.Rproj annex.largefiles=nothing
 .codespellrc annex.largefiles=nothing
+.Rprofile annex.largefiles=nothing
+renv.lock annex.largefiles=nothing
+.Renviron annex.largefiles=nothing
