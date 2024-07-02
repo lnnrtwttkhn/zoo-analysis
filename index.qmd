@@ -1,0 +1,24 @@
+---
+title: "Zoo Analysis"
+---
+
+## Utilities
+
+```{r}
+#| warning: false
+#| message: false
+source(here::here("code", "utilities", "utilities.R"))
+load_packages()
+paths <- create_paths()
+cfg <- load_config()
+graphs <- load_graphs(paths)
+```
+
+## Data
+
+```{r}
+source(here::here("code", "utilities", "data.R"))
+prepare_data_behavior(cfg, paths)
+prepare_data_mri_rest(cfg, paths)
+```
+

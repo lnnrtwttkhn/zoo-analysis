@@ -10,3 +10,4 @@ renv.lock annex.largefiles=nothing
 .Renviron annex.largefiles=nothing
 DESCRIPTION annex.largefiles=nothing
 Makefile annex.largefiles=nothing
+index.qmd annex.largefiles=nothing
