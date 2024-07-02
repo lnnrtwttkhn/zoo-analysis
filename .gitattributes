@@ -8,3 +8,4 @@ zoo-analysis.Rproj annex.largefiles=nothing
 .Rprofile annex.largefiles=nothing
 renv.lock annex.largefiles=nothing
 .Renviron annex.largefiles=nothing
+DESCRIPTION annex.largefiles=nothing

@@ -1,0 +1,10 @@
+Type: project
+Description: Zoo Analysis.
+Depends:
+  here,
+  data.table,
+  magrittr,
+  assertr,
+  tidyr,
+  dplyr,
+  purrr
