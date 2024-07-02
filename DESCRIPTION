@@ -7,4 +7,7 @@ Depends:
   assertr,
   tidyr,
   dplyr,
-  purrr
+  purrr,
+  ggplot2,
+  ggbeeswarm
+  lemon

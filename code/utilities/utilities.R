@@ -15,6 +15,9 @@ load_packages <- function() {
   library("tidyr")
   library("dplyr")
   library("purrr")
+  library("ggplot2")
+  library("ggbeeswarm")
+  library("lemon")
 }
 
 load_config <- function() {
@@ -122,3 +125,27 @@ load_graphs <- function(paths) {
     .[, prob_uni := as.numeric(prob_uni)]
   return(graphs)
 }
+
+theme_zoo <- function() {
+  theme_font <- "Helvetica"
+  theme_color <- "black"
+  size_factor <- 1.1
+  theme_out <- theme() +
+    theme(panel.grid.major = element_blank()) +
+    theme(panel.grid.minor = element_blank()) +
+    theme(panel.background = element_blank()) +
+    theme(panel.border = element_blank()) +
+    theme(axis.title = element_text(family = theme_font, color = theme_color)) +
+    theme(axis.text = element_text(family = theme_font, color = theme_color)) +
+    theme(axis.ticks = element_line(color = theme_color)) +
+    theme(axis.line = element_line(color = theme_color)) +
+    theme(strip.text = element_text(margin = margin(b = 3, t = 3, r = 3, l = 3))) +
+    theme(legend.margin = margin(t = 0, r = 0, b = 0, l = 0)) +
+    theme(axis.text = element_text(size = rel(size_factor))) +
+    theme(axis.title = element_text(size = rel(size_factor))) +
+    theme(legend.text = element_text(size = rel(size_factor))) +
+    theme(legend.title = element_text(size = rel(size_factor))) +
+    theme(strip.text = element_text(size = rel(size_factor)))
+  return(theme_out)
+}
+
