@@ -456,7 +456,7 @@
     },
     "optparse": {
       "Package": "optparse",
-      "Version": "1.7.3",
+      "Version": "1.7.5",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
@@ -464,7 +464,7 @@
         "getopt",
         "methods"
       ],
-      "Hash": "aa4a7717b5760a769c7fd3d34614f2a2"
+      "Hash": "ce5f8381cd2c38d1fc14c83d8b21efd0"
     },
     "pillar": {
       "Package": "pillar",
