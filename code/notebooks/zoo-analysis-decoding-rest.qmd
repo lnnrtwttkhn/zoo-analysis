@@ -1,0 +1,26 @@
+---
+title: "zoo-analysis-decoding-rest"
+---
+
+```{r}
+#| warning: false
+#| message: false
+source(here::here("code", "utilities", "utilities.R"))
+source(here::here("code", "utilities", "data.R"))
+source(here::here("code", "decoding", "zoo-analysis-decoding-rest.R"))
+```
+
+```{r}
+load_packages()
+paths <- create_paths()
+cfg <- load_config()
+graphs <- load_graphs(paths)
+```
+
+## Data
+
+```{r}
+prepare_data_mri_rest(cfg, paths)
+get_decoding_rest_std(cfg, paths)
+plot_decoding_rest_std(cfg, paths)
+```

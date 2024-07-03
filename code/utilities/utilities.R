@@ -57,6 +57,7 @@ create_paths <- function() {
   source_path <- file.path(paths$sourcedata, "zoo-sourcedata-%s")
   paths$behav_task <- sprintf(source_path, "behavior-task")
   paths$decoding_rest <- sprintf(source_path, "decoding-rest")
+  paths$decoding_rest_std <- sprintf(source_path, "decoding-rest-std")
   return(paths)
 }
 

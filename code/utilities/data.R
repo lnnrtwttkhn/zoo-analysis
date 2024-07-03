@@ -134,6 +134,7 @@ prepare_data_mri_rest <- function(cfg, paths) {
     .[, node := NULL] %>%
     setnames(old = "class", new = "node") %>%
     setnames(old = "onset_interval", new = "interval_tr") %>%
+    .[, interval_tr := interval_tr + 1] %>%
     .[, by = .(id, classification, mask_test, train_set, session, run, node), ":="(
       num_trs = length(unique(interval_tr)),
       probability_norm = probability / sum(probability)
