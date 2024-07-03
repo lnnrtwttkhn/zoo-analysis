@@ -11,3 +11,4 @@ renv.lock annex.largefiles=nothing
 DESCRIPTION annex.largefiles=nothing
 Makefile annex.largefiles=nothing
 index.qmd annex.largefiles=nothing
+Dockerfile annex.largefiles=nothing
