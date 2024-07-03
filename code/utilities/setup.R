@@ -1,0 +1,7 @@
+library("here")
+source(here::here("code", "utilities", "utilities.R"))
+source(here::here("code", "utilities", "data.R"))
+load_packages()
+paths <- create_paths()
+cfg <- load_config()
+graphs <- load_graphs(paths)
