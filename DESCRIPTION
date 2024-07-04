@@ -12,4 +12,6 @@ Depends:
   ggbeeswarm,
   lemon,
   optparse,
-  nloptr
+  nloptr,
+  lme4
+

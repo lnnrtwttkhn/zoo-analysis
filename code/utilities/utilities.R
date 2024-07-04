@@ -20,6 +20,7 @@ load_packages <- function() {
   library("lemon")
   library("optparse")
   library("nloptr")
+  library("lme4")
 }
 
 load_config <- function() {
@@ -49,7 +50,7 @@ create_paths <- function() {
   datetime <- strftime(Sys.time(), format = "%y-%m-%d_%H-%M-%S")
   paths <- list()
   paths$code <- file.path(path_root, "code")
-  paths$container <- file.path(path_root, "zoo-analysis_latest.sif")
+  paths$container <- file.path(path_root, "zoo-analysis_0.1.sif")
   paths$input <- file.path(path_root, "input")
   paths$output <- file.path(path_root, "output")
   paths$input_behavior <- file.path(paths$input, "bids", "*", "*", "func", "*events")
@@ -65,7 +66,7 @@ create_paths <- function() {
   paths$behav_task <- sprintf(source_path, "behavior-task")
   paths$decoding_rest <- sprintf(source_path, "decoding-rest")
   paths$decoding_rest_std <- sprintf(source_path, "decoding-rest-std")
-  for (path in c(paths$figures, paths$sourcedata, paths$slopes, paths$logs)) {
+  for (path in c(paths$output, paths$figures, paths$sourcedata, paths$slopes, paths$logs)) {
     create_dir(path)
   }
   return(paths)
