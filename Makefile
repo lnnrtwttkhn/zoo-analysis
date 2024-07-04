@@ -28,3 +28,8 @@ zoo-analysis_latest.sif:
 .PHONY: apptainer-shell
 apptainer-shell:
 	apptainer shell --contain --bind $(pwd):/mnt:rw zoo-analyis_$(DOCKER_VERSION).sif
+
+.PHONY: slopes-hpc
+slopes-hpc: code/decoding/zoo-analysis-decoding-slopes-hpc.R
+	datalad unlock output/slopes && \
+	Rscript --vanilla '$<'

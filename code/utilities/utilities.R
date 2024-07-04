@@ -49,6 +49,7 @@ create_paths <- function() {
   datetime <- strftime(Sys.time(), format = "%y-%m-%d_%H-%M-%S")
   paths <- list()
   paths$code <- file.path(path_root, "code")
+  paths$container <- file.path(path_root, "zoo-analysis_latest.sif")
   paths$input <- file.path(path_root, "input")
   paths$output <- file.path(path_root, "output")
   paths$input_behavior <- file.path(paths$input, "bids", "*", "*", "func", "*events")
@@ -58,10 +59,16 @@ create_paths <- function() {
   # source data:
   paths$sourcedata <- file.path(paths$output, "sourcedata")
   paths$slopes <- file.path(paths$output, "slopes")
+  paths$logs <- file.path(paths$output, "logs", datetime)
+  paths$figures <- file.path(paths$output, "figures")
   source_path <- file.path(paths$sourcedata, "zoo-sourcedata-%s")
   paths$behav_task <- sprintf(source_path, "behavior-task")
   paths$decoding_rest <- sprintf(source_path, "decoding-rest")
   paths$decoding_rest_std <- sprintf(source_path, "decoding-rest-std")
+  for (path in c(paths$figures, paths$sourcedata, paths$slopes, paths$logs)) {
+    create_dir(path)
+  }
+  return(paths)
   return(paths)
 }
 
