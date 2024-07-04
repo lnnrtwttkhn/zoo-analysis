@@ -1,5 +1,5 @@
 # version of the docker container:
-DOCKER_VERSION = 0.1
+DOCKER_VERSION = latest
 # platform of the docker container:
 DOCKER_PLATFORM = linux/amd64
 
@@ -23,8 +23,8 @@ docker-push:
 
 # create an apptainer container from the docker image:
 zoo-analyis.sif:
-	apptainer pull --force "zoo-analyis.sif" docker://lnnrtwttkhn/zoo-analysis:$(DOCKER_VERSION)
+	apptainer pull --force "zoo-analyis_$(DOCKER_VERSION).sif" docker://lnnrtwttkhn/zoo-analysis:$(DOCKER_VERSION)
 
 .PHONY: apptainer-shell
 apptainer-shell:
-	apptainer shell --contain --bind $(pwd):/mnt:rw zoo-analyis.sif
+	apptainer shell --contain --bind $(pwd):/mnt:rw zoo-analyis_$(DOCKER_VERSION).sif
