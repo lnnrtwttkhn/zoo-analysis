@@ -11,4 +11,5 @@ Depends:
   ggplot2,
   ggbeeswarm,
   lemon,
-  optparse
+  optparse,
+  nloptr

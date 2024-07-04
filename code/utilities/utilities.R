@@ -19,6 +19,7 @@ load_packages <- function() {
   library("ggbeeswarm")
   library("lemon")
   library("optparse")
+  library("nloptr")
 }
 
 load_config <- function() {
