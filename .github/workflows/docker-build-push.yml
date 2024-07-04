@@ -4,6 +4,8 @@ on:
   push:
     paths:
       - 'renv.lock'
+      - 'DESCRIPTION'
+      - 'Dockerfile'
   workflow_dispatch:  # This allows manual triggering
 
 jobs:
