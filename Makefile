@@ -22,8 +22,8 @@ docker-push:
 	docker push lnnrtwttkhn/zoo-analysis:$(DOCKER_VERSION)
 
 # create an apptainer container from the docker image:
-zoo-analysis_latest:
-	apptainer pull --force "zoo-analysis_latest" docker://lnnrtwttkhn/zoo-analysis:latest
+zoo-analysis_latest.sif:
+	apptainer pull --force "zoo-analysis_latest.sif" docker://lnnrtwttkhn/zoo-analysis:latest
 
 .PHONY: apptainer-shell
 apptainer-shell:
