@@ -6,7 +6,7 @@ RUN apt-get update
 RUN echo 'APT::Get::Install-Recommends "false";' >> /etc/apt/apt.conf
 
 # external dependencies
-RUN apt-get install -y pandoc && apt-get clean
+RUN apt-get install -y pandoc cmake && apt-get clean
 
 # install renv
 # details: https://rstudio.github.io/renv/articles/docker.html#creating-docker-images-with-renv
