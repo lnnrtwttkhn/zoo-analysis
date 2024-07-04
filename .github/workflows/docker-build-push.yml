@@ -27,6 +27,11 @@ jobs:
     - name: Get short commit hash
       id: vars
       run: echo "hash=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+      
+    - name: Install additional Ubuntu packages
+      run: |
+        sudo apt-get update
+        sudo apt -y install cmake
 
     - name: Build Docker image
       run: |
