@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - 'renv.lock'
+  workflow_dispatch:  # This allows manual triggering
 
 jobs:
   build:
