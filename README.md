@@ -2,6 +2,7 @@
 
 [![Codespell](https://github.com/lnnrtwttkhn/zoo-analysis/actions/workflows/codespell.yml/badge.svg)](https://github.com/lnnrtwttkhn/zoo-analysis/actions/workflows/codespell.yml)
 [![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)](https://hub.docker.com/repository/docker/lnnrtwttkhn/zoo-analysis/)
+[![Build and Push Docker Image](https://github.com/lnnrtwttkhn/zoo-analysis/actions/workflows/docker-build-push.yml/badge.svg)](https://github.com/lnnrtwttkhn/zoo-analysis/actions/workflows/docker-build-push.yml)
 
 ## Dataset structure
 
