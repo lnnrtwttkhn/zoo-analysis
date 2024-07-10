@@ -28,7 +28,8 @@ zoo-analysis_latest.sif:
 
 .PHONY: apptainer-shell
 apptainer-shell:
-	apptainer shell --contain --bind $(pwd):/mnt:rw zoo-analyis_$(DOCKER_VERSION).sif
+	apptainer shell --contain --bind $(pwd):/mnt:rw zoo-analysis_$(DOCKER_VERSION).sif
+	
 .PHONY: docker-shell
 docker-shell:
 	docker run -it -v --bind $(pwd):/zoo-analysis:rw docker://lnnrtwttkhn/zoo-analysis:latest
