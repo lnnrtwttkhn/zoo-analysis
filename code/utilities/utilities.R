@@ -76,7 +76,6 @@ create_paths <- function() {
     create_dir(path)
   }
   return(paths)
-  return(paths)
 }
 
 load_data <- function(paths_input) {
