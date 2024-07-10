@@ -65,7 +65,6 @@ for (c_task in task_type) {
       writeLines(job_info, job_file)
       close(job_file)
       status_report(sprintf("write job for %s:", filename))
-      status_report(sprintf("job: %s", job_info))
       system2(command = "sbatch", args = c(job_path))
       #           }
       #         }
