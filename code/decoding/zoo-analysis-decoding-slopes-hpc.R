@@ -64,6 +64,7 @@ for (c_task in task_type) {
       )
       writeLines(job_info, job_file)
       close(job_file)
+      system2(command = "ln", args = c(sprintf("-sf %s %s", paths$logs, paths$logs_latest)))
       status_report(sprintf("write job for %s:", filename))
       system2(command = "sbatch", args = c(job_path))
       #           }

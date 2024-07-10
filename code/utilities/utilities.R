@@ -74,6 +74,7 @@ create_paths <- function() {
   paths$sourcedata <- file.path(paths$output, "sourcedata")
   paths$slopes <- file.path(paths$output, "slopes")
   paths$logs <- file.path(paths$output, "logs", datetime)
+  paths$logs_latest <- file.path(paths$output, "logs", "latest")
   paths$figures <- file.path(paths$output, "figures")
   source_path <- file.path(paths$sourcedata, "zoo-sourcedata-%s")
   paths$behav_task <- sprintf(source_path, "behavior-task")
