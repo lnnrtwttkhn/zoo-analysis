@@ -29,6 +29,9 @@ zoo-analysis_latest.sif:
 .PHONY: apptainer-shell
 apptainer-shell:
 	apptainer shell --contain --bind $(pwd):/mnt:rw zoo-analyis_$(DOCKER_VERSION).sif
+.PHONY: docker-shell
+docker-shell:
+	docker run -it -v --bind $(pwd):/zoo-analysis:rw docker://lnnrtwttkhn/zoo-analysis:latest
 
 .PHONY: slopes-hpc
 slopes-hpc: code/decoding/zoo-analysis-decoding-slopes-hpc.R
