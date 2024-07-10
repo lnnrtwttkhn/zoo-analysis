@@ -13,5 +13,5 @@ Depends:
   lemon,
   optparse,
   nloptr,
-  lme4
-
+  lme4,
+  comprehenr

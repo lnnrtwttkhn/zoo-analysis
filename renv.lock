@@ -150,6 +150,16 @@
       ],
       "Hash": "f20c47fd52fae58b4e377c37bb8c335b"
     },
+    "comprehenr": {
+      "Package": "comprehenr",
+      "Version": "0.6.10",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R"
+      ],
+      "Hash": "ddc1c79f5fe065f0e5113e11c7ff41d1"
+    },
     "cpp11": {
       "Package": "cpp11",
       "Version": "0.4.3",
