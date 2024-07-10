@@ -22,14 +22,18 @@ docker-push:
 	docker push lnnrtwttkhn/zoo-analysis:$(DOCKER_VERSION)
 
 # create an apptainer container from the docker image:
+.PHONY: zoo-analysis_latest.sif
 zoo-analysis_latest.sif:
 	apptainer pull --force "zoo-analysis_latest.sif" docker://lnnrtwttkhn/zoo-analysis:latest
 
 .PHONY: apptainer-shell
 apptainer-shell:
-	apptainer shell --contain --bind $(pwd):/mnt:rw zoo-analyis_$(DOCKER_VERSION).sif
+	apptainer shell --contain --bind $(pwd):/mnt:rw zoo-analysis_$(DOCKER_VERSION).sif
+	
+.PHONY: docker-shell
+docker-shell:
+	docker run -it -v --bind $(pwd):/zoo-analysis:rw docker://lnnrtwttkhn/zoo-analysis:latest
 
 .PHONY: slopes-hpc
 slopes-hpc: code/decoding/zoo-analysis-decoding-slopes-hpc.R
-	datalad unlock output/slopes && \
 	Rscript --vanilla '$<'

@@ -1,12 +1,15 @@
 FROM r-base:4.3.1
-WORKDIR /project
+WORKDIR /zoo-analysis
+
+ENV RENV_CONFIG_AUTOLOADER_ENABLED FALSE
+ENV RENV_AUTOLOAD_ENABLED FALSE
 
 RUN apt-get update
 
 RUN echo 'APT::Get::Install-Recommends "false";' >> /etc/apt/apt.conf
 
 # external dependencies
-RUN apt-get install -y pandoc && apt-get clean
+RUN apt-get install -y pandoc cmake && apt-get clean
 
 # install renv
 # details: https://rstudio.github.io/renv/articles/docker.html#creating-docker-images-with-renv
