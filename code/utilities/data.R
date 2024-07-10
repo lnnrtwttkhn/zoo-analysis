@@ -172,4 +172,5 @@ prepare_data_mri_rest <- function(cfg, paths) {
     .[, node_previous := NA] %>%
     setorder(id, classification, train_set, mask_test, session, run, trial_index, interval_tr) %>%
     save_data(., paths$decoding_rest)
+  return(dt_output)
 }

@@ -3,6 +3,11 @@ find_root <- function() {
     path_root <- here::here("zoo-analysis")
   } else {
     path_root <- here::here()
+    # root path should be an empty string when it's .Platform$file.sep
+    # relevant for high-performance computing environments
+    if (path_root == .Platform$file.sep) {
+      path_root = ""
+    }
   }
   return(path_root)
 }
@@ -75,7 +80,6 @@ create_paths <- function() {
   for (path in c(paths$output, paths$figures, paths$sourcedata, paths$slopes, paths$logs)) {
     create_dir(path)
   }
-  return(paths)
   return(paths)
 }
 
