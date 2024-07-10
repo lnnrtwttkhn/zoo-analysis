@@ -2,7 +2,7 @@ if (!requireNamespace("here")) install.packages("here")
 source(here::here("code", "utilities", "setup.R"))
 # task_type = c("main", "rest")
 task_type <- c("rest")
-job_script <- here::here("code", "decoding", "zoo-analysis-decoding-slope.R")
+job_script <- here::here("code", "decoding", "zoo-analysis-decoding-slopes.R")
 job_path <- here::here("job")
 
 for (c_task in task_type) {
