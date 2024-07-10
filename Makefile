@@ -36,4 +36,4 @@ docker-shell:
 
 .PHONY: slopes-hpc
 slopes-hpc: code/decoding/zoo-analysis-decoding-slopes-hpc.R
-	Rscript --vanilla '$<'
+	Rscript -e 'renv::run("$<")'
