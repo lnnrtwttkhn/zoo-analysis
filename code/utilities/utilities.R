@@ -34,6 +34,12 @@ load_config <- function() {
     optCtrl = list(maxfun = 100000),
     calc.derivs = FALSE
   )
+  cfg$hpc <- list(
+    "partition" = "quick",
+    "time" = "0:30:00",
+    "memory" = "900MB",
+    "cpus" = "1"
+  )
   cfg$event_levels <- c("fixation", "stimulus", "sri", "response", "feedback", "iti")
   cfg$key_levels <- c("w", "n", "d", "z", "g", "r", "n/a")
   cfg$finger_levels <- c("index", "middle", "ring", "n/a")
