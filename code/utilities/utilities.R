@@ -60,7 +60,7 @@ load_config <- function() {
 
 create_paths <- function() {
   path_root <- find_root()
-  datetime <- strftime(Sys.time(), format = "%y-%m-%d_%H-%M-%S")
+  datetime <- strftime(Sys.time(), format = "%y-%m-%d_%H-%M")
   paths <- list()
   paths$code <- file.path(path_root, "code")
   paths$container <- file.path(path_root, "zoo-analysis_latest.sif")
