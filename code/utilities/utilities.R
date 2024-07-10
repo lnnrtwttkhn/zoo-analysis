@@ -37,7 +37,7 @@ load_config <- function() {
   cfg$hpc <- list(
     "partition" = "quick",
     "time" = "0:30:00",
-    "memory" = "900MB",
+    "memory" = "1500MB",
     "cpus" = "1"
   )
   cfg$event_levels <- c("fixation", "stimulus", "sri", "response", "feedback", "iti")
