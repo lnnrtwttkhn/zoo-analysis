@@ -27,6 +27,7 @@ load_packages <- function() {
   library("nloptr")
   library("lme4")
   library("comprehenr")
+  library("combinat")
 }
 
 load_config <- function() {
