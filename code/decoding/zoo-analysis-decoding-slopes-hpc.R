@@ -54,10 +54,10 @@ for (c_task in task_type) {
       job_info <- c(
         "#!/bin/bash",
         sprintf("#SBATCH --job-name zoo-analysis-slopes-%s", filename),
-        sprintf("#SBATCH --partition %s", cfg$tardis$partition),
-        "#SBATCH --time 0:30:00",
-        "#SBATCH --mem 900MB",
-        "#SBATCH --cpus-per-task 1",
+        sprintf("#SBATCH --partition %s", cfg$hpc$partition),
+        sprintf("#SBATCH --time %s", cfg$hpc$time),
+        sprintf("#SBATCH --mem %s", cfg$hpc$memory),
+        sprintf("#SBATCH --cpus-per-task %s", cfg$hpc$cpus),
         sprintf("#SBATCH --output %s", path_logfile),
         "#SBATCH --mail-type NONE",
         paste(singularity_command, main_command)
