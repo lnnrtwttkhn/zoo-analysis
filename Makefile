@@ -32,7 +32,7 @@ apptainer-shell:
 	
 .PHONY: docker-shell
 docker-shell:
-	docker run -it -v --bind $(pwd):/zoo-analysis:rw docker://lnnrtwttkhn/zoo-analysis:latest
+	docker run -it -v $(pwd):/zoo-analysis:rw lnnrtwttkhn/zoo-analysis:latest
 
 .PHONY: slopes-hpc
 slopes-hpc: code/decoding/zoo-analysis-decoding-slopes-hpc.R
