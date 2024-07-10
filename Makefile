@@ -32,5 +32,4 @@ apptainer-shell:
 
 .PHONY: slopes-hpc
 slopes-hpc: code/decoding/zoo-analysis-decoding-slopes-hpc.R
-	datalad unlock output/slopes && \
 	Rscript --vanilla '$<'
