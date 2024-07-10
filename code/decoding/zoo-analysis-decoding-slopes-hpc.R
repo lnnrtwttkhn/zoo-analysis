@@ -73,5 +73,4 @@ for (c_task in task_type) {
       #   }
     }
   }
-} 
-invisible(file.remove(job_path))
+}
