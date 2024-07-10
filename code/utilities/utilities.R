@@ -3,6 +3,11 @@ find_root <- function() {
     path_root <- here::here("zoo-analysis")
   } else {
     path_root <- here::here()
+    # root path should be an empty string when it's .Platform$file.sep
+    # relevant for high-performance computing environments
+    if (path_root == .Platform$file.sep) {
+      path_root = ""
+    }
   }
   return(path_root)
 }
