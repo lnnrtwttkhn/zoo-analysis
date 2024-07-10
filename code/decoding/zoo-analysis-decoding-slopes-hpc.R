@@ -20,13 +20,13 @@ for (c_task in task_type) {
       #           for (c_trial in seq(1, 24)) {
       #             for (c_tr in seq(1, 8)) {
       job_file <- file(job_path)
-      output_part <- stringr::str_replace(paths$slopes, paste0(here::here(), "/"), "")
+      output_part <- stringr::str_replace(paths$output, paste0(here::here(), "/"), "")
       code_part <- stringr::str_replace(job_script, paste0(here::here(), "/"), "")
       singularity_command <- paste(
         "apptainer exec --cleanenv --contain",
         sprintf("-B %s:/input:ro", paths$input),
         sprintf("-B %s:/code:ro", paths$code),
-        sprintf("-B %s:/%s:rw", paths$slopes, output_part),
+        sprintf("-B %s:/%s:rw", paths$output, output_part),
         paths$container
       )
       main_command <- paste(
