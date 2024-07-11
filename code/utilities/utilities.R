@@ -3,6 +3,11 @@ find_root <- function() {
     path_root <- here::here("zoo-analysis")
   } else {
     path_root <- here::here()
+    # root path should be an empty string when it's .Platform$file.sep
+    # relevant for high-performance computing environments
+    if (path_root == .Platform$file.sep) {
+      path_root = ""
+    }
   }
   return(path_root)
 }
@@ -18,6 +23,11 @@ load_packages <- function() {
   library("ggplot2")
   library("ggbeeswarm")
   library("lemon")
+  library("optparse")
+  library("nloptr")
+  library("lme4")
+  library("comprehenr")
+  library("combinat")
 }
 
 load_config <- function() {
@@ -30,6 +40,12 @@ load_config <- function() {
     optimizer = c('bobyqa'),
     optCtrl = list(maxfun = 100000),
     calc.derivs = FALSE
+  )
+  cfg$hpc <- list(
+    "partition" = "quick",
+    "time" = "0:30:00",
+    "memory" = "1500MB",
+    "cpus" = "1"
   )
   cfg$event_levels <- c("fixation", "stimulus", "sri", "response", "feedback", "iti")
   cfg$key_levels <- c("w", "n", "d", "z", "g", "r", "n/a")
@@ -44,20 +60,29 @@ load_config <- function() {
 
 create_paths <- function() {
   path_root <- find_root()
-  datetime <- strftime(Sys.time(), format = "%y-%m-%d_%H-%M-%S")
+  datetime <- strftime(Sys.time(), format = "%y-%m-%d_%H-%M")
   paths <- list()
   paths$code <- file.path(path_root, "code")
+  paths$container <- file.path(path_root, "zoo-analysis_latest.sif")
   paths$input <- file.path(path_root, "input")
   paths$output <- file.path(path_root, "output")
   paths$input_behavior <- file.path(paths$input, "bids", "*", "*", "func", "*events")
+  paths$input_mri_decoding <- file.path(paths$input, "decoding", "sub-*", "decoding", "*scheme*_time_shift-4*decoding*")
   paths$input_mri_rest <- file.path(paths$input, "decoding", "sub-*", "decoding", "*scheme-7*_time_shift-4*decoding*")
   paths$graphs <- file.path(paths$code, "utilities", "graphs.yml")
   # source data:
   paths$sourcedata <- file.path(paths$output, "sourcedata")
+  paths$slopes <- file.path(paths$output, "slopes")
+  paths$logs <- file.path(paths$output, "logs", datetime)
+  paths$logs_latest <- file.path(paths$output, "logs", "latest")
+  paths$figures <- file.path(paths$output, "figures")
   source_path <- file.path(paths$sourcedata, "zoo-sourcedata-%s")
   paths$behav_task <- sprintf(source_path, "behavior-task")
   paths$decoding_rest <- sprintf(source_path, "decoding-rest")
   paths$decoding_rest_std <- sprintf(source_path, "decoding-rest-std")
+  for (path in c(paths$output, paths$figures, paths$sourcedata, paths$slopes, paths$logs)) {
+    create_dir(path)
+  }
   return(paths)
 }
 
@@ -97,6 +122,10 @@ save_data <- function(df, path) {
   message <- sprintf("successfully exported %s", path)
   status_report(text = message)
   return(df)
+}
+
+create_dir <- function(path) {
+  dir.create(path, showWarnings = FALSE, recursive = TRUE)
 }
 
 filter_paths <- function(paths, pattern) {
@@ -148,5 +177,70 @@ theme_zoo <- function() {
     theme(legend.title = element_text(size = rel(size_factor))) +
     theme(strip.text = element_text(size = rel(size_factor)))
   return(theme_out)
+}
+
+get_input <- function() {
+  option_list <- list(
+    make_option(c("-s", "--subject"),
+                help = "participant label (integer, no zero-padding, no 'sub-' prefix)",
+                default = 1, 
+                type = "integer",
+                metavar = "integer"),
+    make_option(c("-c", "--classification"),
+                help = "classification type [default = %default]",
+                default = "ensemble",
+                type = "character",
+                metavar = "character"),
+    make_option(c("-m", "--mask_test"),
+                help = "anatomical mask of the test set [default = %default] (options: [hippocampus, occipito-temporal, motor, medial-temporal])",
+                default = "occipito-temporal",
+                type = "character",
+                metavar = "character"),
+    make_option(c("-o", "--train_set"),
+                help = "onset of the training set [default = %default] (options: [stimulus, response])",
+                default = "stimulus", 
+                type = "character",
+                metavar = "character"),
+    make_option(c("-r", "--run"),
+                help = "run [default = %default] (options: 1 to 5)",
+                default = 1,
+                type = "integer",
+                metavar = "integer"),
+    make_option(c("-t", "--trial_index"),
+                help = "run [default = %default] (options: 1 to 144)",
+                default = 1,
+                type = "integer",
+                metavar = "integer"),
+    make_option(c("-i", "--interval_tr"),
+                help = "interval_tr [default = %default] (options: 1 to 8)",
+                default = 1,
+                type = "integer",
+                metavar = "integer"),
+    make_option(c("-d", "--data"),
+                help = "data [default = %default] (options: 'main' or 'rest')",
+                default = "rest",
+                type = "character",
+                metavar = "character")
+  )
+  
+  opt_parser <- OptionParser(option_list =  option_list);
+  opt <- parse_args(opt_parser)
+  
+  if (any(unlist(lapply(opt, function(x) is.null(x[[1]]))))) {
+    print_help(opt_parser)
+    stop("At least one argument must be supplied (input file).n", call. = FALSE)
+  }
+  
+  # reformat some of the inputs:
+  opt$subject <- paste0("sub-", sprintf("%02d", as.integer(opt$subject)))
+  opt$run <- paste0("run-", sprintf("%02d", as.integer(opt$run)))
+  
+  return(opt)
+}
+
+filter_sequences <- function(sequence_list) {
+  sequences_filtered <- comprehenr::to_list(for (x in sequence_list) if (x[length(x)] > x[1]) x)
+  base::stopifnot(length(sequences_filtered) == length(sequence_list) / 2)
+  return(sequences_filtered)
 }
 

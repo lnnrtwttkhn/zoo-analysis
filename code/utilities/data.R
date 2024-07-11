@@ -126,6 +126,7 @@ prepare_data_behavior <- function(cfg, paths) {
 
 prepare_data_mri_rest <- function(cfg, paths) {
   dt_input <- load_data(paths$input_mri_rest)
+  # standard ordering is A B C D E F
   dt_output <- dt_input %>%
     .[classification == "ensemble", ] %>%
     .[class != "other", ] %>%
@@ -134,6 +135,7 @@ prepare_data_mri_rest <- function(cfg, paths) {
     .[, node := NULL] %>%
     setnames(old = "class", new = "node") %>%
     setnames(old = "onset_interval", new = "interval_tr") %>%
+    setorder(id, classification, train_set, mask_test, run, trial_run, interval_tr, node) %>%
     .[, interval_tr := interval_tr + 1] %>%
     .[, by = .(id, classification, mask_test, train_set, session, run, node), ":="(
       num_trs = length(unique(interval_tr)),
@@ -141,9 +143,22 @@ prepare_data_mri_rest <- function(cfg, paths) {
     )] %>%
     verify(num_trs %in% cfg$rest$num_trs) %>%
     .[, num_trs := NULL] %>%
+    # check if there is the correct number of classes per TR:
     verify(.[, by = .(id, classification, mask_test, train_set, session, run, trial_run, interval_tr), .(
       num_classes = .N
     )]$num_classes == cfg$num_nodes) %>%
+    .[, by = .(id, classification, train_set, mask_test, session, run, trial_run, interval_tr), ":="(
+      node_index = rleid(node)
+    )] %>%
+    verify(node_index %in% seq(1, cfg$num_nodes)) %>%
+    verify(.[, by = .(node), .(
+      num_indices = length(unique(node_index))
+    )]$num_indices == 1) %>%
+    setorder(id, classification, train_set, mask_test, session, run, trial_run, interval_tr, node, node_index) %>%
+    # check if order of letters matches order of indices:
+    verify(.[, by = .(id, classification, mask_test, train_set, session, run, trial_run, interval_tr), .(
+      check = stringr::str_order(node) == node_index
+    )]$check == TRUE) %>%
     .[, train_set := ifelse(stringr::str_detect(train_set, "response"), "response", "stimulus")] %>%
     .[, mask_test := dplyr::case_when(
       mask_test == "hpc" ~ "hippocampus",
@@ -157,4 +172,5 @@ prepare_data_mri_rest <- function(cfg, paths) {
     .[, node_previous := NA] %>%
     setorder(id, classification, train_set, mask_test, session, run, trial_index, interval_tr) %>%
     save_data(., paths$decoding_rest)
+  return(dt_output)
 }

@@ -9,5 +9,10 @@ Depends:
   dplyr,
   purrr,
   ggplot2,
-  ggbeeswarm
-  lemon
+  ggbeeswarm,
+  lemon,
+  optparse,
+  nloptr,
+  lme4,
+  comprehenr,
+  combinat
