@@ -36,6 +36,9 @@ load_config <- function() {
   cfg$num_nodes <- 6
   cfg$num_graphs <- 2
   cfg$nodes_letters <- LETTERS[1:cfg$num_nodes]
+  cfg$sub_exclude = c("sub-08", "sub-09", "sub-13", "sub-14", "sub-17")
+  cfg$subjects = sprintf("sub-%02d", seq(1, 44))
+  cfg$num_subs = length(cfg$subjects) - length(cfg$sub_exclude)
   cfg$lcctrl <- lme4::lmerControl(
     optimizer = c('bobyqa'),
     optCtrl = list(maxfun = 100000),
@@ -55,6 +58,7 @@ load_config <- function() {
   cfg$graph_levels <- c("uni", "bi", "flat")
   # configuration parameters for resting-state decoding data:
   cfg$rest$num_trs <- c(233, 137)
+  cfg$rest$num_seq <- length(filter_sequences(combinat::permn(1:cfg$num_nodes, sort = TRUE)))
   return(cfg)
 }
 
@@ -71,15 +75,30 @@ create_paths <- function() {
   paths$input_mri_rest <- file.path(paths$input, "decoding", "sub-*", "decoding", "*scheme-7*_time_shift-4*decoding*")
   paths$graphs <- file.path(paths$code, "utilities", "graphs.yml")
   # source data:
-  paths$sourcedata <- file.path(paths$output, "sourcedata")
+  
   paths$slopes <- file.path(paths$output, "slopes")
+  paths$slopes_rest <- file.path(paths$output, "slopes", "rest", "*tsv") 
   paths$logs <- file.path(paths$output, "logs", datetime)
   paths$logs_latest <- file.path(paths$output, "logs", "latest")
   paths$figures <- file.path(paths$output, "figures")
+  # paths to source data:
+  paths$sourcedata <- file.path(paths$output, "sourcedata")
   source_path <- file.path(paths$sourcedata, "zoo-sourcedata-%s")
+  # paths to source data of the behavioral analyses:
   paths$behav_task <- sprintf(source_path, "behavior-task")
+  # paths to source data of the resting-state decoding analyses:
   paths$decoding_rest <- sprintf(source_path, "decoding-rest")
   paths$decoding_rest_std <- sprintf(source_path, "decoding-rest-std")
+  paths$decoding_rest_slopes <- sprintf(source_path, "decoding-rest-slopes")
+  paths$decoding_rest_slopes_session <- sprintf(source_path, "decoding-rest-slopes-session")
+  paths$decoding_rest_slopes_session_stat <- sprintf(source_path, "decoding-rest-slopes-session_stat")
+  paths$decoding_rest_slopes_mean <- sprintf(source_path, "decoding-rest-slopes-mean")
+  paths$decoding_rest_slopes_mean_diff <- sprintf(source_path, "decoding-rest-slopes-mean_diff")
+  paths$decoding_rest_slopes_true <- sprintf(source_path, "decoding-rest-slopes-true")
+  paths$decoding_rest_slopes_true_time <- sprintf(source_path, "decoding-rest-slopes-true_time")
+  paths$decoding_rest_slopes_true_mean <- sprintf(source_path, "decoding-rest-slopes-true_mean")
+  paths$decoding_rest_slopes_max <- sprintf(source_path, "decoding-rest-slopes-max")
+  paths$decoding_rest_slopes_max_diff <- sprintf(source_path, "decoding-rest-slopes-max_diff")
   for (path in c(paths$output, paths$figures, paths$sourcedata, paths$slopes, paths$logs)) {
     create_dir(path)
   }
@@ -244,3 +263,80 @@ filter_sequences <- function(sequence_list) {
   return(sequences_filtered)
 }
 
+reverse_number <- function(number) {
+  number_rev <- unlist(lapply(base::strsplit(as.character(number), ""), function(x) as.numeric(paste(rev(x), collapse = ""))))
+  return(number_rev)
+}
+
+reverse_string <- function(string) {
+  string_rev <- unlist(lapply(base::strsplit(string, NULL), function(x) paste(rev(x), collapse = "")))
+  return(string_rev)
+}
+
+seq_direction = function(number) {
+  differences = lapply(base::strsplit(as.character(number), ""), function(x) diff(as.numeric(x)))
+  get_direction = function(numbers) {
+    if (all(numbers == -1) | sum(numbers == 5) == 1) {
+      direction = "counterclockwise"
+    } else if (all(numbers == 1) | sum(numbers == -5) == 1) {
+      direction = "clockwise"
+    }
+  }
+  directions = unlist(lapply(differences, function(x) get_direction(x)))
+  return(directions)
+}
+
+format_pvalue <- function(pvalue, add_p = FALSE) {
+  pvalue_format <- format.pval(
+    pvalue,
+    digits = 1,
+    eps = 0.001,
+    nsmall = 2,
+    scientific = FALSE,
+    na.form = "NA")
+  pvalue_format <- ifelse(pvalue_format == "<0.001", "< 0.001", paste("=", pvalue_format))
+  if (add_p == TRUE) {
+    pvalue_format = paste("p", pvalue_format)
+  }
+  return(pvalue_format)
+}
+
+get_ttest <- function(dt_input, ttest_cfg) {
+  ttest <- broom::tidy(stats::t.test(
+    formula = as.formula(ttest_cfg$formula),
+    data = droplevels(dt_input),
+    mu = ttest_cfg$mu,
+    paired = ttest_cfg$paired,
+    alternative = ttest_cfg$alternative
+  ))
+  cohensd <- rstatix::cohens_d(
+    data = droplevels(dt_input),
+    formula = as.formula(ttest_cfg$formula),
+    paired = ttest_cfg$paired,
+    mu = ttest_cfg$mu
+  )
+  mean_value <- mean(dt_input$value)
+  std_value <- round(sd(dt_input$value), 2)
+  dt_output <- cbind(ttest, cohensd, mean_value, std_value)
+  return(dt_output)
+}
+
+get_pvalue_adjust <- function(dt_input, ttest_cfg = NA) {
+  dt_output <- dt_input %>%
+    setDT(.) %>%
+    .[, num_tests := .N] %>%
+    .[, estimate_round := round(estimate, 2)] %>%
+    .[, statistic_round := round(statistic, 2)] %>%
+    .[, conf.low_round := round(conf.low, 2)] %>%
+    .[, conf.high_round := round(conf.high, 2)] %>%
+    .[, effsize_round := tryCatch(round(effsize, 2), error=function(err) NA)] %>%
+    .[, p.value_round := round(p.value, 2)] %>%
+    .[, p.value_round_label := format_pvalue(p.value_round)] %>%
+    .[, p.value_significance := ifelse(p.value < 0.05, "*", "n.s.")] %>%
+    .[, p.value_adjust := stats::p.adjust(p.value, method = ttest_cfg$adjust_method, n = .N)] %>%
+    .[, p.value_adjust_round := as.numeric(round(p.value_adjust, 2))] %>%
+    .[, p.value_adjust_round_label := format_pvalue(p.value_adjust_round)] %>%
+    .[, p.value_adjust_significance := ifelse(p.value_adjust < 0.05, "*", "n.s.")] %>%
+    .[, adjust_method := ttest_cfg$adjust_method]
+  return(dt_output)
+}
