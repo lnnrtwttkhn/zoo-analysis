@@ -28,6 +28,7 @@ load_packages <- function() {
   library("lme4")
   library("comprehenr")
   library("combinat")
+  library("lomb")
 }
 
 load_config <- function() {

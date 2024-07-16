@@ -15,4 +15,5 @@ Depends:
   nloptr,
   lme4,
   comprehenr,
-  combinat
+  combinat,
+  lomb
