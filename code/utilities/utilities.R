@@ -29,6 +29,7 @@ load_packages <- function() {
   library("comprehenr")
   library("combinat")
   library("lomb")
+  library("forcats")
 }
 
 load_config <- function() {
