@@ -61,6 +61,8 @@ load_config <- function() {
   # configuration parameters for resting-state decoding data:
   cfg$rest$num_trs <- c(233, 137)
   cfg$rest$num_seq <- length(filter_sequences(combinat::permn(1:cfg$num_nodes, sort = TRUE)))
+  cfg$rest$freq_smoothing_kernel <- 0.015
+  cfg$rest$freq_baseline_run <- "ses-01_run-1"
   return(cfg)
 }
 
@@ -100,7 +102,12 @@ create_paths <- function() {
   paths$decoding_rest_slopes_true_time <- sprintf(source_path, "decoding-rest-slopes-true_time")
   paths$decoding_rest_slopes_true_mean <- sprintf(source_path, "decoding-rest-slopes-true_mean")
   paths$decoding_rest_slopes_max <- sprintf(source_path, "decoding-rest-slopes-max")
-  paths$decoding_rest_slopes_max_diff <- sprintf(source_path, "decoding-rest-slopes-max_diff")
+  paths$decoding_rest_slopes_max_diff <- sprintf(source_path, "decoding-rest-slopes-max-diff")
+  paths$decoding_rest_freq_spec <- sprintf(source_path, "decoding-rest-freq-spec")
+  paths$decoding_rest_freq_spec_power <- sprintf(source_path, "decoding-rest-freq-spec-power")
+  paths$decoding_rest_freq_spec_power_mean <- sprintf(source_path, "decoding-rest-freq_spec-power-mean")
+  paths$decoding_rest_freq_expect <- sprintf(source_path, "decoding-rest-freq-expect")
+  paths$decoding_rest_freq_spec_power_expect <- sprintf(source_path, "decoding-rest-freq-spec-power-expect")
   for (path in c(paths$output, paths$figures, paths$sourcedata, paths$slopes, paths$logs)) {
     create_dir(path)
   }
@@ -341,4 +348,21 @@ get_pvalue_adjust <- function(dt_input, ttest_cfg = NA) {
     .[, p.value_adjust_significance := ifelse(p.value_adjust < 0.05, "*", "n.s.")] %>%
     .[, adjust_method := ttest_cfg$adjust_method]
   return(dt_output)
+}
+
+random_subsequence <- function(sequence, sublength) {
+  # given a "sequence" calculate a random continuous subsequence of a certain "sublength"
+  possible_start <- seq(length(sequence) - sublength + 1)
+  start_index <- sample(possible_start, 1)
+  subsequence <- sequence[start_index:(start_index + sublength - 1)]
+  stopifnot(length(subsequence) == sublength)
+  return(subsequence)
+}
+
+label_fill <- function(original, offset = 0, mod = 2, fill = "") {
+  # this function can be used to generate axis labels that omit e.g.,
+  # every second label. Solution was taken from [here](https://bit.ly/2VycSy0).
+  ii <- as.logical((seq_len(length(original)) - 1 + offset) %% mod)
+  original[ii] <- fill
+  return(original)
 }
