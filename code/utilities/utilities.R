@@ -94,6 +94,7 @@ create_paths <- function() {
   # paths to source data of the behavioral analyses:
   paths$behav_task <- sprintf(source_path, "behavior-task")
   paths$behav_sr_params <- sprintf(source_path, "behavior-sr-params")
+  paths$behav_sr_mat <- sprintf(source_path, "behavior-sr-mat")
   # paths to source data of the resting-state decoding analyses:
   paths$decoding_rest <- sprintf(source_path, "decoding-rest")
   paths$decoding_rest_std <- sprintf(source_path, "decoding-rest-std")
@@ -369,4 +370,46 @@ label_fill <- function(original, offset = 0, mod = 2, fill = "") {
   ii <- as.logical((seq_len(length(original)) - 1 + offset) %% mod)
   original[ii] <- fill
   return(original)
+}
+
+calc_bits <- function(probability) {
+  bits <- -log(probability, base = 2)
+  return(bits)
+}
+
+sr_mat_fun <- function(node_previous, node, alpha, gamma){
+  num_nodes <- 6
+  node_letters <- LETTERS[1:num_nodes]
+  num_transitions <- length(node_previous)
+  counter <- num_transitions - 1
+  # pre-allocate an empty vector to hold the bits:
+  bits <- rep(NA, counter)
+  # pre-allocate an empty vector to hold the SR matrix
+  sr_mat <- list()
+  # pre-allocate the successor matrix with baseline expectation
+  # baseline expectation could also be zero
+  expectation <- 1 / num_nodes ^ 2
+  sr <- matrix(expectation, num_nodes, num_nodes)
+  # add letters to the successor matrix:
+  colnames(sr) <- rownames(sr) <- LETTERS[1:6]
+  # loop through all trials (transitions):
+  for (i in 2:(counter + 1)) {
+    # determine the previous node and the current node:
+    node_x <- which(node_previous[i] == node_letters)
+    node_y <- which(node[i] == node_letters)
+    # normalize the successor matrix to express it in probabilities:
+    sr_norm <- sr / matrix(rowSums(sr), num_nodes, num_nodes)
+    sr_tmp <- as.data.frame(sr_norm, row.names = TRUE)
+    sr_tmp <- rownames_to_column(sr_tmp, "previous")
+    sr_mat[[i - 1]] <- list(sr_tmp)
+    probability <- sr_norm[node_x, node_y]
+    bits[i - 1] <- calc_bits(probability = probability)
+    # update the successor representation:
+    occupancy <- rep(0, num_nodes)
+    occupancy[node_y] <- 1
+    sr[node_x,] <- sr[node_x,] + alpha * (occupancy + gamma * sr[node_y,] - sr[node_x,])
+  }
+  sr_mat <- c(list(sr_mat[[1]]), sr_mat)
+  bits <- c(NA, bits)
+  return(list(sr_mat))
 }
