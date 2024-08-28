@@ -208,7 +208,7 @@ prep_sr_params <- function(cfg, paths) {
     save_data(paths$behav_sr_params)
 }
 
-prep_sr_mat <- function(paths) {
+prep_sr_mat <- function(cfg, paths) {
   dt_behav_task <- load_data(paths$behav_task)
   dt_sr_params <- load_data(paths$behav_sr_params) %>%
     .[model_name == "Full", ] %>%
@@ -241,3 +241,17 @@ prep_sr_mat <- function(paths) {
     save_data(paths$behav_sr_mat)
 }
 
+prep_sr_mat_rest <- function(cfg, paths) {
+  dt_behav_sr_mat <- load_data(paths$behav_sr_mat) %>%
+    .[condition == "Sequence" | (condition == "Single" & run == "run-09"), ] %>%
+    .[, by = .(id, condition, run), max_trial_run := as.numeric(trial_run == max(trial_run))] %>%
+    .[max_trial_run == 1, ] %>%
+    .[, max_trial_run := NULL] %>%
+    .[, by = .(id, run, current), .(
+      mean_sr_prob = mean(sr_prob),
+      num_prev_nodes = .N
+    )] %>%
+    verify(num_prev_nodes == cfg$num_nodes) %>%
+    .[, num_prev_nodes := NULL] %>%
+    save_data(paths$behav_sr_mat_rest)
+}

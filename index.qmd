@@ -15,6 +15,9 @@ source(here::here("code", "utilities", "setup.R"))
 ```{r}
 prepare_data_behavior(cfg, paths)
 prepare_data_mri_rest(cfg, paths)
+prep_sr_params(cfg, paths)
+prep_sr_mat(cfg, paths)
+prep_sr_mat_rest(cfg, paths)
 ```
 
 ## Resting-state
@@ -39,6 +42,15 @@ get_decoding_rest_slopes_max_diff(cfg, paths)
 plot_decoding_rest_slopes_max_diff(cfg, paths)
 get_decoding_rest_slopes_mean_diff(cfg, paths)
 get_decoding_rest_slopes_mean_diff(cfg, paths)
+```
+
+```{r}
+get_decoding_rest_slopes_sr(cfg, paths)
+get_decoding_rest_slopes_sr_mean(cfg, paths)
+plot_decoding_rest_slopes_sr_mean(cfg, paths)
+```
+
+```{r}
 get_decoding_rest_freq_spec(cfg, paths)
 get_decoding_rest_freq_spec_power(cfg, paths)
 get_decoding_rest_freq_spec_power_mean(cfg, paths)
@@ -47,4 +59,3 @@ plot_decoding_rest_freq_spec_power_mean(cfg, paths)
 get_decoding_rest_freq_spec_power_expect(cfg, paths)
 plot_decoding_rest_freq_spec_power_expect(cfg, paths)
 ```
-

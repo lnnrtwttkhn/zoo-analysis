@@ -498,3 +498,67 @@ plot_decoding_rest_freq_spec_power_expect <- function(cfg, paths) {
           panel.border = element_blank(),
           panel.background = element_blank())
 }
+
+get_decoding_rest_slopes_sr <- function(cfg, paths) {
+  dt_rest <- load_data(paths$decoding_rest) %>%
+    .[session == "ses-02", ] %>%
+    .[mask == "vis", ] %>%
+    .[, run := dplyr::case_when(
+      run == "run-1" ~ "run-09",
+      run == "run-2" ~ "run-01",
+      run == "run-3" ~ "run-02",
+      run == "run-4" ~ "run-03",
+      run == "run-5" ~ "run-04",
+      run == "run-6" ~ "run-05"
+    )] %>%
+    .[, run := factor(as.factor(run), levels = c(
+      "run-09", "run-01", "run-02", "run-03", "run-04", "run-05"))]
+  dt_sr_mat_rest <- load_data(paths$behav_sr_mat_rest)
+  grouping_variables = c("id", "classification", "mask_test", "train_set", "session", "run", "node_previous", "trial_index", "interval_tr")
+  dt_output <- dt_rest %>%
+    merge.data.table(x = ., y = dt_sr_mat_rest,
+                     by.x = c("id", "run", "node"), by.y = c("id", "run", "current")) %>%
+    .[, by = grouping_variables, .(
+      slope = coef(lm(probability ~ mean_sr_prob))[2] * (-1),
+      slope_norm = coef(lm(probability_norm ~ mean_sr_prob))[2] * (-1),
+      kendall = cor.test(mean_sr_prob, probability, method = "kendall")$estimate * (-1),
+      kendall_norm = cor.test(mean_sr_prob, probability_norm, method = "kendall")$estimate * (-1),
+      pearson = cor.test(mean_sr_prob, probability, method = "pearson")$estimate * (-1),
+      pearson_norm = cor.test(mean_sr_prob, probability_norm, method = "pearson")$estimate * (-1)
+      # seq_numbers = paste(x, collapse = ""),
+      # seq_letters = paste(node[x], collapse = ""),
+      # seq_start = node[x][1],
+      # seq_diff_mean = mean(diff(x)),
+      # seq_diff_sd = sd(diff(x)),
+      # seq_length = length(x),
+      # seq_graph = as.numeric(all(abs(diff(x)) %in% c(1, 5)))
+    )] %>%
+    save_data(paths$decoding_rest_slopes_sr)
+}
+
+get_decoding_rest_slopes_sr_mean <- function(cfg, paths) {
+  dt_input <- load_data(paths$decoding_rest_slopes_sr)
+  dt_output <- dt_input %>%
+    .[, by = .(id, mask_test, run), .(
+      num_trs = .N,
+      mean_slope = mean(abs(slope))
+    )] %>%
+    verify(num_trs %in% cfg$rest$num_trs) %>%
+    .[, num_trs := NULL] %>%
+    save_data(paths$decoding_rest_slopes_sr_mean)
+}
+
+plot_decoding_rest_slopes_sr_mean <- function(cfg, paths) {
+  dt_input <- load_data(paths$decoding_rest_slopes_sr_mean)
+  figure <- ggplot(data = dt_input, aes(x = run, y = mean_slope)) +
+    # geom_beeswarm(dodge.width = 0.9, alpha = 0.3) +
+    # geom_boxplot(outlier.shape = NA, width = 0.5) +
+    stat_summary(geom = "point", fun = "mean", position = position_dodge(0.9), pch = 23) +
+    stat_summary(geom = "linerange", fun.data = "mean_se", position = position_dodge(0.9)) +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    xlab("Resting-state run (in Session 02)") +
+    ylab("Mean absolute slope") +
+    theme_zoo() +
+    coord_capped_cart(expand = TRUE, bottom = "both", left = "both")
+  return(figure)
+}

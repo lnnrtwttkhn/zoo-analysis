@@ -95,6 +95,7 @@ create_paths <- function() {
   paths$behav_task <- sprintf(source_path, "behavior-task")
   paths$behav_sr_params <- sprintf(source_path, "behavior-sr-params")
   paths$behav_sr_mat <- sprintf(source_path, "behavior-sr-mat")
+  paths$behav_sr_mat_rest <- sprintf(source_path, "behavior-sr-mat-rest")
   # paths to source data of the resting-state decoding analyses:
   paths$decoding_rest <- sprintf(source_path, "decoding-rest")
   paths$decoding_rest_std <- sprintf(source_path, "decoding-rest-std")
@@ -113,6 +114,8 @@ create_paths <- function() {
   paths$decoding_rest_freq_spec_power_mean <- sprintf(source_path, "decoding-rest-freq_spec-power-mean")
   paths$decoding_rest_freq_expect <- sprintf(source_path, "decoding-rest-freq-expect")
   paths$decoding_rest_freq_spec_power_expect <- sprintf(source_path, "decoding-rest-freq-spec-power-expect")
+  paths$decoding_rest_slopes_sr <- sprintf(source_path, "decoding-rest-slopes-sr")
+  paths$decoding_rest_slopes_sr_mean <- sprintf(source_path, "decoding-rest-slopes-sr-mean")
   for (path in c(paths$output, paths$figures, paths$sourcedata, paths$slopes, paths$logs)) {
     create_dir(path)
   }
