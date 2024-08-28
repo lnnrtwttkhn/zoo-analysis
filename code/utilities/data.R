@@ -185,3 +185,26 @@ prepare_data_mri_rest_slopes <- function(cfg, paths) {
     save_data(., paths$decoding_rest_slopes)
   return(dt_output)
 }
+
+prep_sr_params <- function(cfg, paths) {
+  dt_input_sr <- load_data(paths$input_sr_modeling) %>%
+    .[, model_name := "sr" ]
+  dt_input_sr_base <- load_data(paths$input_sr_base_modeling) %>%
+    .[, model_name := "sr_base" ]
+  dt_input <- rbind(dt_input_sr, dt_input_sr_base)
+  # dt_demographics <- load_data(paths$source$demographics) %>%
+  #   .[!(id %in% cfg$sub_exclude), ]
+  num_params <- 2
+  dt_output <- dt_input %>%
+    .[!(id %in% cfg$sub_exclude), ] %>%
+    # merge.data.table(x = ., y = dt_demographics, by = c("id", "order")) %>%
+    .[, id := as.factor(as.character(id))] %>%
+    .[, neg_ll := as.numeric(neg_ll)] %>%
+    .[, model_name := dplyr::case_when(
+      model_name == "sr" ~ "Full",
+      model_name == "sr_base" ~ "Base"
+    )] %>%
+    .[, model_name := factor(as.factor(model_name), levels = c("Base", "Full"))] %>%
+    save_data(paths$behav_sr_params)
+}
+

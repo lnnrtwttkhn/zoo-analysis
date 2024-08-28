@@ -77,6 +77,8 @@ create_paths <- function() {
   paths$input_behavior <- file.path(paths$input, "bids", "*", "*", "func", "*events")
   paths$input_mri_decoding <- file.path(paths$input, "decoding", "sub-*", "decoding", "*scheme*_time_shift-4*decoding*")
   paths$input_mri_rest <- file.path(paths$input, "decoding", "sub-*", "decoding", "*scheme-7*_time_shift-4*decoding*")
+  paths$input_sr_modeling <- file.path(paths$input, "sr-modeling", "modeling", "sub-*-sr.csv")
+  paths$input_sr_base_modeling <- file.path(paths$input, "sr-modeling", "modeling", "sub-*-sr_base.csv")
   paths$graphs <- file.path(paths$code, "utilities", "graphs.yml")
   # source data:
   
@@ -90,6 +92,7 @@ create_paths <- function() {
   source_path <- file.path(paths$sourcedata, "zoo-sourcedata-%s")
   # paths to source data of the behavioral analyses:
   paths$behav_task <- sprintf(source_path, "behavior-task")
+  paths$behav_sr_params <- sprintf(source_path, "behavior-sr-params")
   # paths to source data of the resting-state decoding analyses:
   paths$decoding_rest <- sprintf(source_path, "decoding-rest")
   paths$decoding_rest_std <- sprintf(source_path, "decoding-rest-std")
