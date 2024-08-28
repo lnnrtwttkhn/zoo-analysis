@@ -30,6 +30,7 @@ load_packages <- function() {
   library("combinat")
   library("lomb")
   library("forcats")
+  library("tibble")
 }
 
 load_config <- function() {

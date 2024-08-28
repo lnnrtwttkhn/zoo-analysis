@@ -17,4 +17,5 @@ Depends:
   comprehenr,
   combinat,
   lomb,
-  forcats
+  forcats,
+  tibble
