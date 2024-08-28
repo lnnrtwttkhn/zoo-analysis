@@ -16,3 +16,35 @@ source(here::here("code", "utilities", "setup.R"))
 prepare_data_behavior(cfg, paths)
 prepare_data_mri_rest(cfg, paths)
 ```
+
+## Resting-state
+
+```{r}
+source(here::here("code", "decoding", "zoo-analysis-decoding-rest.R"))
+get_decoding_rest_std(cfg, paths)
+plot_decoding_rest_std(cfg, paths)
+get_decoding_rest_slopes_session(cfg, paths)
+get_decoding_rest_slopes_session_stat(cfg, paths)
+plot_decoding_rest_slopes_session(cfg, paths)
+get_decoding_rest_slopes_mean(cfg, paths)
+plot_decoding_rest_slopes_mean(cfg, paths)
+get_decoding_rest_slopes_true(cfg, paths)
+get_decoding_rest_slopes_true_time(cfg, paths)
+plot_decoding_rest_slopes_true_time(cfg, paths)
+get_decoding_rest_slopes_true_mean(cfg, paths)
+plot_decoding_rest_slopes_true_mean(cfg, paths)
+get_decoding_rest_slopes_max(cfg, paths)
+plot_decoding_rest_slopes_max(cfg, paths)
+get_decoding_rest_slopes_max_diff(cfg, paths)
+plot_decoding_rest_slopes_max_diff(cfg, paths)
+get_decoding_rest_slopes_mean_diff(cfg, paths)
+get_decoding_rest_slopes_mean_diff(cfg, paths)
+get_decoding_rest_freq_spec(cfg, paths)
+get_decoding_rest_freq_spec_power(cfg, paths)
+get_decoding_rest_freq_spec_power_mean(cfg, paths)
+get_decoding_rest_freq_expect(cfg, paths)
+plot_decoding_rest_freq_spec_power_mean(cfg, paths)
+get_decoding_rest_freq_spec_power_expect(cfg, paths)
+plot_decoding_rest_freq_spec_power_expect(cfg, paths)
+```
+

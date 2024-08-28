@@ -174,3 +174,14 @@ prepare_data_mri_rest <- function(cfg, paths) {
     save_data(., paths$decoding_rest)
   return(dt_output)
 }
+
+prepare_data_mri_rest_slopes <- function(cfg, paths) {
+  dt_input <- load_data(Sys.glob(paths$slopes_rest))
+  dt_output <- dt_input %>%
+    .[!(id %in% cfg$sub_exclude), ] %>%
+    .[, session_run := paste(session, run, sep = "_")] %>%
+    .[, kendal := kendall * -1] %>%
+    .[, pearson := pearson * -1] %>%
+    save_data(., paths$decoding_rest_slopes)
+  return(dt_output)
+}
