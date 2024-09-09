@@ -562,3 +562,36 @@ plot_decoding_rest_slopes_sr_mean <- function(cfg, paths) {
     coord_capped_cart(expand = TRUE, bottom = "both", left = "both")
   return(figure)
 }
+
+get_decoding_rest_slopes_sr_mean_phase <- function(cfg, paths) {
+  dt_input <- load_data(paths$decoding_rest_slopes_sr)
+  dt_output <- dt_input %>%
+    .[, phase := dplyr::case_when(
+      run == "run-09" ~ "Pre Seq",
+      run %in% c("run-01", "run-02") ~ "Seq 1",
+      run %in% c("run-03", "run-04", "run-05", "run-06") ~ "Seq 2",
+    )] %>%
+    .[, run := factor(as.factor(run), levels = c(
+      "Pre Seq", "Seq 1", "Seq 2"))] %>%
+    .[, by = .(id, mask_test, phase), .(
+      num_trs = .N,
+      mean_slope = mean(abs(slope))
+    )] %>%
+    save_data(paths$decoding_rest_slopes_sr_mean_phase)
+}
+
+plot_decoding_rest_slopes_sr_mean_phase <- function(cfg, paths) {
+  dt_input <- load_data(paths$decoding_rest_slopes_sr_mean_phase)
+  figure <- ggplot(data = dt_input, aes(x = phase, y = mean_slope)) +
+    geom_beeswarm(dodge.width = 0.9, alpha = 0.3) +
+    geom_boxplot(outlier.shape = NA, width = 0.5) +
+    stat_summary(aes(group = 1), geom = "line", fun = "mean") +
+    stat_summary(geom = "point", fun = "mean", pch = 23) +
+    stat_summary(geom = "linerange", fun.data = "mean_se") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    xlab("Resting-state phase (in Session 02)") +
+    ylab("Mean absolute slope") +
+    theme_zoo() +
+    coord_capped_cart(expand = TRUE, bottom = "both", left = "both")
+  return(figure)
+}

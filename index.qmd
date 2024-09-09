@@ -48,6 +48,8 @@ get_decoding_rest_slopes_mean_diff(cfg, paths)
 get_decoding_rest_slopes_sr(cfg, paths)
 get_decoding_rest_slopes_sr_mean(cfg, paths)
 plot_decoding_rest_slopes_sr_mean(cfg, paths)
+get_decoding_rest_slopes_sr_mean_phase(cfg, paths)
+plot_decoding_rest_slopes_sr_mean_phase(cfg, paths)
 ```
 
 ```{r}
