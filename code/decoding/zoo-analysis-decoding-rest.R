@@ -441,6 +441,7 @@ plot_decoding_rest_freq_spec_power_mean <- function(cfg, paths) {
   figure <- figure +
     geom_text(data = frequency_expectation, aes(
       x = xintercept - 0.015, y = max(yrange), label = paste(round(xintercept, 2))))
+  return(figure)
 }
 
 get_decoding_rest_freq_spec_power_expect <- function(cfg, paths) {
@@ -497,6 +498,7 @@ plot_decoding_rest_freq_spec_power_expect <- function(cfg, paths) {
           panel.grid.minor = element_blank(),
           panel.border = element_blank(),
           panel.background = element_blank())
+  return(figure)
 }
 
 get_decoding_rest_slopes_sr <- function(cfg, paths) {
