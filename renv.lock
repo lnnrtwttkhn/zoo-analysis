@@ -416,6 +416,16 @@
       ],
       "Hash": "899f28fe0388b7f687d7453429c2474d"
     },
+    "ggnewscale": {
+      "Package": "ggnewscale",
+      "Version": "0.5.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "ggplot2"
+      ],
+      "Hash": "0e4714a05e572eacd7c232fde675558e"
+    },
     "ggplot2": {
       "Package": "ggplot2",
       "Version": "3.5.1",

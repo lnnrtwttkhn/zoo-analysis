@@ -31,6 +31,7 @@ load_packages <- function() {
   library("lomb")
   library("forcats")
   library("tibble")
+  library("ggnewscale")
 }
 
 load_config <- function() {

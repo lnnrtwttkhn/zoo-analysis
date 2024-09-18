@@ -18,4 +18,5 @@ Depends:
   combinat,
   lomb,
   forcats,
-  tibble
+  tibble,
+  ggnewscale
