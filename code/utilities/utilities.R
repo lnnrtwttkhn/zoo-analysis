@@ -381,39 +381,34 @@ calc_bits <- function(probability) {
   return(bits)
 }
 
-sr_mat_fun <- function(node_previous, node, alpha, gamma){
-  num_nodes <- 6
-  node_letters <- LETTERS[1:num_nodes]
-  num_transitions <- length(node_previous)
-  counter <- num_transitions - 1
-  # pre-allocate an empty vector to hold the bits:
-  bits <- rep(NA, counter)
-  # pre-allocate an empty vector to hold the SR matrix
-  sr_mat <- list()
+sr_mat_fun <- function(dt, cfg){
+  dt$sr_mat <- rep(NA, nrow(dt))
+  bits <- rep(NA, nrow(dt) - 1)
+  gamma <- unique(dt$gamma)
+  alpha <- unique(dt$alpha)
   # pre-allocate the successor matrix with baseline expectation
   # baseline expectation could also be zero
-  expectation <- 1 / num_nodes ^ 2
-  sr <- matrix(expectation, num_nodes, num_nodes)
+  expectation <- 1 / cfg$num_nodes ^ 2
+  sr <- matrix(expectation, cfg$num_nodes, cfg$num_nodes)
   # add letters to the successor matrix:
-  colnames(sr) <- rownames(sr) <- LETTERS[1:6]
+  colnames(sr) <- rownames(sr) <- cfg$nodes_letters
   # loop through all trials (transitions):
-  for (i in 2:(counter + 1)) {
+  for (i in nrow(dt) + 1) {
     # determine the previous node and the current node:
-    node_x <- which(node_previous[i] == node_letters)
-    node_y <- which(node[i] == node_letters)
+    node_x <- which(dt$node_previous[i] == cfg$nodes_letters)
+    node_y <- which(dt$node[i] == cfg$nodes_letters)
     # normalize the successor matrix to express it in probabilities:
-    sr_norm <- sr / matrix(rowSums(sr), num_nodes, num_nodes)
-    sr_tmp <- as.data.frame(sr_norm, row.names = TRUE)
-    sr_tmp <- rownames_to_column(sr_tmp, "previous")
-    sr_mat[[i - 1]] <- list(sr_tmp)
+    sr_norm <- sr / matrix(rowSums(sr), cfg$num_nodes, cfg$num_nodes)
+    dt$sr_mat[i - 1] <- list(rownames_to_column(as.data.frame(sr_norm, row.names = TRUE), "previous"))
     probability <- sr_norm[node_x, node_y]
-    bits[i - 1] <- calc_bits(probability = probability)
+    bits[i] <- calc_bits(probability = probability)
     # update the successor representation:
-    occupancy <- rep(0, num_nodes)
+    occupancy <- rep(0, cfg$num_nodes)
     occupancy[node_y] <- 1
-    sr[node_x,] <- sr[node_x,] + alpha * (occupancy + gamma * sr[node_y,] - sr[node_x,])
+    successor_prediction_error <- gamma * sr[node_y,] - sr[node_x,]
+    sr[node_x,] <- sr[node_x,] + alpha * (occupancy + successor_prediction_error)
   }
-  sr_mat <- c(list(sr_mat[[1]]), sr_mat)
-  bits <- c(NA, bits)
-  return(list(sr_mat))
+  dt$bits <- c(NA, bits)
+  return(list(dt = list(dt)))
 }
+

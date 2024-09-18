@@ -224,14 +224,12 @@ prep_sr_mat <- function(cfg, paths) {
     .[trial_run > 1, ] %>%
     merge.data.table(x = ., y = dt_sr_params, by = c("id")) %>%
     # merge.data.table(x = ., y = dt_demographics, by = c("id")) %>%
-    .[, by = .(id, alpha, gamma), sr_mat := sr_mat_fun(node_previous, node, alpha = unique(alpha), gamma = unique(gamma))] %>%
-    unnest(., sr_mat) %>%
-    setDT(.) %>%
-    .[, c("id", "run", "condition", "trial_run", "graph", "alpha", "gamma", "sr_mat")] %>%
+    .[, by = .(id), sr_mat_fun(.SD, cfg)] %>%
+    unnest(., dt) %>%
     unnest(., sr_mat) %>%
     setDT(.) %>%
     .[, previous := unlist(lapply(previous, function(x) LETTERS[as.numeric(x)]))] %>%
-    pivot_longer(cols = LETTERS[1:6], names_to = "current", values_to = "sr_prob") %>%
+    pivot_longer(cols = cfg$nodes_letters, names_to = "current", values_to = "sr_prob") %>%
     setDT(.) %>%
     .[, previous := as.factor(previous)] %>%
     .[, current := as.factor(current)] %>%
