@@ -529,7 +529,8 @@ get_decoding_rest_slopes_sr <- function(cfg, paths) {
       kendall = cor.test(mean_sr_prob, probability, method = "kendall")$estimate * (-1),
       kendall_norm = cor.test(mean_sr_prob, probability_norm, method = "kendall")$estimate * (-1),
       pearson = cor.test(mean_sr_prob, probability, method = "pearson")$estimate * (-1),
-      pearson_norm = cor.test(mean_sr_prob, probability_norm, method = "pearson")$estimate * (-1)
+      pearson_norm = cor.test(mean_sr_prob, probability_norm, method = "pearson")$estimate * (-1),
+      sum_sr_prob = sum(mean_sr_prob),
       # seq_numbers = paste(x, collapse = ""),
       # seq_letters = paste(node[x], collapse = ""),
       # seq_start = node[x][1],
@@ -538,6 +539,8 @@ get_decoding_rest_slopes_sr <- function(cfg, paths) {
       # seq_length = length(x),
       # seq_graph = as.numeric(all(abs(diff(x)) %in% c(1, 5)))
     )] %>%
+    # verify that the SR probabilities sum to 1 (with tolerance):
+    verify(near(1, sum_sr_prob, tol = 1e-15)) %>%
     save_data(paths$decoding_rest_slopes_sr)
 }
 
