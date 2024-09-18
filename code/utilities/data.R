@@ -248,6 +248,7 @@ prep_sr_mat_rest <- function(cfg, paths) {
     .[, max_trial_run := NULL] %>%
     .[, by = .(id, run, current), .(
       mean_sr_prob = mean(sr_prob),
+      sum_sr_prob = sum(sr_prob),
       num_prev_nodes = .N
     )] %>%
     verify(num_prev_nodes == cfg$num_nodes) %>%
