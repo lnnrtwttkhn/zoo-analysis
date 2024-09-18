@@ -193,6 +193,17 @@ load_graphs <- function(paths) {
   return(graphs)
 }
 
+save_figure <- function(plot, filename, width, height) {
+  paths <- create_paths()
+  ggsave(filename = paste0("zoo-figure-", filename, ".pdf"),
+         plot = plot, device = cairo_pdf, path = paths$figures,
+         scale = 1, dpi = "retina", width = width, height = height)
+  ggsave(filename = paste0("zoo-figure-", filename, ".png"),
+         plot = plot, device = "png", path = paths$figures,
+         scale = 1, dpi = "retina", width = width, height = height)
+  return(plot)
+}
+
 theme_zoo <- function() {
   theme_font <- "Helvetica"
   theme_color <- "black"

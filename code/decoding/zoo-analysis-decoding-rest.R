@@ -20,7 +20,7 @@ get_decoding_rest_std <- function(cfg, paths) {
 
 plot_decoding_rest_std <- function(cfg, paths) {
   dt_input <- load_data(paths$decoding_rest_std)
-  ggplot(dt_input, aes(x = ses_run, y = mean_std_prob)) +
+  figure <- ggplot(dt_input, aes(x = ses_run, y = mean_std_prob)) +
     geom_beeswarm(dodge.width = 0.9, alpha = 0.3) +
     geom_boxplot(outlier.shape = NA, width = 0.5) +
     stat_summary(geom = "point", fun = "mean", pch = 23) +
@@ -32,6 +32,8 @@ plot_decoding_rest_std <- function(cfg, paths) {
     coord_capped_cart(left = "both", bottom = "both", expand = TRUE) +
     theme(legend.position = "none") +
     theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  save_figure(figure, filename = "decoding-rest-std", width = 5, height = 4)
+  return(figure)
 }
 
 get_decoding_rest_slopes_session <- function(cfg, paths) {
@@ -133,6 +135,7 @@ plot_decoding_rest_slopes_mean <- function(cfg, paths) {
     ylab("Mean absolute slope") +
     theme_zoo() +
     coord_capped_cart(expand = TRUE, bottom = "both", left = "both")
+  save_figure(figure, filename = "decoding-rest-slopes-mean", width = 5, height = 4)
   return(figure)
 }
 
@@ -562,6 +565,7 @@ plot_decoding_rest_slopes_sr_mean <- function(cfg, paths) {
     ylab("Mean absolute slope") +
     theme_zoo() +
     coord_capped_cart(expand = TRUE, bottom = "both", left = "both")
+  save_figure(figure, filename = "decoding-rest-slopes-sr-mean", width = 5, height = 4)
   return(figure)
 }
 
