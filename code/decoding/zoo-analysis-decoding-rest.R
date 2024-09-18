@@ -536,9 +536,11 @@ get_decoding_rest_slopes_sr <- function(cfg, paths) {
       # seq_start = node[x][1],
       # seq_diff_mean = mean(diff(x)),
       # seq_diff_sd = sd(diff(x)),
-      # seq_length = length(x),
+      seq_length = .N
       # seq_graph = as.numeric(all(abs(diff(x)) %in% c(1, 5)))
     )] %>%
+    # verify that there are six values per slope (one for each node):
+    verify(seq_length == cfg$num_nodes) %>%
     # verify that the SR probabilities sum to 1 (with tolerance):
     verify(near(1, sum_sr_prob, tol = 1e-15)) %>%
     save_data(paths$decoding_rest_slopes_sr)
