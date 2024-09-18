@@ -115,6 +115,7 @@ create_paths <- function() {
   paths$decoding_rest_freq_expect <- sprintf(source_path, "decoding-rest-freq-expect")
   paths$decoding_rest_freq_spec_power_expect <- sprintf(source_path, "decoding-rest-freq-spec-power-expect")
   paths$decoding_rest_slopes_sr <- sprintf(source_path, "decoding-rest-slopes-sr")
+  paths$decoding_sd_sr_prob <- sprintf(source_path, "decoding-rest-sd-sr-prob")
   paths$decoding_rest_slopes_sr_mean <- sprintf(source_path, "decoding-rest-slopes-sr-mean")
   paths$decoding_rest_slopes_sr_mean_phase <- sprintf(source_path, "decoding-rest-slopes-sr-mean-phase")
   for (path in c(paths$output, paths$figures, paths$sourcedata, paths$slopes, paths$logs)) {

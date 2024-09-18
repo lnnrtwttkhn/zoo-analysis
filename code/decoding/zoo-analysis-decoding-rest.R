@@ -530,6 +530,7 @@ get_decoding_rest_slopes_sr <- function(cfg, paths) {
       kendall_norm = cor.test(mean_sr_prob, probability_norm, method = "kendall")$estimate * (-1),
       pearson = cor.test(mean_sr_prob, probability, method = "pearson")$estimate * (-1),
       pearson_norm = cor.test(mean_sr_prob, probability_norm, method = "pearson")$estimate * (-1),
+      sd_sr_prob = sd(mean_sr_prob),
       sum_sr_prob = sum(mean_sr_prob),
       # seq_numbers = paste(x, collapse = ""),
       # seq_letters = paste(node[x], collapse = ""),
@@ -544,6 +545,34 @@ get_decoding_rest_slopes_sr <- function(cfg, paths) {
     # verify that the SR probabilities sum to 1 (with tolerance):
     verify(near(1, sum_sr_prob, tol = 1e-15)) %>%
     save_data(paths$decoding_rest_slopes_sr)
+}
+
+get_decoding_rest_sd_sr_prob <- function(cfg, paths) {
+  dt_input <- load_data(paths$decoding_rest_slopes_sr)
+  dt_output <- dt_input %>%
+    .[, by = .(id, mask_test, run), .(
+      num_trs = .N,
+      mean_sd_sr_prob = mean(sd_sr_prob)
+    )] %>%
+    verify(num_trs %in% cfg$rest$num_trs) %>%
+    .[, num_trs := NULL] %>%
+    save_data(paths$decoding_sd_sr_prob)
+}
+
+plot_decoding_rest_sd_sr_prob <- function(cfg, paths) {
+  dt_input <- load_data(paths$decoding_sd_sr_prob)
+  figure <- ggplot(data = dt_input, aes(x = run, y = mean_sd_sr_prob)) +
+    # geom_beeswarm(dodge.width = 0.9, alpha = 0.3) +
+    # geom_boxplot(outlier.shape = NA, width = 0.5) +
+    stat_summary(geom = "point", fun = "mean", position = position_dodge(0.9), pch = 23) +
+    stat_summary(geom = "linerange", fun.data = "mean_se", position = position_dodge(0.9)) +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    xlab("Resting-state run (in Session 02)") +
+    ylab("Mean SD SR Probability") +
+    theme_zoo() +
+    coord_capped_cart(expand = TRUE, bottom = "both", left = "both")
+  save_figure(figure, filename = "decoding-rest-sd-sr-mean", width = 5, height = 4)
+  return(figure)
 }
 
 get_decoding_rest_slopes_sr_mean <- function(cfg, paths) {
