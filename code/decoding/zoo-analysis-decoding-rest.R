@@ -525,6 +525,7 @@ get_decoding_rest_slopes_sr <- function(cfg, paths) {
                      by.x = c("id", "run", "node"), by.y = c("id", "run", "current")) %>%
     .[, by = grouping_variables, .(
       slope = coef(lm(probability ~ mean_sr_prob))[2] * (-1),
+      slope_rank = coef(lm(probability ~ rank(mean_sr_prob)))[2] * (-1),
       slope_norm = coef(lm(probability_norm ~ mean_sr_prob))[2] * (-1),
       kendall = cor.test(mean_sr_prob, probability, method = "kendall")$estimate * (-1),
       kendall_norm = cor.test(mean_sr_prob, probability_norm, method = "kendall")$estimate * (-1),
@@ -580,7 +581,8 @@ get_decoding_rest_slopes_sr_mean <- function(cfg, paths) {
   dt_output <- dt_input %>%
     .[, by = .(id, mask_test, run), .(
       num_trs = .N,
-      mean_slope = mean(abs(slope))
+      mean_slope = mean(abs(slope)),
+      mean_slope_rank = mean(abs(slope_rank))
     )] %>%
     verify(num_trs %in% cfg$rest$num_trs) %>%
     .[, num_trs := NULL] %>%
@@ -590,6 +592,7 @@ get_decoding_rest_slopes_sr_mean <- function(cfg, paths) {
 plot_decoding_rest_slopes_sr_mean <- function(cfg, paths) {
   dt_input <- load_data(paths$decoding_rest_slopes_sr_mean)
   figure <- ggplot(data = dt_input, aes(x = run, y = mean_slope)) +
+  # figure <- ggplot(data = dt_input, aes(x = run, y = mean_slope_rank)) +
     # geom_beeswarm(dodge.width = 0.9, alpha = 0.3) +
     # geom_boxplot(outlier.shape = NA, width = 0.5) +
     stat_summary(geom = "point", fun = "mean", position = position_dodge(0.9), pch = 23) +
