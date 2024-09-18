@@ -240,7 +240,8 @@ prep_sr_mat <- function(cfg, paths) {
 }
 
 prep_sr_mat_rest <- function(cfg, paths) {
-  dt_behav_sr_mat <- load_data(paths$behav_sr_mat) %>%
+  dt_input <- load_data(paths$behav_sr_mat)
+  dt_output <- dt_input %>%
     .[condition == "Sequence" | (condition == "Single" & run == "run-09"), ] %>%
     .[, by = .(id, condition, run), max_trial_run := as.numeric(trial_run == max(trial_run))] %>%
     .[max_trial_run == 1, ] %>%
