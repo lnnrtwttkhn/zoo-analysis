@@ -638,3 +638,42 @@ plot_decoding_rest_slopes_sr_mean_phase <- function(cfg, paths) {
     coord_capped_cart(expand = TRUE, bottom = "both", left = "both")
   return(figure)
 }
+
+plot_decoding_rest_surprise_timecourse <- function(cfg, paths) {
+  dt_input <- load_data(paths$behav_sr_mat)
+  set.seed(498)
+  random_id <- sample(unique(dt_input$id), 3)
+  random_id <- c("sub-04", "sub-42")
+  dt_output <- dt_input %>%
+    .[id %in% random_id, ] %>%
+    distinct(., pick(contains(c("id", "session", "run", "condition", "trial_run", "node", "bits")))) %>%
+    setDT(.) %>%
+    .[, trial_study := .GRP, by = .(session, condition, run, trial_run)] %>%
+    .[, condition_session_run := sprintf("%s (%s %s)", condition, session, run)] %>%
+    .[, by = .(id, condition, run), min_trial_run := unique(trial_study[trial_study == min(trial_study)])] %>%
+    .[, by = .(id, condition, run), max_trial_run := unique(trial_study[trial_study == max(trial_study)])] %>%
+    .[condition == "Sequence" & run == "run-03", by = .(id, condition, run), graph_change := median(c(unique(min_trial_run), unique(max_trial_run)))]
+  figure <- ggplot(data = dt_output, aes(x = trial_study, y = bits)) +
+    facet_grid(vars(id), vars(session), scales = "free") +
+    geom_vline(aes(xintercept = min_trial_run, color = condition), linewidth = 0.75) +
+    scale_color_viridis_d(option = "viridis", name = "Task Condition") +
+    new_scale_color() +
+    geom_vline(aes(xintercept = graph_change, color = "Graph Change"), linewidth = 1) +
+    scale_color_manual(values = "red", name = "") +
+    # geom_rect(data = dt_rect, aes(
+    #   xmin = min_trial_run, xmax = max_trial_run,
+    #   ymin = -Inf, ymax = Inf, fill = condition),
+    #   linewidth = 0.75, color = "black", alpha = 0.1) +
+    # geoms below will use another color scale
+    new_scale_color() +
+    geom_line(aes(color = node)) +
+    scale_color_viridis_d(option = "C", name = "Stimuli") +
+    # geom_smooth(method = "lm", formula = y~x, color = "black") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    xlab("Time (in Trials)") +
+    ylab("SR-based Shannon surprise") +
+    theme_zoo() +
+    coord_capped_cart(expand = TRUE, bottom = "both", left = "both")
+  save_figure(figure, filename = "decoding-rest-rest-surprise-timecourse", width = 8, height = 5)
+  return(figure)
+}
