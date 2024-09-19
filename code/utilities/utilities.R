@@ -119,6 +119,7 @@ create_paths <- function() {
   paths$decoding_sd_sr_prob <- sprintf(source_path, "decoding-rest-sd-sr-prob")
   paths$decoding_rest_slopes_sr_mean <- sprintf(source_path, "decoding-rest-slopes-sr-mean")
   paths$decoding_rest_slopes_sr_mean_phase <- sprintf(source_path, "decoding-rest-slopes-sr-mean-phase")
+  paths$decoding_rest_slopes_sr_gamma_corr <- sprintf(source_path, "decoding-rest-slopes-sr-gamma-corr")
   for (path in c(paths$output, paths$figures, paths$sourcedata, paths$slopes, paths$logs)) {
     create_dir(path)
   }

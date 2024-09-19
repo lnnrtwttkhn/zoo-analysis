@@ -578,8 +578,16 @@ plot_decoding_rest_sd_sr_prob <- function(cfg, paths) {
 
 get_decoding_rest_slopes_sr_mean <- function(cfg, paths) {
   dt_input <- load_data(paths$decoding_rest_slopes_sr)
+  dt_sr_params <- load_data(paths$behav_sr_params) %>%
+    .[model_name == "Full", ] %>%
+    .[mod == "model", ] %>%
+    .[iter == 1, ] %>%
+    .[variable %in% c("alpha", "gamma"), ] %>%
+    .[, c("id", "variable", "value")] %>%
+    pivot_wider(id_cols = c("id"), names_from = "variable")
   dt_output <- dt_input %>%
-    .[, by = .(id, mask_test, run), .(
+    merge.data.table(x = ., y = dt_sr_params, by = c("id")) %>%
+    .[, by = .(id, mask_test, run, alpha, gamma), .(
       num_trs = .N,
       mean_slope = mean(abs(slope)),
       mean_slope_rank = mean(abs(slope_rank))
@@ -587,6 +595,36 @@ get_decoding_rest_slopes_sr_mean <- function(cfg, paths) {
     verify(num_trs %in% cfg$rest$num_trs) %>%
     .[, num_trs := NULL] %>%
     save_data(paths$decoding_rest_slopes_sr_mean)
+}
+
+get_decoding_rest_slopes_sr_gamma_corr <- function(cfg, paths) {
+  dt_input <- load_data(paths$decoding_rest_slopes_sr_mean)
+  dt_output <- dt_input %>%
+    .[, by = .(mask_test, run), .(
+      num_subs = .N,
+      cor = list(broom::tidy(cor.test(mean_slope, gamma, method = "pearson")))
+    )] %>%
+    unnest(cor) %>%
+    setDT(.) %>%
+    .[, label := sprintf("r = %.2f, p = %.2f", estimate, p.value)] %>%
+    save_data(paths$decoding_rest_slopes_sr_gamma_corr)
+}
+
+plot_decoding_rest_slopes_sr_gamma_corr <- function(cfg, paths) {
+  dt_input <- load_data(paths$decoding_rest_slopes_sr_mean)
+  dt_input_stat <- load_data(paths$decoding_rest_slopes_sr_gamma_corr)
+  figure <- ggplot(data = dt_input, aes(x = gamma, y = mean_slope)) +
+    facet_wrap(~ run) +
+    geom_point(color = "darkgray") +
+    geom_smooth(method = "lm", formula = y~x, color = "black") +
+    geom_text(data = dt_input_stat, aes(label = label), y = 90, x = 0.5) +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    xlab(expression(gamma)) +
+    ylab("Mean absolute slope") +
+    theme_zoo() +
+    coord_capped_cart(expand = TRUE, bottom = "both", left = "both")
+  figure
+  return(figure)
 }
 
 plot_decoding_rest_slopes_sr_mean <- function(cfg, paths) {
