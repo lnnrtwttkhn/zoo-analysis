@@ -316,6 +316,7 @@ get_decoding_rest_freq_spec <- function(cfg, paths) {
   num_trs_session1 <- max(cfg$rest$num_trs)
   num_trs_session2 <- min(cfg$rest$num_trs)
   smoothing_kernel <- cfg$rest$freq_smoothing_kernel
+  set.seed(2937)
   dt_output <- dt_input %>%
     # take a random subsequence of the session 1 resting-state data
     # this subsequence has the same number of TRs as the session 2 resting state data
@@ -369,6 +370,11 @@ get_decoding_rest_freq_spec_power <- function(cfg, paths) {
       power_smooth_baseline = rep(power_smooth[ses_run == baseline_run], length(unique(ses_run))),
       power_smooth_norm_baseline = rep(power_smooth_norm[ses_run == baseline_run], length(unique(ses_run)))
     )] %>%
+    .[, by = .(id, mask_test, seq_id), ":="(
+      num_ses_run = length(unique(ses_run)),
+      power_smooth_baseline = rep(power_smooth[ses_run == baseline_run], length(unique(ses_run))),
+      power_smooth_norm_baseline = rep(power_smooth_norm[ses_run == baseline_run], length(unique(ses_run)))
+    )] %>%
     verify(num_ses_run == 8) %>%
     .[, num_ses_run := NULL] %>%
     # power relative to the baseline run data:
@@ -385,17 +391,13 @@ get_decoding_rest_freq_spec_power_mean <- function(cfg, paths) {
     # average across all sequences:
     .[, by = .(id, mask_test, ses_run, freq_bins_smooth), .(
       num_sequences = .N,
-      power_smooth = mean(power_smooth_norm_rel)
+      power_smooth = as.numeric(mean(power_smooth)),
+      power_smooth_norm = as.numeric(mean(power_smooth_norm)),
+      power_smooth_rel = as.numeric(mean(power_smooth_rel)),
+      power_smooth_norm_rel = as.numeric(mean(power_smooth_norm_rel))
     )] %>%
     verify(num_sequences == 360) %>%
-    .[, by = .(mask_test, ses_run, freq_bins_smooth), .(
-      num_subs = .N,
-      mean_spec = mean(power_smooth),
-      sem_upper = mean(power_smooth) + (sd(power_smooth)/sqrt(.N)),
-      sem_lower = mean(power_smooth) - (sd(power_smooth)/sqrt(.N))
-    )] %>%
     .[, ses_run := as.factor(ses_run)] %>%
-    .[, mean_spec := as.numeric(mean_spec)] %>%
     .[, freq_bins_smooth := as.numeric(freq_bins_smooth)] %>%
     save_data(., paths$decoding_rest_freq_spec_power_mean)
 }
@@ -416,15 +418,39 @@ get_decoding_rest_freq_expect <- function(cfg, paths) {
     save_data(., paths$decoding_rest_freq_expect)
 }
 
+plot_decoding_rest_freq_spec_power_baseline <- function(cfg, paths) {
+  dt_input <- load_data(paths$decoding_rest_freq_spec_power_mean) %>%
+    .[ses_run == "ses-01_run-1", ]
+  figure <- ggplot(data = dt_input, aes(y = power_smooth_norm, x = freq_bins_smooth)) +
+    geom_vline(data = frequency_expectation, aes(xintercept = xintercept),
+               linetype = "dashed") +
+    stat_summary(geom = "ribbon", fun.data = "mean_se", aes(fill = ses_run),
+                 alpha = 0.3, color = NA) +
+    stat_summary(geom = "line", fun = "mean", aes(color = ses_run)) +
+    facet_wrap(~ mask_test) +
+    xlab("Frequency") +
+    ylab("Power") +
+    coord_capped_cart(left = "both", bottom = "both", expand = TRUE, xlim = c(0, 0.3)) +
+    scale_x_continuous(labels = label_fill(seq(0, 0.3, by = 0.05), mod = 1),
+                       breaks = seq(0, 0.3, by = 0.05)) +
+    theme(panel.border = element_blank()) + 
+    theme(axis.line = element_line(colour = "black")) +
+    theme(panel.grid.major = element_blank()) +
+    theme(panel.grid.minor = element_blank()) +
+    theme(panel.background = element_blank()) +
+    theme(panel.border = element_blank())
+  return(figure)
+}
+
 plot_decoding_rest_freq_spec_power_mean <- function(cfg, paths) {
   dt_input <- load_data(paths$decoding_rest_freq_spec_power_mean)
   frequency_expectation <- load_data(paths$decoding_rest_freq_expect)
-  figure <- ggplot(data = dt_input, aes(y = mean_spec, x = freq_bins_smooth)) +
-    geom_line(aes(color = ses_run)) +
+  figure <- ggplot(data = dt_input, aes(y = power_smooth_norm_rel, x = freq_bins_smooth)) +
     geom_vline(data = frequency_expectation, aes(xintercept = xintercept),
                linetype = "dashed") +
-    geom_ribbon(aes(fill = ses_run, ymin = sem_lower, ymax = sem_upper),
-                alpha = 0.3, color = NA) +
+    stat_summary(geom = "ribbon", fun.data = "mean_se", aes(fill = ses_run),
+                 alpha = 0.3, color = NA) +
+    stat_summary(geom = "line", fun = "mean", aes(color = ses_run)) +
     facet_wrap(~ mask_test) +
     xlab("Frequency") +
     ylab("Relative power") +
