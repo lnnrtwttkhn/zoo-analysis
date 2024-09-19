@@ -368,19 +368,21 @@ get_decoding_rest_freq_spec_power <- function(cfg, paths) {
     .[, by = .(id, mask_test, seq_id), ":="(
       num_ses_run = length(unique(ses_run)),
       power_smooth_baseline = rep(power_smooth[ses_run == baseline_run], length(unique(ses_run))),
-      power_smooth_norm_baseline = rep(power_smooth_norm[ses_run == baseline_run], length(unique(ses_run)))
+      power_smooth_norm_baseline = rep(power_smooth_norm[ses_run == baseline_run], length(unique(ses_run))),
+      power_smooth_norm_baseline1 = as.numeric(rep(power_smooth_norm[ses_run == "ses-01_run-1"], length(unique(ses_run)))),
+      power_smooth_norm_baseline2 = as.numeric(rep(power_smooth_norm[ses_run == "ses-01_run-2"], length(unique(ses_run)))),
+      power_smooth_norm_baseline3 = as.numeric(rep(power_smooth_norm[ses_run == "ses-02_run-1"], length(unique(ses_run))))
     )] %>%
-    .[, by = .(id, mask_test, seq_id), ":="(
-      num_ses_run = length(unique(ses_run)),
-      power_smooth_baseline = rep(power_smooth[ses_run == baseline_run], length(unique(ses_run))),
-      power_smooth_norm_baseline = rep(power_smooth_norm[ses_run == baseline_run], length(unique(ses_run)))
-    )] %>%
+    .[, by = .(id, mask_test, seq_id),
+       power_smooth_norm_baseline_mean := rowMeans(.SD), .SDcols = c("power_smooth_norm_baseline1", "power_smooth_norm_baseline2", "power_smooth_norm_baseline3")
+    ] %>%
     verify(num_ses_run == 8) %>%
     .[, num_ses_run := NULL] %>%
     # power relative to the baseline run data:
     .[, by = .(id, mask_test, ses_run, seq_id), ":="(
       power_smooth_rel = power_smooth - power_smooth_baseline,
-      power_smooth_norm_rel = power_smooth_norm - power_smooth_norm_baseline
+      power_smooth_norm_rel = power_smooth_norm - power_smooth_norm_baseline,
+      power_smooth_norm_rel_mean = power_smooth_norm - power_smooth_norm_baseline_mean
     )] %>%
     save_data(., paths$decoding_rest_freq_spec_power)
 }
@@ -394,7 +396,8 @@ get_decoding_rest_freq_spec_power_mean <- function(cfg, paths) {
       power_smooth = as.numeric(mean(power_smooth)),
       power_smooth_norm = as.numeric(mean(power_smooth_norm)),
       power_smooth_rel = as.numeric(mean(power_smooth_rel)),
-      power_smooth_norm_rel = as.numeric(mean(power_smooth_norm_rel))
+      power_smooth_norm_rel = as.numeric(mean(power_smooth_norm_rel)),
+      power_smooth_norm_rel_mean = as.numeric(mean(power_smooth_norm_rel_mean))
     )] %>%
     verify(num_sequences == 360) %>%
     .[, ses_run := as.factor(ses_run)] %>%
@@ -443,9 +446,11 @@ plot_decoding_rest_freq_spec_power_baseline <- function(cfg, paths) {
 }
 
 plot_decoding_rest_freq_spec_power_mean <- function(cfg, paths) {
-  dt_input <- load_data(paths$decoding_rest_freq_spec_power_mean)
+  dt_input <- load_data(paths$decoding_rest_freq_spec_power_mean) %>%
+    .[!(ses_run %in% c("ses-01_run-1", "ses-01_run-2", "ses-02_run-1"))]
   frequency_expectation <- load_data(paths$decoding_rest_freq_expect)
-  figure <- ggplot(data = dt_input, aes(y = power_smooth_norm_rel, x = freq_bins_smooth)) +
+  figure <- ggplot(data = dt_input, aes(y = power_smooth_norm_rel_mean, x = freq_bins_smooth)) +
+    geom_hline(yintercept = 0, color = "black") +  
     geom_vline(data = frequency_expectation, aes(xintercept = xintercept),
                linetype = "dashed") +
     stat_summary(geom = "ribbon", fun.data = "mean_se", aes(fill = ses_run),
@@ -484,8 +489,8 @@ get_decoding_rest_freq_spec_power_expect <- function(cfg, paths) {
     .[, ses_run := as.factor(ses_run)] %>%
     .[, freq_bins_smooth := as.numeric(freq_bins_smooth)] %>%
     .[, by = .(id, mask_test, ses_run, seq_id), .(
-      power_index_fast = power_smooth_rel[which.min(abs(freq_bins_smooth - fast_freq))],
-      power_index_slow = power_smooth_rel[which.min(abs(freq_bins_smooth - slow_freq))]
+      power_index_fast = power_smooth_norm_rel_mean[which.min(abs(freq_bins_smooth - fast_freq))],
+      power_index_slow = power_smooth_norm_rel_mean[which.min(abs(freq_bins_smooth - slow_freq))]
     )] %>%
     # melt all index variables into one column:
     gather(grep("power", names(.), fixed = TRUE), key = "index", value = "power") %>%
