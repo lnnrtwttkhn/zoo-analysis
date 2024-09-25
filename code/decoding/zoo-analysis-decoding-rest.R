@@ -395,7 +395,7 @@ get_decoding_rest_freq_spec_power_mean <- function(cfg, paths) {
   dt_input <- load_data(paths$decoding_rest_freq_spec_power)
   dt_output <- dt_input %>%
     # average across all sequences:
-    .[, by = .(id, mask_test, ses_run, freq_bins_smooth), .(
+    .[, by = .(id, mask_test, ses_run, condition, freq_bins_smooth), .(
       num_sequences = .N,
       power_smooth = as.numeric(mean(power_smooth)),
       power_smooth_norm = as.numeric(mean(power_smooth_norm)),
@@ -466,9 +466,11 @@ plot_decoding_rest_freq_spec_power_baseline <- function(cfg, paths) {
 }
 
 plot_decoding_rest_freq_spec_power_mean <- function(cfg, paths) {
-  dt_input <- load_data(paths$decoding_rest_freq_spec_power_mean)
+  dt_input <- load_data(paths$decoding_rest_freq_spec_power_mean) %>%
+    .[condition == "Sequence"]
   frequency_expectation <- load_data(paths$decoding_rest_freq_expect)
   figure <- ggplot(data = dt_input, aes(y = power_smooth_norm_rel_mean, x = freq_bins_smooth)) +
+    geom_hline(yintercept = 0, color = "black") +
     geom_vline(data = frequency_expectation, aes(xintercept = xintercept), linetype = "dashed") +
     geom_text(data = frequency_expectation, aes(
       x = xintercept, y = Inf, label = paste(round(xintercept, 2))), hjust = -0.3, vjust = 2) +
@@ -479,7 +481,7 @@ plot_decoding_rest_freq_spec_power_mean <- function(cfg, paths) {
     stat_summary(geom = "line", fun = "mean", aes(color = ses_run)) +
     facet_wrap(~ mask_test) +
     xlab("Frequency") +
-    ylab("Power") +
+    ylab("Relative power") +
     theme_zoo() +
     coord_capped_cart(left = "both", bottom = "both", expand = TRUE, xlim = c(0, 0.3)) +
     scale_x_continuous(labels = label_fill(seq(0, 0.3, by = 0.05), mod = 1),
@@ -492,7 +494,7 @@ plot_decoding_rest_freq_spec_power_mean <- function(cfg, paths) {
     theme(legend.title.position = "top") +
     theme(legend.justification = "center") +
     theme(legend.margin = margin(0, 0, 0, 0))
-  save_figure(figure, filename = "decoding-rest-freq-spec-power-mean", width = 5, height = 5)
+  save_figure(figure, filename = "decoding-rest-freq-spec-power-mean-rel", width = 5, height = 5)
   return(figure)
 }
 
@@ -533,9 +535,9 @@ get_decoding_rest_freq_spec_power_expect <- function(cfg, paths) {
   dt_output <- dt_input %>%
     .[, ses_run := as.factor(ses_run)] %>%
     .[, freq_bins_smooth := as.numeric(freq_bins_smooth)] %>%
-    .[, by = .(id, mask_test, ses_run, seq_id), .(
-      power_index_fast = power_smooth_norm[which.min(abs(freq_bins_smooth - fast_freq))],
-      power_index_slow = power_smooth_norm[which.min(abs(freq_bins_smooth - slow_freq))]
+    .[, by = .(id, mask_test, ses_run, condition, seq_id), .(
+      power_index_fast = power_smooth_norm_rel_mean[which.min(abs(freq_bins_smooth - fast_freq))],
+      power_index_slow = power_smooth_norm_rel_mean[which.min(abs(freq_bins_smooth - slow_freq))]
     )] %>%
     # melt all index variables into one column:
     gather(grep("power", names(.), fixed = TRUE), key = "index", value = "power") %>%
@@ -543,7 +545,7 @@ get_decoding_rest_freq_spec_power_expect <- function(cfg, paths) {
     .[grepl("index_fast", index), label := paste0("Fast (", round(fast_freq, 2), ")")] %>%
     .[grepl("index_slow", index), label := paste0("Slow (", round(slow_freq, 2), ")")] %>%
     # average across sequences for seen and unseen sequences:
-    .[, by = .(id, mask_test, ses_run, index, label), .(
+    .[, by = .(id, mask_test, ses_run, condition, index, label), .(
       num_seqs = .N,
       power = mean(power)
     )] %>%
@@ -599,6 +601,7 @@ plot_decoding_rest_freq_spec_power_expect <- function(cfg, paths) {
   dt_input <- load_data(paths$decoding_rest_freq_spec_power_expect)
   # dt_input_stat <- load_data(paths$decoding_rest_freq_spec_power_expect_cond_stat)
   figure <- ggplot(data = dt_input, aes(y = power, x = fct_rev(label))) +
+    geom_hline(yintercept = 0, color = "black") +
     geom_beeswarm(aes(fill = ses_run), alpha = 0.3, dodge.width = 0.9, pch = 21, color = "black") +
     geom_boxplot(aes(fill = ses_run), outlier.shape = NA, width = 0.5, position = position_dodge(0.9), color = "black") +
     stat_summary(aes(fill = ses_run), geom = "point", fun = "mean", pch = 23, position = position_dodge(0.9), color = "black") +
@@ -607,14 +610,14 @@ plot_decoding_rest_freq_spec_power_expect <- function(cfg, paths) {
     #            color = "gray", parse = FALSE, size = rel(2.5)) +
     facet_wrap(~ mask_test) +
     xlab("Predicted frequency") +
-    ylab("Power") +
-    coord_capped_cart(left = "both", bottom = "both", expand = TRUE, ylim = c(0, 0.06)) +
+    ylab("Relative power") +
+    coord_capped_cart(left = "both", bottom = "both", expand = TRUE) +
     theme_zoo() +
     theme(axis.ticks.x = element_line(color = "white")) +
     theme(axis.line.x = element_line(color = "white")) +
     scale_color_viridis_d(name = "Resting-state run") +
     scale_fill_viridis_d(name = "Resting-state run")
-  save_figure(figure, filename = "decoding-rest-freq-spec-power-expect", width = 6, height = 4)
+  save_figure(figure, filename = "decoding-rest-freq-spec-power-expect-rel", width = 6, height = 4)
   return(figure)
 }
 
