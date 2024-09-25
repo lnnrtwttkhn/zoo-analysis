@@ -466,11 +466,12 @@ plot_decoding_rest_freq_spec_power_baseline <- function(cfg, paths) {
 }
 
 plot_decoding_rest_freq_spec_power_mean <- function(cfg, paths) {
-  dt_input <- load_data(paths$decoding_rest_freq_spec_power_mean) %>%
-    .[!(ses_run %in% c("ses-01_run-1", "ses-01_run-2", "ses-02_run-1"))]
+  dt_input <- load_data(paths$decoding_rest_freq_spec_power_mean)
   frequency_expectation <- load_data(paths$decoding_rest_freq_expect)
   figure <- ggplot(data = dt_input, aes(y = power_smooth_norm_rel_mean, x = freq_bins_smooth)) +
-    geom_hline(yintercept = 0, color = "black") +  
+    geom_vline(data = frequency_expectation, aes(xintercept = xintercept), linetype = "dashed") +
+    geom_text(data = frequency_expectation, aes(
+      x = xintercept, y = Inf, label = paste(round(xintercept, 2))), hjust = -0.3, vjust = 2) +
     geom_vline(data = frequency_expectation, aes(xintercept = xintercept),
                linetype = "dashed") +
     stat_summary(geom = "ribbon", fun.data = "mean_se", aes(fill = ses_run),
@@ -478,23 +479,20 @@ plot_decoding_rest_freq_spec_power_mean <- function(cfg, paths) {
     stat_summary(geom = "line", fun = "mean", aes(color = ses_run)) +
     facet_wrap(~ mask_test) +
     xlab("Frequency") +
-    ylab("Relative power") +
-    # theme(legend.position = "top", legend.direction = "horizontal",
-    #       legend.justification = "center", legend.margin = margin(0, 0, 0, 0),
-    #       legend.box.margin = margin(t = 0, r = 0, b = -5, l = 0)) +
+    ylab("Power") +
+    theme_zoo() +
     coord_capped_cart(left = "both", bottom = "both", expand = TRUE, xlim = c(0, 0.3)) +
     scale_x_continuous(labels = label_fill(seq(0, 0.3, by = 0.05), mod = 1),
                        breaks = seq(0, 0.3, by = 0.05)) +
-    theme(panel.border = element_blank()) + 
-    theme(axis.line = element_line(colour = "black")) +
-    theme(panel.grid.major = element_blank()) +
-    theme(panel.grid.minor = element_blank()) +
-    theme(panel.background = element_blank()) +
-    theme(panel.border = element_blank())
-  yrange = layer_scales(figure)$y$range$range
-  figure <- figure +
-    geom_text(data = frequency_expectation, aes(
-      x = xintercept - 0.015, y = max(yrange), label = paste(round(xintercept, 2))))
+    scale_color_viridis_d(name = "Resting-state run") +
+    scale_fill_viridis_d(name = "Resting-state run") +
+    guides(color = guide_legend(ncol = 3, byrow = TRUE)) +
+    theme(legend.title = element_text(hjust = 0.5)) +
+    theme(legend.position = "bottom") +
+    theme(legend.title.position = "top") +
+    theme(legend.justification = "center") +
+    theme(legend.margin = margin(0, 0, 0, 0))
+  save_figure(figure, filename = "decoding-rest-freq-spec-power-mean", width = 5, height = 5)
   return(figure)
 }
 
@@ -536,8 +534,8 @@ get_decoding_rest_freq_spec_power_expect <- function(cfg, paths) {
     .[, ses_run := as.factor(ses_run)] %>%
     .[, freq_bins_smooth := as.numeric(freq_bins_smooth)] %>%
     .[, by = .(id, mask_test, ses_run, seq_id), .(
-      power_index_fast = power_smooth_norm_rel_mean[which.min(abs(freq_bins_smooth - fast_freq))],
-      power_index_slow = power_smooth_norm_rel_mean[which.min(abs(freq_bins_smooth - slow_freq))]
+      power_index_fast = power_smooth_norm[which.min(abs(freq_bins_smooth - fast_freq))],
+      power_index_slow = power_smooth_norm[which.min(abs(freq_bins_smooth - slow_freq))]
     )] %>%
     # melt all index variables into one column:
     gather(grep("power", names(.), fixed = TRUE), key = "index", value = "power") %>%
@@ -599,29 +597,24 @@ get_decoding_rest_freq_spec_power_expect_cond_stat <- function(cfg, paths) {
 
 plot_decoding_rest_freq_spec_power_expect <- function(cfg, paths) {
   dt_input <- load_data(paths$decoding_rest_freq_spec_power_expect)
-  figure <- ggplot(data = dt_input, aes(
-    y = power, x = fct_rev(label), fill = ses_run)) + 
-    geom_bar(stat = "summary", fun = "mean", position = position_dodge(0.9),
-             width = 0.8) +
-    # geom_point(position = position_jitterdodge(
-    #   jitter.width = 0.1, jitter.height = 0, seed = 2, dodge.width = 0.9),
-    #   alpha = 1, inherit.aes = TRUE, pch = 21,
-    #   color = "white") +
+  # dt_input_stat <- load_data(paths$decoding_rest_freq_spec_power_expect_cond_stat)
+  figure <- ggplot(data = dt_input, aes(y = power, x = fct_rev(label))) +
+    geom_beeswarm(aes(fill = ses_run), alpha = 0.3, dodge.width = 0.9, pch = 21, color = "black") +
+    geom_boxplot(aes(fill = ses_run), outlier.shape = NA, width = 0.5, position = position_dodge(0.9), color = "black") +
+    stat_summary(aes(fill = ses_run), geom = "point", fun = "mean", pch = 23, position = position_dodge(0.9), color = "black") +
+    stat_summary(aes(group = ses_run), geom = "linerange", fun.data = "mean_se", position = position_dodge(0.9), color = "black") +
+    # geom_label(data = dt_input_stat, aes(y = 0.06, label = paste("p", p.value_adjust_round_label)),
+    #            color = "gray", parse = FALSE, size = rel(2.5)) +
     facet_wrap(~ mask_test) +
-    stat_summary(fun.data = "mean_se", geom = "errorbar",
-                 position = position_dodge(0.9), width = 0, color = "black") +
-    xlab("Predicted frequency") + ylab("Relative power") +
-    coord_capped_cart(left = "both", bottom = "both", expand = TRUE) +
-    theme(axis.ticks.x = element_line(color = "white"), axis.line.x = element_line(color = "white")) +
-    theme(legend.position = "top", legend.direction = "horizontal",
-          legend.justification = "center", legend.margin = margin(t = 0, r = 0, b = 0, l = 0),
-          legend.box.margin = margin(t = 0, r = 0, b = 0, l = 0)) +
-    theme(panel.border = element_blank(), axis.line = element_line()) +
-    theme(axis.line = element_line(colour = "black"),
-          panel.grid.major = element_blank(),
-          panel.grid.minor = element_blank(),
-          panel.border = element_blank(),
-          panel.background = element_blank())
+    xlab("Predicted frequency") +
+    ylab("Power") +
+    coord_capped_cart(left = "both", bottom = "both", expand = TRUE, ylim = c(0, 0.06)) +
+    theme_zoo() +
+    theme(axis.ticks.x = element_line(color = "white")) +
+    theme(axis.line.x = element_line(color = "white")) +
+    scale_color_viridis_d(name = "Resting-state run") +
+    scale_fill_viridis_d(name = "Resting-state run")
+  save_figure(figure, filename = "decoding-rest-freq-spec-power-expect", width = 6, height = 4)
   return(figure)
 }
 
