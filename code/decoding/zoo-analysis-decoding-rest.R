@@ -10,8 +10,8 @@ get_decoding_rest_std <- function(cfg, paths) {
     .[, num_class := NULL] %>%
     .[, by = .(id, session, run, mask), .(
       num_trs = .N,
-      mean_std_prob = sd(std_prob),
-      mean_std_prob_norm = sd(std_prob_norm)
+      mean_std_prob = mean(std_prob),
+      mean_std_prob_norm = mean(std_prob_norm)
     )] %>%
     verify(num_trs %in% cfg$rest$num_trs) %>%
     .[, ses_run := paste(session, run, sep = "_")] %>%
@@ -21,13 +21,14 @@ get_decoding_rest_std <- function(cfg, paths) {
 plot_decoding_rest_std <- function(cfg, paths) {
   dt_input <- load_data(paths$decoding_rest_std)
   figure <- ggplot(dt_input, aes(x = ses_run, y = mean_std_prob)) +
-    geom_beeswarm(dodge.width = 0.9, alpha = 0.3) +
-    geom_boxplot(outlier.shape = NA, width = 0.5) +
+    # geom_beeswarm(dodge.width = 0.9, alpha = 0.3) +
+    # geom_boxplot(outlier.shape = NA, width = 0.5) +
     stat_summary(geom = "point", fun = "mean", pch = 23) +
     stat_summary(aes(group = 1), geom = "line", fun = "mean") +
     stat_summary(geom = "linerange", fun.data = "mean_se") +
     facet_wrap(~ mask) +
     ylab("SD of probability") +
+    xlab("Resting-state run") +
     theme_zoo() +
     coord_capped_cart(left = "both", bottom = "both", expand = TRUE) +
     theme(legend.position = "none") +
