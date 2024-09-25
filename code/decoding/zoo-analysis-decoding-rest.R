@@ -381,10 +381,13 @@ get_decoding_rest_freq_spec_power <- function(cfg, paths) {
     .[, num_ses_run := NULL] %>%
     # power relative to the baseline run data:
     .[, by = .(id, mask_test, ses_run, seq_id), ":="(
-      power_smooth_rel = power_smooth - power_smooth_baseline,
-      power_smooth_norm_rel = power_smooth_norm - power_smooth_norm_baseline,
-      power_smooth_norm_rel_mean = power_smooth_norm - power_smooth_norm_baseline_mean
+      power_smooth_rel = as.numeric(power_smooth - power_smooth_baseline),
+      power_smooth_norm_rel = as.numeric(power_smooth_norm - power_smooth_norm_baseline),
+      power_smooth_norm_rel_mean = as.numeric(power_smooth_norm - power_smooth_norm_baseline_mean)
     )] %>%
+    .[, ses_run := as.factor(ses_run)] %>%
+    .[, freq_bins_smooth := as.numeric(freq_bins_smooth)] %>%
+    .[, condition := ifelse(ses_run %in% c("ses-01_run-1", "ses-01_run-2", "ses-02_run-1"), "Single", "Sequence")] %>%
     save_data(., paths$decoding_rest_freq_spec_power)
 }
 
@@ -401,9 +404,25 @@ get_decoding_rest_freq_spec_power_mean <- function(cfg, paths) {
       power_smooth_norm_rel_mean = as.numeric(mean(power_smooth_norm_rel_mean))
     )] %>%
     verify(num_sequences == 360) %>%
-    .[, ses_run := as.factor(ses_run)] %>%
-    .[, freq_bins_smooth := as.numeric(freq_bins_smooth)] %>%
     save_data(., paths$decoding_rest_freq_spec_power_mean)
+}
+
+get_decoding_rest_freq_spec_power_mean_cond <- function(cfg, paths) {
+  dt_input <- load_data(paths$decoding_rest_freq_spec_power)
+  dt_output <- dt_input %>%
+    # average across all sequences:
+    .[, by = .(id, mask_test, condition, freq_bins_smooth), .(
+      num_sequences = .N,
+      power_smooth = as.numeric(mean(power_smooth)),
+      power_smooth_norm = as.numeric(mean(power_smooth_norm)),
+      power_smooth_rel = as.numeric(mean(power_smooth_rel)),
+      power_smooth_norm_rel = as.numeric(mean(power_smooth_norm_rel)),
+      power_smooth_norm_rel_mean = as.numeric(mean(power_smooth_norm_rel_mean))
+    )] %>%
+    # verify(num_sequences == 360) %>%
+    # .[, ses_run := as.factor(ses_run)] %>%
+    .[, freq_bins_smooth := as.numeric(freq_bins_smooth)] %>%
+    save_data(., paths$decoding_rest_freq_spec_power_mean_cond)
 }
 
 get_decoding_rest_freq_expect <- function(cfg, paths) {
@@ -479,6 +498,33 @@ plot_decoding_rest_freq_spec_power_mean <- function(cfg, paths) {
   return(figure)
 }
 
+plot_decoding_rest_freq_spec_power_mean_cond <- function(cfg, paths) {
+  dt_input <- load_data(paths$decoding_rest_freq_spec_power_mean_cond)
+  frequency_expectation <- load_data(paths$decoding_rest_freq_expect)
+  figure <- ggplot(data = dt_input, aes(y = power_smooth_norm_rel_mean, x = freq_bins_smooth)) +
+    geom_vline(data = frequency_expectation, aes(xintercept = xintercept), linetype = "dashed") +
+    geom_text(data = frequency_expectation, aes(
+      x = xintercept, y = Inf, label = paste(round(xintercept, 2))), hjust = -0.3, vjust = 2) +
+    stat_summary(geom = "ribbon", fun.data = "mean_se", aes(fill = condition),
+                 alpha = 0.3, color = NA) +
+    stat_summary(geom = "line", fun = "mean", aes(color = condition)) +
+    facet_wrap(~ mask_test) +
+    xlab("Frequency") +
+    ylab("Relative power") +
+    theme_zoo() +
+    scale_color_manual(values = c("red", "blue"), name = "Condition") +
+    scale_fill_manual(values = c("red", "blue"), name = "Condition") +
+    coord_capped_cart(left = "both", bottom = "both", expand = TRUE, xlim = c(0, 0.3)) +
+    scale_x_continuous(labels = label_fill(seq(0, 0.3, by = 0.05), mod = 1),
+                       breaks = seq(0, 0.3, by = 0.05)) +
+    theme(legend.position = "bottom") +
+    theme(legend.direction = "horizontal") +
+    theme(legend.justification = "center") +
+    theme(legend.margin = margin(0, 0, 0, 0))
+  save_figure(figure, filename = "decoding-rest-freq-spec-power-mean-cond-rel", width = 3.5, height = 4)
+  return(figure)
+}
+
 get_decoding_rest_freq_spec_power_expect <- function(cfg, paths) {
   dt_input <- load_data(paths$decoding_rest_freq_spec_power)
   frequency_expectation <- load_data(paths$decoding_rest_freq_expect)
@@ -508,6 +554,49 @@ get_decoding_rest_freq_spec_power_expect <- function(cfg, paths) {
     save_data(., paths$decoding_rest_freq_spec_power_expect)
 }
 
+get_decoding_rest_freq_spec_power_expect_cond <- function(cfg, paths) {
+  dt_input <- load_data(paths$decoding_rest_freq_spec_power)
+  frequency_expectation <- load_data(paths$decoding_rest_freq_expect)
+  fast_freq <- frequency_expectation %>%
+    .[tITI == "32 ms"] %>% .$xintercept
+  slow_freq <- frequency_expectation %>%
+    .[tITI == "2048 ms"] %>% .$xintercept
+  dt_output <- dt_input %>%
+    .[, by = .(id, mask_test, condition, seq_id), .(
+      power_index_fast = power_smooth_norm[which.min(abs(freq_bins_smooth - fast_freq))],
+      power_index_slow = power_smooth_norm[which.min(abs(freq_bins_smooth - slow_freq))]
+    )] %>%
+    # melt all index variables into one column:
+    gather(grep("power", names(.), fixed = TRUE), key = "index", value = "power") %>%
+    setDT(.) %>%
+    .[grepl("index_fast", index), label := paste0("Fast (", round(fast_freq, 2), ")")] %>%
+    .[grepl("index_slow", index), label := paste0("Slow (", round(slow_freq, 2), ")")] %>%
+    # average across sequences for seen and unseen sequences:
+    .[, by = .(id, mask_test, condition, index, label), .(
+      num_seqs = .N,
+      power = mean(power)
+    )] %>%
+    verify(num_seqs %in% c(360)) %>%
+    save_data(., paths$decoding_rest_freq_spec_power_expect_cond)
+}
+
+get_decoding_rest_freq_spec_power_expect_cond_stat <- function(cfg, paths) {
+  dt_input <- load_data(paths$decoding_rest_freq_spec_power_expect_cond)
+  ttest_cfg <- list(
+    formula = "value ~ condition",
+    adjust_method = "bonferroni",
+    paired = TRUE,
+    mu = 0,
+    alternative = "two.sided"
+  )
+  dt_output <- dt_input %>%
+    .[, value := power] %>%
+    .[, by = .(label), .(ttest = list(get_ttest(.SD, ttest_cfg)))] %>%
+    unnest(ttest) %>%
+    get_pvalue_adjust(., ttest_cfg) %>%
+    save_data(., paths$decoding_rest_freq_spec_power_expect_cond_stat)
+}
+
 plot_decoding_rest_freq_spec_power_expect <- function(cfg, paths) {
   dt_input <- load_data(paths$decoding_rest_freq_spec_power_expect)
   figure <- ggplot(data = dt_input, aes(
@@ -533,6 +622,34 @@ plot_decoding_rest_freq_spec_power_expect <- function(cfg, paths) {
           panel.grid.minor = element_blank(),
           panel.border = element_blank(),
           panel.background = element_blank())
+  return(figure)
+}
+
+plot_decoding_rest_freq_spec_power_expect_cond <- function(cfg, paths) {
+  dt_input <- load_data(paths$decoding_rest_freq_spec_power_expect_cond)
+  dt_input_stat <- load_data(paths$decoding_rest_freq_spec_power_expect_cond_stat)
+  figure <- ggplot(data = dt_input, aes(y = power, x = fct_rev(label))) +
+    geom_boxplot(aes(fill = condition), outlier.shape = NA, width = 0.5, position = position_dodge(0.9), color = "black", alpha = 0.3) +
+    geom_beeswarm(aes(fill = condition), alpha = 0.3, dodge.width = 0.9, pch = 21, color = "black") +
+    stat_summary(aes(fill = condition), geom = "point", fun = "mean", pch = 23, position = position_dodge(0.9), color = "black") +
+    stat_summary(aes(group = condition), geom = "linerange", fun.data = "mean_se", position = position_dodge(0.9), color = "black") +
+    geom_label(data = dt_input_stat, aes(y = 0.06, label = paste("p", p.value_adjust_round_label)),
+              color = "gray", parse = FALSE, size = rel(2.5)) +
+    facet_wrap(~ mask_test) +
+    xlab("Predicted frequency") +
+    ylab("Power") +
+    coord_capped_cart(left = "both", bottom = "both", expand = TRUE, ylim = c(0, 0.06)) +
+    theme_zoo() +
+    theme(axis.ticks.x = element_line(color = "white")) +
+    theme(axis.line.x = element_line(color = "white")) +
+    scale_color_manual(values = c("red", "blue"), name = "Condition") +
+    scale_fill_manual(values = c("red", "blue"), name = "Condition") +
+    theme(legend.position = "bottom") +
+    theme(legend.direction = "horizontal") +
+    theme(legend.justification = "center") +
+    theme(legend.margin = margin(0, 0, 0, 0)) +
+    theme(legend.box.margin = margin(t = 0, r = 0, b = 0, l = 0))
+  save_figure(figure, filename = "decoding-rest-freq-spec-power-expect-cond", width = 3.5, height = 4)
   return(figure)
 }
 
