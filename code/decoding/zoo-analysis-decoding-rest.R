@@ -761,14 +761,14 @@ plot_decoding_rest_slopes_sr_gamma_corr <- function(cfg, paths) {
   figure <- ggplot(data = dt_input, aes(x = gamma, y = mean_slope)) +
     facet_wrap(~ run) +
     geom_point(color = "darkgray") +
-    geom_smooth(method = "lm", formula = y~x, color = "black") +
-    geom_text(data = dt_input_stat, aes(label = label), y = 90, x = 0.5) +
+    geom_smooth(method = "lm", formula = y ~ x + I(x^2), color = "black") +
+    # geom_text(data = dt_input_stat, aes(label = label), y = 90, x = 0.5) +
     theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
     xlab(expression(gamma)) +
     ylab("Mean absolute slope") +
     theme_zoo() +
     coord_capped_cart(expand = TRUE, bottom = "both", left = "both")
-  figure
+  save_figure(figure, filename = "decoding-rest-slopes-sr-gamma-corr", width = 5, height = 4)
   return(figure)
 }
 
