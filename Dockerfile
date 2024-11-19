@@ -1,4 +1,4 @@
-FROM r-base:4.3.1
+FROM r-base:4.4.1
 WORKDIR /zoo-analysis
 
 ENV RENV_CONFIG_AUTOLOADER_ENABLED FALSE
