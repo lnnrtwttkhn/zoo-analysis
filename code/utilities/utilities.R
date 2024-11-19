@@ -30,6 +30,8 @@ load_packages <- function() {
   library("combinat")
   library("lomb")
   library("forcats")
+  library("tibble")
+  library("ggnewscale")
 }
 
 load_config <- function() {
@@ -77,6 +79,8 @@ create_paths <- function() {
   paths$input_behavior <- file.path(paths$input, "bids", "*", "*", "func", "*events")
   paths$input_mri_decoding <- file.path(paths$input, "decoding", "sub-*", "decoding", "*scheme*_time_shift-4*decoding*")
   paths$input_mri_rest <- file.path(paths$input, "decoding", "sub-*", "decoding", "*scheme-7*_time_shift-4*decoding*")
+  paths$input_sr_modeling <- file.path(paths$input, "sr-modeling", "modeling", "sub-*-sr.csv")
+  paths$input_sr_base_modeling <- file.path(paths$input, "sr-modeling", "modeling", "sub-*-sr_base.csv")
   paths$graphs <- file.path(paths$code, "utilities", "graphs.yml")
   # source data:
   
@@ -90,8 +94,14 @@ create_paths <- function() {
   source_path <- file.path(paths$sourcedata, "zoo-sourcedata-%s")
   # paths to source data of the behavioral analyses:
   paths$behav_task <- sprintf(source_path, "behavior-task")
+  paths$behav_sr_params <- sprintf(source_path, "behavior-sr-params")
+  paths$behav_sr_mat <- sprintf(source_path, "behavior-sr-mat")
+  paths$behav_sr_mat_rest <- sprintf(source_path, "behavior-sr-mat-rest")
   # paths to source data of the resting-state decoding analyses:
   paths$decoding_rest <- sprintf(source_path, "decoding-rest")
+  paths$decoding_rest_between_tr <- sprintf(source_path, "decoding-rest-between-tr")
+  paths$decoding_rest_between_tr_sr <- sprintf(source_path, "decoding-rest-between-tr-sr")
+  paths$decoding_rest_between_tr_sr_cor <- sprintf(source_path, "decoding-rest-between-tr-sr-cor")
   paths$decoding_rest_std <- sprintf(source_path, "decoding-rest-std")
   paths$decoding_rest_slopes <- sprintf(source_path, "decoding-rest-slopes")
   paths$decoding_rest_slopes_session <- sprintf(source_path, "decoding-rest-slopes-session")
@@ -106,8 +116,17 @@ create_paths <- function() {
   paths$decoding_rest_freq_spec <- sprintf(source_path, "decoding-rest-freq-spec")
   paths$decoding_rest_freq_spec_power <- sprintf(source_path, "decoding-rest-freq-spec-power")
   paths$decoding_rest_freq_spec_power_mean <- sprintf(source_path, "decoding-rest-freq_spec-power-mean")
+  paths$decoding_rest_freq_spec_power_mean_cond <- sprintf(source_path, "decoding-rest-freq_spec-power-mean-cond")
   paths$decoding_rest_freq_expect <- sprintf(source_path, "decoding-rest-freq-expect")
   paths$decoding_rest_freq_spec_power_expect <- sprintf(source_path, "decoding-rest-freq-spec-power-expect")
+  paths$decoding_rest_freq_spec_power_expect_cond <- sprintf(source_path, "decoding-rest-freq-spec-power-expect-cond")
+  paths$decoding_rest_freq_spec_power_expect_cond_stat <- sprintf(source_path, "decoding-rest-freq-spec-power-expect-cond-stat")
+  paths$decoding_rest_slopes_sr <- sprintf(source_path, "decoding-rest-slopes-sr")
+  paths$decoding_sd_sr_prob <- sprintf(source_path, "decoding-rest-sd-sr-prob")
+  paths$decoding_rest_slopes_sr_mean <- sprintf(source_path, "decoding-rest-slopes-sr-mean")
+  paths$decoding_rest_slopes_sr_mean_phase <- sprintf(source_path, "decoding-rest-slopes-sr-mean-phase")
+  paths$decoding_rest_slopes_sr_gamma_corr <- sprintf(source_path, "decoding-rest-slopes-sr-gamma-corr")
+  paths$decoding_rest_surprise_prob <- sprintf(source_path, "decoding-rest-surprise-prob")
   for (path in c(paths$output, paths$figures, paths$sourcedata, paths$slopes, paths$logs)) {
     create_dir(path)
   }
@@ -182,6 +201,17 @@ load_graphs <- function(paths) {
     .[, prob_flat := as.numeric(prob_flat)] %>%
     .[, prob_uni := as.numeric(prob_uni)]
   return(graphs)
+}
+
+save_figure <- function(plot, filename, width, height) {
+  paths <- create_paths()
+  ggsave(filename = paste0("zoo-figure-", filename, ".pdf"),
+         plot = plot, device = cairo_pdf, path = paths$figures,
+         scale = 1, dpi = "retina", width = width, height = height)
+  ggsave(filename = paste0("zoo-figure-", filename, ".png"),
+         plot = plot, device = "png", path = paths$figures,
+         scale = 1, dpi = "retina", width = width, height = height)
+  return(plot)
 }
 
 theme_zoo <- function() {
@@ -366,3 +396,40 @@ label_fill <- function(original, offset = 0, mod = 2, fill = "") {
   original[ii] <- fill
   return(original)
 }
+
+calc_bits <- function(probability) {
+  bits <- -log(probability, base = 2)
+  return(bits)
+}
+
+sr_mat_fun <- function(dt, cfg){
+  dt$sr_mat <- rep(NA, nrow(dt))
+  bits <- rep(NA, nrow(dt) - 1)
+  gamma <- unique(dt$gamma)
+  alpha <- unique(dt$alpha)
+  # pre-allocate the successor matrix with baseline expectation
+  # baseline expectation could also be zero
+  expectation <- 1 / cfg$num_nodes ^ 2
+  sr <- matrix(expectation, cfg$num_nodes, cfg$num_nodes)
+  # add letters to the successor matrix:
+  colnames(sr) <- rownames(sr) <- cfg$nodes_letters
+  # loop through all trials (transitions):
+  for (i in nrow(dt) + 1) {
+    # determine the previous node and the current node:
+    node_x <- which(dt$node_previous[i] == cfg$nodes_letters)
+    node_y <- which(dt$node[i] == cfg$nodes_letters)
+    # normalize the successor matrix to express it in probabilities:
+    sr_norm <- sr / matrix(rowSums(sr), cfg$num_nodes, cfg$num_nodes)
+    dt$sr_mat[i - 1] <- list(rownames_to_column(as.data.frame(sr_norm, row.names = TRUE), "previous"))
+    probability <- sr_norm[node_x, node_y]
+    bits[i] <- calc_bits(probability = probability)
+    # update the successor representation:
+    occupancy <- rep(0, cfg$num_nodes)
+    occupancy[node_y] <- 1
+    successor_prediction_error <- gamma * sr[node_y,] - sr[node_x,]
+    sr[node_x,] <- sr[node_x,] + alpha * (occupancy + successor_prediction_error)
+  }
+  dt$bits <- c(NA, bits)
+  return(list(dt = list(dt)))
+}
+

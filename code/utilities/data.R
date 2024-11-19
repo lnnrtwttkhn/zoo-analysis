@@ -185,3 +185,73 @@ prepare_data_mri_rest_slopes <- function(cfg, paths) {
     save_data(., paths$decoding_rest_slopes)
   return(dt_output)
 }
+
+prep_sr_params <- function(cfg, paths) {
+  dt_input_sr <- load_data(paths$input_sr_modeling) %>%
+    .[, model_name := "sr" ]
+  dt_input_sr_base <- load_data(paths$input_sr_base_modeling) %>%
+    .[, model_name := "sr_base" ]
+  dt_input <- rbind(dt_input_sr, dt_input_sr_base)
+  # dt_demographics <- load_data(paths$source$demographics) %>%
+  #   .[!(id %in% cfg$sub_exclude), ]
+  num_params <- 2
+  dt_output <- dt_input %>%
+    .[!(id %in% cfg$sub_exclude), ] %>%
+    # merge.data.table(x = ., y = dt_demographics, by = c("id", "order")) %>%
+    .[, id := as.factor(as.character(id))] %>%
+    .[, neg_ll := as.numeric(neg_ll)] %>%
+    .[, model_name := dplyr::case_when(
+      model_name == "sr" ~ "Full",
+      model_name == "sr_base" ~ "Base"
+    )] %>%
+    .[, model_name := factor(as.factor(model_name), levels = c("Base", "Full"))] %>%
+    save_data(paths$behav_sr_params)
+}
+
+prep_sr_mat <- function(cfg, paths) {
+  dt_behav_task <- load_data(paths$behav_task)
+  dt_sr_params <- load_data(paths$behav_sr_params) %>%
+    .[model_name == "Full", ] %>%
+    .[mod == "model", ] %>%
+    .[iter == 1, ] %>%
+    .[variable %in% c("alpha", "gamma"), ] %>%
+    .[, c("id", "variable", "value")] %>%
+    pivot_wider(id_cols = c("id"), names_from = "variable")
+  # dt_demographics <- load_data(paths$source$demographics)
+  dt_behav_sr_mat <- dt_behav_task %>%
+    .[!(id %in% cfg$sub_exclude), ] %>%
+    .[event_type == "response", ] %>%
+    .[trial_run > 1, ] %>%
+    merge.data.table(x = ., y = dt_sr_params, by = c("id")) %>%
+    # merge.data.table(x = ., y = dt_demographics, by = c("id")) %>%
+    .[, by = .(id), sr_mat_fun(.SD, cfg)] %>%
+    unnest(., dt) %>%
+    unnest(., sr_mat) %>%
+    setDT(.) %>%
+    .[, previous := unlist(lapply(previous, function(x) LETTERS[as.numeric(x)]))] %>%
+    pivot_longer(cols = cfg$nodes_letters, names_to = "current", values_to = "sr_prob") %>%
+    setDT(.) %>%
+    .[, previous := as.factor(previous)] %>%
+    .[, current := as.factor(current)] %>%
+    .[, sr_prob := as.numeric(sr_prob)] %>%
+    merge.data.table(x = ., y = graphs, by.x = c("previous", "current"), by.y = c("node_previous", "node"), all.y = TRUE, sort = FALSE) %>%
+    # .[, dist_prob := paste(dist_current, prob_current)] %>%
+    save_data(paths$behav_sr_mat)
+}
+
+prep_sr_mat_rest <- function(cfg, paths) {
+  dt_input <- load_data(paths$behav_sr_mat)
+  dt_output <- dt_input %>%
+    .[condition == "Sequence" | (condition == "Single" & run == "run-09"), ] %>%
+    .[, by = .(id, condition, run), max_trial_run := as.numeric(trial_run == max(trial_run))] %>%
+    .[max_trial_run == 1, ] %>%
+    .[, max_trial_run := NULL] %>%
+    .[, by = .(id, run, current), .(
+      mean_sr_prob = mean(sr_prob),
+      sum_sr_prob = sum(sr_prob),
+      num_prev_nodes = .N
+    )] %>%
+    verify(num_prev_nodes == cfg$num_nodes) %>%
+    .[, num_prev_nodes := NULL] %>%
+    save_data(paths$behav_sr_mat_rest)
+}
