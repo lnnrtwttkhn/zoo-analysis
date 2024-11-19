@@ -13,7 +13,7 @@ RUN apt-get install -y pandoc cmake libcurl4-openssl-dev libssl-dev && apt-get c
 
 # install renv
 # details: https://rstudio.github.io/renv/articles/docker.html#creating-docker-images-with-renv
-ENV RENV_VERSION v1.0.7
+ENV RENV_VERSION v1.0.11
 RUN R -e "install.packages('remotes', repos = c(CRAN = 'https://cloud.r-project.org'))"
 RUN R -e "remotes::install_github('rstudio/renv@${RENV_VERSION}')"
 
