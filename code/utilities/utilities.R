@@ -19,6 +19,7 @@ load_packages <- function() {
   library("ggbeeswarm")
   library("lemon")
   library("broom")
+  library("rstatix")
 }
 
 load_config <- function() {
