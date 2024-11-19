@@ -649,6 +649,143 @@ plot_decoding_rest_freq_spec_power_expect_cond <- function(cfg, paths) {
   return(figure)
 }
 
+get_decoding_rest_between_tr <- function(cfg, paths) {
+  dt_input <- load_data(paths$decoding_rest)
+  dt_output <- dt_input %>%
+    .[mask == "vis", ] %>%
+    .[, run := dplyr::case_when(
+      run == "run-1" ~ "run-09",
+      run == "run-2" ~ "run-01",
+      run == "run-3" ~ "run-02",
+      run == "run-4" ~ "run-03",
+      run == "run-5" ~ "run-04",
+      run == "run-6" ~ "run-05"
+    )] %>%
+    .[, run := factor(as.factor(run), levels = c(
+      "run-09", "run-01", "run-02", "run-03", "run-04", "run-05"))] %>%
+    verify(.[, by = .(id, session, run, interval_tr), .(
+      num_class = .N
+    )]$num_class == cfg$num_nodes) %>%
+    .[, by = .(id, session, run, interval_tr),
+      # max_class := as.numeric(probability == max(probability))
+      max_class := as.numeric(probability_norm == max(probability_norm))
+    ] %>%
+    verify(classifier == node) %>%
+    .[max_class == 1, ] %>%
+    .[, by = .(id, session, run), ":="(
+      from = shift(node),
+      to = node
+    )] %>%
+    verify(.[, by = .(id, session, run), .(
+      num_trs = .N
+    )]$num_trs %in% cfg$rest$num_trs) %>%
+    .[, by = .(id, session, run), num_trs := .N] %>%
+    .[!is.na(from)] %>%
+    .[, by = .(id, session, run, interval_tr), transition := paste(from, to, sep = "-")] %>%
+    .[, by = .(id, session, run, transition, from, to), .(
+      num = .N,
+      freq = .N / unique(num_trs)
+    )] %>%
+    # verify(.[, by = .(id, session, run), .(
+    #   unique_transitions = length(unique(transitions))
+    # )]$unique_transitions == cfg$num_nodes * cfg$num_nodes) %>%
+    save_data(paths$decoding_rest_between_tr)
+}
+
+plot_decoding_rest_between_tr_rep <- function(cfg, paths) {
+  dt_input <- load_data(paths$decoding_rest_between_tr) %>%
+    .[, by = .(session, run, transition, from, to), .(
+      mean_freq = mean(freq)
+    )]
+  figure <- ggplot(data = dt_input, aes(x = from, y = to)) +
+    geom_tile(aes(fill = mean_freq)) +
+    facet_wrap(~ run, nrow = 1) +
+    theme(axis.ticks = element_blank()) +
+    xlab("State at TR t - 1") +
+    ylab("State at TR t") +
+    scale_fill_viridis_c(option = "magma", name = "Frequency") +
+    scale_y_discrete(limits = rev) +
+    theme(panel.grid.major = element_blank()) +
+    theme(panel.grid.minor = element_blank()) +
+    theme(panel.background = element_blank()) +
+    theme(axis.line = element_blank()) +
+    theme(axis.text = element_text(color = "black")) +
+    theme(axis.title = element_text(color = "black")) +
+    theme(plot.title = element_text(hjust = 0.5)) +
+    theme(plot.tag = element_text(face = "bold")) +
+    ggtitle("Including repetitions")
+  return(figure)
+}
+
+plot_decoding_rest_between_tr_no_rep <- function(cfg, paths) {
+  dt_input <- load_data(paths$decoding_rest_between_tr) %>%
+    .[!(from == to), ] %>%
+    .[, by = .(session, run, transition, from, to), .(
+      mean_freq = mean(freq)
+    )]
+  figure <- ggplot(data = dt_input, aes(x = from, y = to)) +
+    geom_tile(aes(fill = mean_freq)) +
+    facet_wrap(~ run, nrow = 1) +
+    theme(axis.ticks = element_blank()) +
+    xlab("State at TR t - 1") +
+    ylab("State at TR t") +
+    scale_fill_viridis_c(option = "magma", name = "Frequency") +
+    scale_y_discrete(limits = rev) +
+    theme(panel.grid.major = element_blank()) +
+    theme(panel.grid.minor = element_blank()) +
+    theme(panel.background = element_blank()) +
+    theme(axis.line = element_blank()) +
+    theme(axis.text = element_text(color = "black")) +
+    theme(axis.title = element_text(color = "black")) +
+    theme(plot.title = element_text(hjust = 0.5)) +
+    theme(plot.tag = element_text(face = "bold")) +
+    ggtitle("Excluding repetitions")
+  return(figure)
+}
+
+get_decoding_rest_between_tr_sr <- function(cfg, paths) {
+  dt_input <- load_data(paths$decoding_rest_between_tr)
+  dt_sr_mat <- load_data(paths$behav_sr_mat) %>%
+    .[condition == "Sequence" | (condition == "Single" & run == "run-09"), ] %>%
+    .[, by = .(id, condition, run), max_trial_run := as.numeric(trial_run == max(trial_run))] %>%
+    .[max_trial_run == 1, ] %>%
+    .[, max_trial_run := NULL] %>%
+    .[, c("id", "session", "run", "previous", "current", "sr_prob")]
+  dt_output <- dt_input %>%
+    merge.data.table(x = ., y =  dt_sr_mat,
+                     by.x = c("id", "session", "run", "from", "to"),
+                     by.y = c("id", "session", "run", "previous", "current")) %>%
+    save_data(paths$decoding_rest_between_tr_sr)
+  correlation_method = "pearson"
+  dt_cor <- dt_output %>%
+    .[!(from == to), ] %>%
+    .[, by = .(id, session, run), .(
+      corr_freq_sr = cor(freq, sr_prob, method = correlation_method)
+    )] %>%
+    save_data(paths$decoding_rest_between_tr_sr_cor)
+  
+}
+
+plot_decoding_rest_sd_sr_prob <- function(cfg, paths) {
+  dt_input <- load_data(paths$decoding_rest_between_tr_sr_cor)
+  figure <- ggplot(data = dt_input, aes(x = run, y = corr_freq_sr)) +
+    geom_hline(yintercept = 0, color = "gray", linetype = "dashed") +
+    geom_beeswarm(dodge.width = 0.9, alpha = 0.3) +
+    geom_boxplot(outlier.shape = NA, width = 0.5) +
+    stat_summary(geom = "point", fun = "mean", position = position_dodge(0.9), pch = 23) +
+    stat_summary(geom = "linerange", fun.data = "mean_se", position = position_dodge(0.9)) +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+    xlab("Resting-state run (in Session 02)") +
+    ylab("Correlation (Pearson's)") +
+    theme_zoo() +
+    coord_capped_cart(expand = TRUE, bottom = "both", left = "both") +
+    ggtitle("Correlation between frequency of decoded state transitions\nand SR matrices before each resting-state run") +
+    theme(plot.title = element_text(hjust = 0.5))
+  save_figure(figure, filename = "decoding-rest-between-tr-sr-cor", width = 5, height = 4)
+  return(figure)
+}
+
+
 get_decoding_rest_slopes_sr <- function(cfg, paths) {
   dt_rest <- load_data(paths$decoding_rest) %>%
     .[session == "ses-02", ] %>%
@@ -692,6 +829,52 @@ get_decoding_rest_slopes_sr <- function(cfg, paths) {
     verify(near(1, sum_sr_prob, tol = 1e-15)) %>%
     save_data(paths$decoding_rest_slopes_sr)
 }
+
+random_walk <- function(dt, cfg, num_steps = 1000, repetitions = FALSE) {
+  states <- rep(NA, num_steps)
+  current_state <- as.character(sample(cfg$nodes_letters, size = 1))
+  for (i in 1:num_steps) {
+    states[i] <- current_state
+    dt_next <- dt %>%
+      .[previous == current_state, ] %>%
+      verify(nrow(.) == cfg$num_nodes)
+    current_state <- as.character(sample(dt_next$current, size = 1, prob = dt_next$sr_prob))
+  }
+  if (isFALSE(repetitions)) {
+    states <- states[c(TRUE, diff(as.integer(factor(states))) != 0)]
+  }
+  num_states = length(states)
+  return(list("states" = list(states), "num_states" = num_states))
+}
+
+bla <- function() {
+  dt_input <- load_data(paths$behav_sr_mat)
+  num_steps <- 1000
+  subseq_length <- 6
+  dt_output <- dt_input %>%
+    .[condition == "Sequence" | (condition == "Single" & run == "run-09"), ] %>%
+    .[, by = .(id, condition, run), max_trial_run := as.numeric(trial_run == max(trial_run))] %>%
+    .[max_trial_run == 1, ] %>%
+    .[, max_trial_run := NULL] %>%
+    .[, by = .(id, condition, run, trial_run), random_walk(.SD, cfg, num_steps = num_steps)] %>%
+    .[, .(subsequence = lapply(1:(length(unlist(states)) - subseq_length + 1), function(i) {
+      paste(unlist(states)[i:(i + subseq_length - 1)], collapse = "-")
+    })), by = .(id, condition, run, trial_run)]
+  
+  bla <- da %>%
+    .[, subsequence := as.character(subsequence)] %>%
+    .[, by = .(id, condition, run, trial_run, subsequence), .(
+      frequency = .N
+    )] %>%
+    .[, by = .(id, condition, run, trial_run), .(
+      num_unique_seq = length(unique(subsequence))
+    )]
+  
+  dt_output$subsequence = droplevels(dt_output$subsequence)
+  length(unique(dt_output$subsequence))
+}
+
+
 
 get_decoding_rest_sd_sr_prob <- function(cfg, paths) {
   dt_input <- load_data(paths$decoding_rest_slopes_sr)
@@ -858,5 +1041,61 @@ plot_decoding_rest_surprise_timecourse <- function(cfg, paths) {
     theme_zoo() +
     coord_capped_cart(expand = TRUE, bottom = "both", left = "both")
   save_figure(figure, filename = "decoding-rest-rest-surprise-timecourse", width = 8, height = 5)
+  return(figure)
+}
+
+get_decoding_rest_surprise_prob <- function(cfg, paths) {
+  dt_input <- load_data(paths$behav_sr_mat)
+  dt_output <- dt_input %>%
+    .[, by = .(id, graph, prob_current), .(
+      mean_bits = mean(bits)
+    )] %>%
+    .[, prob_current := as.factor(prob_current)] %>%
+    save_data(., paths$decoding_rest_surprise_prob)
+}
+
+plot_decoding_rest_surprise_prob <- function(cfg, paths) {
+  dt_input <- load_data(paths$decoding_rest_surprise_prob) %>%
+    .[!(prob_current == "NaN"), ]
+  figure <- ggplot(data = dt_input, aes(x = as.factor(prob_current), y = as.numeric(mean_bits))) +
+    facet_wrap(~ graph, scales = "free_x") +
+    # geom_hline(yintercept = chance_level, linetype = "dashed", color = "gray") +
+    # geom_beeswarm(aes(group = id, color = prob_current), alpha = 0.3, cex = 0.5) +
+    geom_boxplot(aes(color = prob_current), width = 0.2, outlier.shape = NA) +
+    stat_summary(aes(group = 1), geom = "ribbon", fun.data = "mean_se", alpha = 0.3) +
+    stat_summary(aes(group = 1), geom = "line", fun = "mean") +
+    stat_summary(aes(color = prob_current), geom = "point", fun = "mean", pch = 23, color = "black") +
+    stat_summary(aes(color = prob_current), geom = "errorbar", fun.data = "mean_se", color = "black", width = 0) +
+    theme_zoo() +
+    coord_capped_cart(left = "both", bottom = "both") +
+    # scale_y_continuous(
+    #   limits = c(0, 120),
+    #   labels = label_fill(seq(0, 100, 20), mod = 1),
+    #   breaks = seq(0, 100, 20)) +
+    xlab("Transition probability") +
+    ylab("Behavioral accuracy (in %)") +
+    theme(axis.line.x = element_line(color = "white")) +
+    theme(axis.ticks.x = element_line(color = "white")) +
+    theme(legend.position = "none") +
+    theme(axis.title.x = element_text(margin = margin(t = 10, r = 0, b = 0, l = 0)))
+  figure
+  
+  
+  figure <- ggplot(data = dt_input, aes(y = mean_bits, group = prob_current)) +
+    # geom_beeswarm(aes(fill = prob_current), alpha = 0.3, dodge.width = 0.9, pch = 21, color = "black") +
+    geom_boxplot(aes(fill = prob_current), outlier.shape = NA, width = 0.5, position = position_dodge(0.9), color = "black") +
+    stat_summary(aes(fill =prob_current), geom = "point", fun = "mean", pch = 23, position = position_dodge(0.9), color = "black") +
+    stat_summary(aes(group = prob_current), geom = "linerange", fun.data = "mean_se", position = position_dodge(0.9), color = "black") +
+    # geom_label(data = dt_input_stat, aes(y = 0.06, label = paste("p", p.value_adjust_round_label)),
+    #            color = "gray", parse = FALSE, size = rel(2.5)) +
+    facet_wrap(~ graph) +
+    xlab("Predicted frequency") +
+    ylab("Relative power") +
+    coord_capped_cart(left = "both", bottom = "both", expand = TRUE) +
+    theme_zoo() +
+    scale_color_viridis_d(name = "Resting-state run") +
+    scale_fill_viridis_d(name = "Resting-state run") +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  save_figure(figure, filename = "decoding-rest-surprise-prob", width = 6, height = 4)
   return(figure)
 }

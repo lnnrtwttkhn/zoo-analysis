@@ -99,6 +99,9 @@ create_paths <- function() {
   paths$behav_sr_mat_rest <- sprintf(source_path, "behavior-sr-mat-rest")
   # paths to source data of the resting-state decoding analyses:
   paths$decoding_rest <- sprintf(source_path, "decoding-rest")
+  paths$decoding_rest_between_tr <- sprintf(source_path, "decoding-rest-between-tr")
+  paths$decoding_rest_between_tr_sr <- sprintf(source_path, "decoding-rest-between-tr-sr")
+  paths$decoding_rest_between_tr_sr_cor <- sprintf(source_path, "decoding-rest-between-tr-sr-cor")
   paths$decoding_rest_std <- sprintf(source_path, "decoding-rest-std")
   paths$decoding_rest_slopes <- sprintf(source_path, "decoding-rest-slopes")
   paths$decoding_rest_slopes_session <- sprintf(source_path, "decoding-rest-slopes-session")
@@ -123,6 +126,7 @@ create_paths <- function() {
   paths$decoding_rest_slopes_sr_mean <- sprintf(source_path, "decoding-rest-slopes-sr-mean")
   paths$decoding_rest_slopes_sr_mean_phase <- sprintf(source_path, "decoding-rest-slopes-sr-mean-phase")
   paths$decoding_rest_slopes_sr_gamma_corr <- sprintf(source_path, "decoding-rest-slopes-sr-gamma-corr")
+  paths$decoding_rest_surprise_prob <- sprintf(source_path, "decoding-rest-surprise-prob")
   for (path in c(paths$output, paths$figures, paths$sourcedata, paths$slopes, paths$logs)) {
     create_dir(path)
   }
