@@ -13,4 +13,5 @@ Depends:
   lemon,
   broom,
   rstatix,
-  lme4
+  lme4,
+  broom.mixed
