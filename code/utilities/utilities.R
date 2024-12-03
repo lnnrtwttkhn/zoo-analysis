@@ -21,7 +21,7 @@ load_packages <- function() {
   library("broom")
   library("rstatix")
   library("cowplot")
-  library("lmerTest")
+  library("lme4")
 }
 
 load_config <- function() {
