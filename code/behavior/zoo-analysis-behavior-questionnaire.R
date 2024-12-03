@@ -365,6 +365,14 @@ plot_questionnaire_prob_ratings_correlation <- function(cfg, paths) {
   return(figure)
 }
 
+get_questionnaire_prob_ratings_model <- function(cfg, paths) {
+  dt_input <- load_data(paths$source$questionnaire)
+  model_formulas <- list(
+    "probability_rating ~ (prob_uni + prob_bi) * order + (1 | id)"
+  )
+  dt_output <- get_lme(model_formulas, dt_input, cfg)
+}
+
 plot_questionnaire_all <- function(cfg, paths) {
   figure <- plot_grid(
     plot_grid(

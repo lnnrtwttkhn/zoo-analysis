@@ -251,3 +251,28 @@ format_pvalue <- function(pvalue, add_p = FALSE) {
   }
   return(pvalue_format)
 }
+
+get_lme <- function(formulas, data, cfg) {
+  models_output <- lapply(seq_along(formulas), function(i) {
+    model <- lmerTest::lmer(
+      formula = as.formula(formulas[[i]]),
+      control = cfg$lcctrl,
+      data = data,
+      subset = NULL,
+      weights = NULL,
+      na.action = na.omit,
+      offset = NULL,
+      REML = TRUE
+    )
+    tidy_output <- broom::tidy(stats::anova(model)) %>%
+      setDT(.) %>%
+      .[, p.value_round := round(p.value, 2)] %>%
+      .[, p.value_round_label := format_pvalue(p.value_round)] %>%
+      .[, p.value_significance := ifelse(p.value < 0.05, "*", "n.s.")]
+    tidy_output$model_formula <- formulas[[i]]
+    tidy_output$model_number <- i
+    return(tidy_output)
+  })
+  results_df <- bind_rows(models_output)
+  return(results_df)
+}

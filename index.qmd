@@ -48,6 +48,7 @@ plot_questionnaire_prob_ratings_onestep(cfg, paths)
 get_questionnaire_prob_ratings_correlation(cfg, paths)
 get_questionnaire_prob_ratings_correlation_stat(cfg, paths)
 plot_questionnaire_prob_ratings_correlation(cfg, paths)
+get_questionnaire_prob_ratings_model(cfg, paths)
 plot_questionnaire_all(cfg, paths)
 ```
 
