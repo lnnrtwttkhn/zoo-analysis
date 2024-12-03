@@ -20,6 +20,8 @@ load_packages <- function() {
   library("lemon")
   library("broom")
   library("rstatix")
+  library("cowplot")
+  library("lmerTest")
 }
 
 load_config <- function() {

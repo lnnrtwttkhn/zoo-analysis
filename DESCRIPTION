@@ -12,4 +12,5 @@ Depends:
   ggbeeswarm
   lemon,
   broom,
-  rstatix
+  rstatix,
+  lmerTest
