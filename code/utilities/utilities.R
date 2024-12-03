@@ -35,12 +35,15 @@ load_config <- function() {
     optCtrl = list(maxfun = 100000),
     calc.derivs = FALSE
   )
+  cfg$sub_exclude = c("sub-08", "sub-09", "sub-13", "sub-14", "sub-17")
   cfg$event_levels <- c("fixation", "stimulus", "sri", "response", "feedback", "iti")
   cfg$key_levels <- c("w", "n", "d", "z", "g", "r", "n/a")
   cfg$finger_levels <- c("index", "middle", "ring", "n/a")
   cfg$hand_levels <- c("left", "right", "n/a")
   cfg$condition_levels <- c("Training", "Single", "Sequence")
   cfg$graph_levels <- c("uni", "bi", "flat")
+  # configuration parameters for questionnaire data:
+  cfg$questionnaire$num_trials <- 30
   # configuration parameters for resting-state decoding data:
   cfg$rest$num_trs <- c(233, 137)
   return(cfg)
@@ -54,13 +57,35 @@ create_paths <- function() {
   paths$input <- file.path(path_root, "input")
   paths$output <- file.path(path_root, "output")
   paths$input_behavior <- file.path(paths$input, "bids", "*", "*", "func", "*events")
+  paths$input_demographics <- file.path(paths$input, "bids", "participants")
+  paths$input_questionnaire <- file.path(paths$input, "bids", "*", "ses-02", "beh", "*beh.tsv")
   paths$input_mri_rest <- file.path(paths$input, "decoding", "sub-*", "decoding", "*scheme-7*_time_shift-4*decoding*")
   paths$graphs <- file.path(paths$code, "utilities", "graphs.yml")
+  # outputs:
+  paths$figures <- file.path(paths$output, "figures")
   # source data:
   paths$sourcedata <- file.path(paths$output, "sourcedata")
   source_path <- file.path(paths$sourcedata, "zoo-sourcedata-%s")
+  paths$source <- list()
+  # paths: analysis of demographics data:
+  paths$source$demographics <- sprintf(source_path, "demographics")
+  # paths: analysis of questionnaire data:
+  paths$source$questionnaire <- sprintf(source_path, "questionnaire")
+  paths$source$questionnaire_seq_detect <- sprintf(source_path, "questionnaire_seq_detect")
+  paths$source$questionnaire_seq_detect_order <- sprintf(source_path, "questionnaire_seq_detect_order")
+  paths$source$questionnaire_seq_when <- sprintf(source_path, "questionnaire_seq_when")
+  paths$source$questionnaire_seq_when_order <- sprintf(source_path, "questionnaire_seq_when_order")  
+  paths$source$questionnaire_prob_ratings <- sprintf(source_path, "questionnaire_prob_ratings")
+  paths$source$questionnaire_prob_ratings_accuracy <- sprintf(source_path, "questionnaire_prob_ratings_accuracy")
+  paths$source$questionnaire_prob_ratings_accuracy_stat <- sprintf(source_path, "questionnaire_prob_ratings_accuracy_stat")
+  paths$source$questionnaire_prob_ratings_onestep <- sprintf(source_path, "questionnaire_prob_ratings_onestep")
+  paths$source$questionnaire_prob_ratings_correlation <- sprintf(source_path, "questionnaire_prob_ratings_correlation")
+  paths$source$questionnaire_prob_ratings_correlation_stat <- sprintf(source_path, "questionnaire_prob_ratings_correlation_stat")
   paths$behav_task <- sprintf(source_path, "behavior-task")
   paths$decoding_rest <- sprintf(source_path, "decoding-rest")
+  # paths: analysis of behavioral data from sequence trials:
+  paths$behavior_sequence_run <- sprintf(source_path, "behavior-sequence-run")
+  paths$behavior_sequence_run_stat  <- sprintf(source_path, "behavior-sequence-run-stat")
   return(paths)
 }
 
@@ -100,6 +125,16 @@ save_data <- function(df, path) {
   message <- sprintf("successfully exported %s", path)
   status_report(text = message)
   return(df)
+}
+
+save_figure <- function(plot, filename, width, height) {
+  ggsave(filename = paste0("zoo_figure_", filename, ".pdf"),
+         plot = plot, device = cairo_pdf, path = paths$figures,
+         scale = 1, dpi = "retina", width = width, height = height)
+  ggsave(filename = paste0("zoo_figure_", filename, ".png"),
+         plot = plot, device = "png", path = paths$figures,
+         scale = 1, dpi = "retina", width = width, height = height)
+  return(plot)
 }
 
 filter_paths <- function(paths, pattern) {
@@ -153,3 +188,65 @@ theme_zoo <- function() {
   return(theme_out)
 }
 
+get_ttest <- function(dt_input, ttest_cfg) {
+  if (ttest_cfg$paired == TRUE) {
+    ttest <- broom::tidy(stats::t.test(
+      formula = as.formula(ttest_cfg$formula),
+      data = droplevels(dt_input),
+      paired = ttest_cfg$paired,
+      alternative = ttest_cfg$alternative
+    ))
+  } else if (ttest_cfg$paired == FALSE) {
+    ttest <- broom::tidy(stats::t.test(
+      formula = as.formula(ttest_cfg$formula),
+      data = droplevels(dt_input),
+      mu = ttest_cfg$mu,
+      alternative = ttest_cfg$alternative
+    ))
+  }
+  cohensd <- rstatix::cohens_d(
+    data = droplevels(dt_input),
+    formula = as.formula(ttest_cfg$formula),
+    paired = ttest_cfg$paired,
+    mu = ttest_cfg$mu
+  )
+  mean_value <- mean(dt_input$value)
+  std_value <- round(sd(dt_input$value), 2)
+  dt_output <- cbind(ttest, cohensd, mean_value, std_value)
+  return(dt_output)
+}
+
+get_pvalue_adjust <- function(dt_input, ttest_cfg = NA) {
+  dt_output <- dt_input %>%
+    setDT(.) %>%
+    .[, num_tests := .N] %>%
+    .[, estimate_round := round(estimate, 2)] %>%
+    .[, statistic_round := round(statistic, 2)] %>%
+    .[, conf.low_round := round(conf.low, 2)] %>%
+    .[, conf.high_round := round(conf.high, 2)] %>%
+    .[, effsize_round := tryCatch(round(effsize, 2), error=function(err) NA)] %>%
+    .[, p.value_round := round(p.value, 2)] %>%
+    .[, p.value_round_label := format_pvalue(p.value_round)] %>%
+    .[, p.value_significance := ifelse(p.value < 0.05, "*", "n.s.")] %>%
+    .[, p.value_adjust := stats::p.adjust(p.value, method = ttest_cfg$adjust_method, n = .N)] %>%
+    .[, p.value_adjust_round := as.numeric(round(p.value_adjust, 2))] %>%
+    .[, p.value_adjust_round_label := format_pvalue(p.value_adjust_round)] %>%
+    .[, p.value_adjust_significance := ifelse(p.value_adjust < 0.05, "*", "n.s.")] %>%
+    .[, adjust_method := ttest_cfg$adjust_method]
+  return(dt_output)
+}
+
+format_pvalue <- function(pvalue, add_p = FALSE) {
+  pvalue_format <- format.pval(
+    pvalue,
+    digits = 1,
+    eps = 0.001,
+    nsmall = 2,
+    scientific = FALSE,
+    na.form = "NA")
+  pvalue_format <- ifelse(pvalue_format == "<0.001", "< 0.001", paste("=", pvalue_format))
+  if (add_p == TRUE) {
+    pvalue_format <- paste("p", pvalue_format)
+  }
+  return(pvalue_format)
+}

@@ -124,6 +124,70 @@ prepare_data_behavior <- function(cfg, paths) {
     save_data(., paths$behav_task)
 }
 
+prep_demographics_data <- function(cfg, paths) {
+  # create a data table with the graph order for each participant:
+  data_task <- load_data(paths$behav_task)
+  data_order <- unique(data_task[, c("id", "order")])
+  # prepare the demographics data:
+  dt_output <- load_data(paths$input_demographics) %>%
+    setnames(., "participant_id", "id") %>%
+    .[, id := as.factor(as.character(id))] %>%
+    .[, age := as.integer(age)] %>%
+    .[, birth_year := as.integer(birth_year)] %>%
+    .[, birth_quarter := as.integer(birth_quarter)] %>%
+    .[, sex := as.factor(as.character(sex))] %>%
+    .[, handedness := as.factor(as.character(handedness))] %>%
+    .[, education_level := as.factor(as.character(education_level))] %>%
+    .[, years_school := as.numeric(years_school)] %>%
+    .[, years_apprenticeship := as.numeric(years_apprenticeship)] %>%
+    .[, years_studies := as.numeric(years_studies)] %>%
+    .[, years_education := as.numeric(years_education)] %>%
+    .[, sequence_detected := as.factor(as.character(sequence_detected))] %>%
+    .[, when_detected := ifelse(when_detected == "n/a", NA, when_detected)] %>%
+    .[, when_detected := as.numeric(when_detected)] %>%
+    .[data_order, on = .(id)] %>%
+    save_data(paths$source$demographics)
+}
+
+prepare_questionnaire_data <- function(cfg, paths) {
+  dt_input_task <- load_data(paths$behav_task)
+  dt_task <- dt_input_task %>%
+    .[condition == "Sequence"] %>%
+    .[event_type == "stimulus"] %>%
+    .[, c("id", "stim_file", "node", "node_previous",
+          "prob_uni", "prob_bi", "prob_flat",
+          "dist_uni", "dist_bi")] %>%
+    setnames(old = "stim_file", new = "stim_current") %>%
+    .[, by = .(id), stim_previous := lag(stim_current)] %>%
+    distinct() %>%
+    drop_na(node_previous)
+  dt_demographics <- load_data(paths$source$demographics)
+  dt_questionnaire <- load_data(paths$input_questionnaire)
+  dt_output <- dt_questionnaire %>%
+    .[, onset := as.numeric(onset)] %>%
+    .[, trial := as.numeric(trial)] %>%
+    .[, stim_1 := as.character(stringr::str_replace(stim_1, "stimuli\\\\", ""))] %>%
+    .[, stim_2 := as.character(stringr::str_replace(stim_2, "stimuli\\\\", ""))] %>%
+    setnames(old = "stim_1", new = "stim_current") %>%
+    setnames(old = "stim_2", new = "stim_previous") %>%
+    .[, probability_rating := as.numeric(probability_rating) / 100] %>%
+    .[, response_key := as.character(response_key)] %>%
+    .[, response_key := NULL] %>%
+    .[, response_time := as.numeric(response_time)] %>%
+    .[, log_response_time := log(response_time)] %>%
+    setnames(old = "participant_id", new = "id") %>%
+    .[, psychopy_version := NULL] %>%
+    verify(.[, by = .(id), .(num_trials = .N)]$num_trials == cfg$questionnaire$num_trials) %>%
+    plyr::join(., dt_task, by = c("id", "stim_current", "stim_previous")) %>%
+    dplyr::left_join(., dt_demographics, by = "id") %>%
+    setDT(.) %>%
+    verify(.[, by = .(id, node_previous), .(num_nodes = .N)]$num_nodes == (cfg$num_nodes - 1)) %>%
+    .[, prob_uni_diff := probability_rating - prob_uni] %>%
+    .[, prob_bi_diff :=  probability_rating - prob_bi] %>%
+    .[, prob_flat_diff :=  probability_rating - prob_flat] %>%
+    save_data(paths$source$questionnaire)
+}
+
 prepare_data_mri_rest <- function(cfg, paths) {
   dt_input <- load_data(paths$input_mri_rest)
   dt_output <- dt_input %>%

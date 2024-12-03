@@ -20,5 +20,34 @@ graphs <- load_graphs(paths)
 source(here::here("code", "utilities", "data.R"))
 prepare_data_behavior(cfg, paths)
 prepare_data_mri_rest(cfg, paths)
+prep_demographics_data(cfg, paths)
+prepare_questionnaire_data(cfg, paths)
+```
+
+## Questionnaire
+
+```{r}
+source(here::here("code", "behavior", "zoo-analysis-behavior-questionnaire.R"))
+get_questionnaire_seq_detect(cfg, paths)
+plot_questionnaire_seq_detect(cfg, paths)
+get_questionnaire_seq_detect_order(cfg, paths)
+plot_questionnaire_seq_detect_order(cfg, paths)
+get_questionnaire_seq_when(cfg, paths)
+plot_questionnaire_seq_when(cfg, paths)
+get_questionnaire_seq_when_order(cfg, paths)
+plot_questionnaire_seq_when_order(cfg, paths)
+get_questionnaire_prob_ratings(cfg, paths)
+plot_questionnaire_prob_ratings(cfg, paths)
+plot_questionnaire_prob_ratings_seq_detect(cfg, paths)
+plot_questionnaire_prob_ratings_seq_detect_overlay(cfg, paths)
+get_questionnaire_prob_ratings_accuracy(cfg, paths)
+get_questionnaire_prob_ratings_accuracy_stat(cfg, paths)
+plot_questionnaire_prob_ratings_accuracy(cfg, paths)
+get_questionnaire_prob_ratings_onestep(cfg, paths)
+plot_questionnaire_prob_ratings_onestep(cfg, paths)
+get_questionnaire_prob_ratings_correlation(cfg, paths)
+get_questionnaire_prob_ratings_correlation_stat(cfg, paths)
+plot_questionnaire_prob_ratings_correlation(cfg, paths)
+plot_questionnaire_all(cfg, paths)
 ```
 
