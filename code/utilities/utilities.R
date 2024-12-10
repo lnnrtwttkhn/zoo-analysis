@@ -45,6 +45,9 @@ load_config <- function() {
   cfg$graph_levels <- c("uni", "bi", "flat")
   # configuration parameters for questionnaire data:
   cfg$questionnaire$num_trials <- 30
+  # configuration parameters for sequence trial behavioral data:
+  cfg$sequence$num_runs <- 5
+  cfg$sequence$num_trials_run <- 240
   # configuration parameters for resting-state decoding data:
   cfg$rest$num_trs <- c(233, 137)
   return(cfg)
@@ -268,7 +271,11 @@ get_lme <- function(formulas, data, cfg) {
       setDT(.) %>%
       .[, p.value_round := round(p.value, 2)] %>%
       .[, p.value_round_label := format_pvalue(p.value_round)] %>%
-      .[, p.value_significance := ifelse(p.value < 0.05, "*", "n.s.")]
+      .[, p.value_significance := ifelse(p.value < 0.05, "*", "n.s.")] %>%
+      .[, latex := sprintf(
+        fmt = "$F_{%#.2f, %#.2f} = %#.2f$, $p %s$",
+        round(NumDF, 2), round(DenDF, 2), round(statistic, 2), p.value_round_label
+      )]
     tidy_output$model_formula <- formulas[[i]]
     tidy_output$model_number <- i
     return(tidy_output)
