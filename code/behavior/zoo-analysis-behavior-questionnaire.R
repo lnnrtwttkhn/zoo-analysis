@@ -368,6 +368,7 @@ plot_questionnaire_prob_ratings_correlation <- function(cfg, paths) {
 get_questionnaire_prob_ratings_model <- function(cfg, paths) {
   dt_input <- load_data(paths$source$questionnaire)
   model_formulas <- list(
+    "probability_rating ~ (prob_uni + prob_bi) * order * sequence_detected + (1 | id)",
     "probability_rating ~ (prob_uni + prob_bi) * order + (1 | id)"
   )
   dt_output <- get_lme(model_formulas, dt_input, cfg)
