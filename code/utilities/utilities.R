@@ -18,6 +18,7 @@ load_packages <- function() {
   library("ggplot2")
   library("ggbeeswarm")
   library("lemon")
+  library("cowplot")
 }
 
 load_config <- function() {
