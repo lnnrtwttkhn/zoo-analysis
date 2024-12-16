@@ -299,3 +299,62 @@ get_decoding_single_fit_mean_eval <- function(cfg, paths) {
     setorder(., mask_test, event, time) %>%
     save_data(paths$source$decoding_single_interval_sine_fit_mean_eval)
 }
+
+plot_sequentiality_illustration <- function(cfg, paths) {
+  rect_offset <- 0.25
+  timepoints = c(3, 5)
+  dt_input1 <- load_data(paths$source$decoding_single_interval_sine_fit_mean_eval)
+  dt_input2 <- load_data(paths$source$decoding_single_interval_sine_fit_mean_eval) %>%
+    .[time %in% timepoints, ]
+  fig1 <- ggplot(data = NULL, aes(x = time, y = sine_probability)) +
+    geom_line(data = dt_input1, aes(color = as.factor(event))) +
+    geom_point(data = dt_input2, aes(color = as.factor(event))) +
+    geom_rect(data = dt_input2 %>% .[event == 1, ], aes(
+      xmin = time - rect_offset, xmax = time + rect_offset, ymin = 2.5, ymax = 45),
+      fill = NA, color = "black", linetype = "dashed") + 
+    coord_capped_cart(left = "both", bottom = "both", ylim = c(0, 50)) +
+    xlab("Time (in TRs; 1 TR = 1.25 s)") +
+    ylab("Probability (%)") +
+    ggtitle("Classifier probability time courses") +
+    scale_x_continuous(labels = label_fill(seq(1, 10, 1), mod = 3), breaks = seq(0, 9, 1)) +
+    scale_colour_manual(name = "Event", values = cfg$colors$class) +
+    scale_fill_manual(name = "Event", values = cfg$colors$class) +
+    theme(plot.title = element_text(hjust = 0.5, face = "bold")) +
+    theme_zoo()
+  fig2 <- ggplot(data = dt_input2 %>% .[time == timepoints[1], ], aes(
+    x = as.factor(event), y = sine_probability)) +
+    geom_point(aes(color = as.factor(event))) +
+    geom_smooth(aes(x = rev(event)), method = "lm", color = "black", se = FALSE) +
+    coord_capped_cart(left = "both", bottom = "both", ylim = c(0, 50)) +
+    xlab("Serial position (reverse)") +
+    ylab("Probability (%)") +
+    ggtitle("Forward sequentiality") +
+    scale_colour_manual(values = cfg$colors$class, guide = "none") +
+    scale_fill_manual(values = cfg$colors$class, guide = "none") +
+    theme(plot.title = element_text(hjust = 0.5, face = "bold")) +
+    scale_x_discrete(limits = rev(levels(as.factor(seq(1, 6))))) +
+    theme_zoo()
+  fig3 <- ggplot(data = dt_input2 %>% .[time == timepoints[2], ], aes(
+    x = as.factor(event), y = sine_probability)) +
+    geom_point(aes(color = as.factor(event))) +
+    geom_smooth(aes(x = rev(event)), method = "lm", color = "black", se = FALSE) +
+    coord_capped_cart(left = "both", bottom = "both", ylim = c(0, 50)) +
+    xlab("Serial position (reverse)") +
+    ylab("Probability (%)") +
+    ggtitle("Backward sequentiality") +
+    scale_colour_manual(values = cfg$colors$class, guide = "none") +
+    scale_fill_manual(values = cfg$colors$class, guide = "none") +
+    theme(plot.title = element_text(hjust = 0.5, face = "bold")) +
+    scale_x_discrete(limits = rev(levels(as.factor(seq(1, 6))))) +
+    theme_zoo()
+  plot_legend = get_legend(fig1)
+  figure <- plot_grid(
+    fig1 + theme(legend.position = "none"),
+    plot_grid(fig2, fig3, nrow = 2, ncol = 1, labels = c("b", "c")),
+    plot_legend,
+    ncol = 3, nrow = 1, rel_widths = c(0.55, 0.35, 0.1),
+    labels = c("a")
+  )
+  save_figure(plot = figure, "sequentiality_illustration", width = 7, height = 5)
+  return(figure)
+}
