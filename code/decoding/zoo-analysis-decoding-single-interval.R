@@ -284,7 +284,7 @@ plot_decoding_single <- function(cfg, paths) {
 get_decoding_single_fit_mean_eval <- function(cfg, paths) {
   # evaluate the sine function per participant and node:
   dt_input <- load_data(paths$source$decoding_single_interval_sine_fit_mean)
-  timeshift = (0.512 + 0.1) / cfg$tr
+  timeshift = (0.6 + 0.1) / cfg$tr
   dt_output <- dt_input %>%
     .[mask_test == "visual", ] %>%
     dcast(., mask_test ~ parameter, value.var = "mean_value") %>%
@@ -302,7 +302,8 @@ get_decoding_single_fit_mean_eval <- function(cfg, paths) {
 
 plot_sequentiality_illustration <- function(cfg, paths) {
   rect_offset <- 0.25
-  timepoints = c(3, 5)
+  timepoints <- c(3, 6)
+  y_values <- c(2.5, 45)
   dt_input1 <- load_data(paths$source$decoding_single_interval_sine_fit_mean_eval)
   dt_input2 <- load_data(paths$source$decoding_single_interval_sine_fit_mean_eval) %>%
     .[time %in% timepoints, ]
@@ -310,8 +311,16 @@ plot_sequentiality_illustration <- function(cfg, paths) {
     geom_line(data = dt_input1, aes(color = as.factor(event))) +
     geom_point(data = dt_input2, aes(color = as.factor(event))) +
     geom_rect(data = dt_input2 %>% .[event == 1, ], aes(
-      xmin = time - rect_offset, xmax = time + rect_offset, ymin = 2.5, ymax = 45),
-      fill = NA, color = "black", linetype = "dashed") + 
+      xmin = time - rect_offset, xmax = time + rect_offset, ymin = y_values[1], ymax = y_values[2]),
+      fill = NA, color = "black", linetype = "solid") + 
+    geom_curve(data = dt_input2 %>% .[time == timepoints[1], ], aes(
+      x = time, y = y_values[2], xend = 9, yend = y_values[2]),
+      arrow = arrow(length = unit(0.03, "npc")),
+      curvature = -0.2) +
+    geom_curve(data = dt_input2 %>% .[time == timepoints[2], ], aes(
+      x = time, y = y_values[1], xend = 9, yend = y_values[1]),
+      arrow = arrow(length = unit(0.03, "npc")),
+      curvature = 0.3) +
     coord_capped_cart(left = "both", bottom = "both", ylim = c(0, 50)) +
     xlab("Time (in TRs; 1 TR = 1.25 s)") +
     ylab("Probability (%)") +
@@ -358,3 +367,4 @@ plot_sequentiality_illustration <- function(cfg, paths) {
   save_figure(plot = figure, "sequentiality_illustration", width = 7, height = 5)
   return(figure)
 }
+
