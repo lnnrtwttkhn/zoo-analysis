@@ -10,4 +10,5 @@ Depends:
   purrr,
   ggplot2,
   ggbeeswarm
-  lemon
+  lemon,
+  cowplot
