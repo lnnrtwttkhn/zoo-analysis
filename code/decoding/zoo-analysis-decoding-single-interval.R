@@ -290,12 +290,14 @@ get_decoding_single_fit_mean_eval <- function(cfg, paths) {
     dcast(., mask_test ~ parameter, value.var = "mean_value") %>%
     .[rep(1:.N, each = cfg$num_nodes)] %>%
     .[, event := rep(1:cfg$num_nodes, length.out = .N)] %>%
-    .[, shift := shift + timeshift * event - 1] %>%
+    .[, shift := shift + timeshift * (event - 1)] %>%
+    .[, onset := 0 + timeshift * (event - 1)] %>%
     .[, params := lapply(transpose(.SD), c), .SDcols = cfg$sine_params$names] %>%
-    .[, by = .(mask_test, event), .(
+    .[, by = .(mask_test, event, onset, baseline), .(
       sine_probability = sine_truncated(params = unlist(params), time = cfg$sine_params$time_eval))] %>%
     .[, sine_probability := sine_probability * 100] %>%
-    .[, by = .(mask_test, event), time := cfg$sine_params$time_eval] %>%
+    .[, baseline := baseline * 100] %>%
+    .[, by = .(mask_test, event, onset, baseline), time := cfg$sine_params$time_eval] %>%
     setorder(., mask_test, event, time) %>%
     save_data(paths$source$decoding_single_interval_sine_fit_mean_eval)
 }
@@ -303,16 +305,32 @@ get_decoding_single_fit_mean_eval <- function(cfg, paths) {
 plot_sequentiality_illustration <- function(cfg, paths) {
   rect_offset <- 0.25
   timepoints <- c(3, 6)
-  y_values <- c(2.5, 45)
+  y_values <- c(3, 44)
   dt_input1 <- load_data(paths$source$decoding_single_interval_sine_fit_mean_eval)
   dt_input2 <- load_data(paths$source$decoding_single_interval_sine_fit_mean_eval) %>%
     .[time %in% timepoints, ]
   fig1 <- ggplot(data = NULL, aes(x = time, y = sine_probability)) +
+    # add gray rectangles in the background:
+    geom_rect(data = dt_input2 %>% .[event == 1, ], aes(
+      xmin = time - rect_offset, xmax = time + rect_offset, ymin = y_values[1], ymax = y_values[2]),
+      fill = "gray95") + 
+    # add sine-waves:
     geom_line(data = dt_input1, aes(color = as.factor(event))) +
+    # add dots to sine-wave:
     geom_point(data = dt_input2, aes(color = as.factor(event))) +
+    # add black line around rectangles
     geom_rect(data = dt_input2 %>% .[event == 1, ], aes(
       xmin = time - rect_offset, xmax = time + rect_offset, ymin = y_values[1], ymax = y_values[2]),
       fill = NA, color = "black", linetype = "solid") + 
+    # add text labels to event onsets:
+    geom_text(data = dt_input2 %>% .[time == timepoints[1], ], aes(
+      label = event, y = y_values[1] - 2, x = onset, color = as.factor(event)),
+      show.legend = FALSE) +
+    # add sticks to event onsets
+    geom_segment(data = dt_input2 %>% .[time == timepoints[1], ], aes(
+      x = onset, y = baseline, xend = onset, yend = baseline + 1.5, color = as.factor(event)),
+      show.legend = FALSE) +
+    # add arrows from rectangles:
     geom_curve(data = dt_input2 %>% .[time == timepoints[1], ], aes(
       x = time, y = y_values[2], xend = 9, yend = y_values[2]),
       arrow = arrow(length = unit(0.03, "npc")),
@@ -327,9 +345,9 @@ plot_sequentiality_illustration <- function(cfg, paths) {
     ggtitle("Classifier probability time courses") +
     scale_x_continuous(labels = label_fill(seq(1, 10, 1), mod = 3), breaks = seq(0, 9, 1)) +
     scale_colour_manual(name = "Event", values = cfg$colors$class) +
-    scale_fill_manual(name = "Event", values = cfg$colors$class) +
     theme(plot.title = element_text(hjust = 0.5, face = "bold")) +
     theme_zoo()
+  fig1
   fig2 <- ggplot(data = dt_input2 %>% .[time == timepoints[1], ], aes(
     x = as.factor(event), y = sine_probability)) +
     geom_point(aes(color = as.factor(event))) +
@@ -364,7 +382,7 @@ plot_sequentiality_illustration <- function(cfg, paths) {
     ncol = 3, nrow = 1, rel_widths = c(0.55, 0.35, 0.1),
     labels = c("a")
   )
-  save_figure(plot = figure, "sequentiality_illustration", width = 7, height = 5)
+  save_figure(plot = figure, "sequentiality_illustration", width = 7, height = 4.5)
   return(figure)
 }
 
