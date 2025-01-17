@@ -23,6 +23,7 @@ load_packages <- function() {
   library("cowplot")
   library("lmerTest")
   library("broom.mixed")
+  library("tibble")
 }
 
 load_config <- function() {
