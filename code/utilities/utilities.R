@@ -87,6 +87,7 @@ create_paths <- function() {
   # paths: analysis of behavioral data from sequence trials:
   paths$source$behavior_sequence_run <- sprintf(source_path, "behavior_sequence_run")
   paths$source$behavior_sequence_run_stat <- sprintf(source_path, "behavior_sequence_run_stat")
+  paths$source$behavior_sequence_run_glm <- sprintf(source_path, "behavior_sequence_run_glm")
   paths$source$behavior_sequence_onestep <- sprintf(source_path, "behavior_sequence_onestep")
   paths$source$behavior_sequence_onestep_stat <- sprintf(source_path, "behavior_sequence_onestep_stat")
   paths$source$behavior_sequence_graph <- sprintf(source_path, "behavior_sequence_graph")
@@ -129,7 +130,7 @@ create_paths <- function() {
   paths$source$behavior_sr_fit_sr_matrices
   paths$source$behavior_sr_fit_response_time_alpha <- sprintf(source_path, "behavior_sr_fit_response_time_alpha")
   paths$source$behavior_sr_fit_response_time_alpha_stat  <- sprintf(source_path, "behavior_sr_fit_response_time_alpha_stat")
-  
+  paths$source$behavior_sr_fit_response_time_alpha_glm  <- sprintf(source_path, "behavior_sr_fit_response_time_alpha_glm")
   
   paths$decoding_rest <- sprintf(source_path, "decoding-rest")
   # paths: analysis of behavioral data from sequence trials:
@@ -297,6 +298,22 @@ format_pvalue <- function(pvalue, add_p = FALSE) {
     pvalue_format <- paste("p", pvalue_format)
   }
   return(pvalue_format)
+}
+
+run_glm <- function(formula, data, cfg, tidy = TRUE) {
+  model = stats::glm(
+    formula = as.formula(formula),
+    data = data,
+    subset = NULL,
+    weights = NULL,
+    na.action = na.omit,
+    offset = NULL
+  )
+  # return a tidy model if TRUE
+  if (tidy == TRUE) {
+    model = broom::tidy(model)
+  }
+  return(model)
 }
 
 get_lme <- function(formulas, data, cfg) {

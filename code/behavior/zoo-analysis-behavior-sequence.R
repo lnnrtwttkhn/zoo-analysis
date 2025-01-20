@@ -51,6 +51,30 @@ get_behavior_sequence_run_lme <- function(cfg, paths) {
   run_lme(lme_formula, lme_data)
 }
 
+get_behavior_sequence_run_glm <- function(cfg, paths) {
+  dt_input <- load_data(paths$source$behavior_sequence_run)
+  model_formulas <- c("mean_log_response_time ~ run_index")
+  dt_output <- dt_input %>%
+    .[, by = .(id), {
+      model = lapply(model_formulas, run_glm, data = .SD, cfg = cfg, tidy = TRUE)
+      model_formula = model_formulas
+      model_number = seq_len(length(model_formulas))
+      num_runs = .N
+      list(model, model_formula, model_number, num_runs)
+    }] %>%
+    unnest(model) %>%
+    setDT(.) %>%
+    # .[, term := dplyr::case_when(
+    #   stringr::str_detect(term, "(Intercept)") ~ "Intercept",
+    #   stringr::str_detect(term, "prob_graph") ~ "1-step",
+    #   stringr::str_detect(term, "prob_sr") ~ "SR",
+    #   stringr::str_detect(term, "prob_stim") ~ "Stimulus"
+    # )] %>%
+    verify(num_runs == cfg$sequence$num_runs) %>%
+    setnames(., old = "term", new = "predictor") %>%
+    save_data(paths$source$behavior_sequence_run_glm)
+}
+
 get_behavior_sequence_onestep <- function(cfg, paths) {
   # analyze response times and behavioral accuracy during one-step transitions:
   dt_input <- load_data(paths$source$behavior_task)
