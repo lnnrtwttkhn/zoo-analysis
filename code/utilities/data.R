@@ -1,7 +1,7 @@
 prepare_data_behavior <- function(cfg, paths) {
   dt_input <- load_data(paths$input_behavior)
-  # dt_demographics <- load_data(paths$source$demographics) %>%
-  #   .[!(id %in% cfg$sub_exclude), ]
+  dt_demographics <- load_data(paths$source$demographics) %>%
+    .[!(id %in% cfg$sub_exclude), ]
   dt_output <- dt_input %>%
     .[, index := NULL] %>%
     .[, event_type := factor(as.factor(event_type), levels = cfg$event_levels)] %>%
@@ -112,7 +112,7 @@ prepare_data_behavior <- function(cfg, paths) {
       prob_bi == 0.1 & graph == "bi" ~ "Low\n(0.1)"
     )] %>%
     .[, onestep := factor(as.factor(onestep), levels = c("Low\n(0.1)", "High\n(0.35)", "High\n(0.7)"))] %>%
-    # merge.data.table(x = ., y = dt_demographics, by = c("id", "order")) %>%
+    merge.data.table(x = ., y = dt_demographics, by = c("id", "order")) %>%
     setcolorder(., c(
       "id", "session", "condition", "run", "trial_run", "event_type",
       "node", "node_previous", "node_next",

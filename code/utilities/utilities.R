@@ -47,8 +47,10 @@ load_config <- function() {
   cfg$condition_levels <- c("Training", "Single", "Sequence")
   cfg$graph_levels <- c("uni", "bi", "flat")
   # set plotting colors:
+  cfg$colors_probability = hcl.colors(4, "Dark Mint")
   cfg$colors_graph <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")[c(6,7)]
   cfg$colors_sr <- hcl.colors(20, "Inferno")
+  cfg$colors_conscious <- hcl.colors(5, "Plasma")[c(1, 4)]
   # configuration parameters for questionnaire data:
   cfg$questionnaire$num_trials <- 30
   # configuration parameters for sequence trial behavioral data:
@@ -79,8 +81,18 @@ create_paths <- function() {
   paths$sourcedata <- file.path(paths$output, "sourcedata")
   source_path <- file.path(paths$sourcedata, "zoo-sourcedata-%s")
   paths$source <- list()
+  paths$source$behavior_task <- sprintf(source_path, "behavior_task")
   # paths: analysis of demographics data:
   paths$source$demographics <- sprintf(source_path, "demographics")
+  # paths: analysis of behavioral data from sequence trials:
+  paths$source$behavior_sequence_run <- sprintf(source_path, "behavior_sequence_run")
+  paths$source$behavior_sequence_run_stat <- sprintf(source_path, "behavior_sequence_run_stat")
+  paths$source$behavior_sequence_onestep <- sprintf(source_path, "behavior_sequence_onestep")
+  paths$source$behavior_sequence_onestep_stat <- sprintf(source_path, "behavior_sequence_onestep_stat")
+  paths$source$behavior_sequence_graph <- sprintf(source_path, "behavior_sequence_graph")
+  paths$source$behavior_sequence_graph_run <- sprintf(source_path, "behavior_sequence_graph_run")
+  paths$source$behavior_sequence_previous <- sprintf(source_path, "behavior_sequence_previous")
+  paths$source$behavior_sequence_previous_dist <- sprintf(source_path, "behavior_sequence_previous_dist")
   # paths: analysis of questionnaire data:
   paths$source$questionnaire <- sprintf(source_path, "questionnaire")
   paths$source$questionnaire_seq_detect <- sprintf(source_path, "questionnaire_seq_detect")
@@ -118,7 +130,7 @@ create_paths <- function() {
   paths$source$behavior_sr_fit_response_time_alpha <- sprintf(source_path, "behavior_sr_fit_response_time_alpha")
   paths$source$behavior_sr_fit_response_time_alpha_stat  <- sprintf(source_path, "behavior_sr_fit_response_time_alpha_stat")
   
-  paths$source$behavior_task <- sprintf(source_path, "behavior_task")
+  
   paths$decoding_rest <- sprintf(source_path, "decoding-rest")
   # paths: analysis of behavioral data from sequence trials:
   paths$behavior_sequence_run <- sprintf(source_path, "behavior-sequence-run")
@@ -228,14 +240,13 @@ theme_zoo <- function() {
 get_ttest <- function(dt_input, ttest_cfg) {
   if (ttest_cfg$paired == TRUE) {
     ttest <- broom::tidy(stats::t.test(
-      formula = as.formula(ttest_cfg$formula),
+      as.formula(sprintf("Pair(%s, %s) ~ 1", ttest_cfg$lhs, ttest_cfg$rhs)),
       data = droplevels(dt_input),
-      paired = ttest_cfg$paired,
       alternative = ttest_cfg$alternative
     ))
   } else if (ttest_cfg$paired == FALSE) {
     ttest <- broom::tidy(stats::t.test(
-      formula = as.formula(ttest_cfg$formula),
+      formula = as.formula(sprintf("%s ~ %s", ttest_cfg$lhs, ttest_cfg$rhs)),
       data = droplevels(dt_input),
       mu = ttest_cfg$mu,
       alternative = ttest_cfg$alternative
@@ -243,7 +254,7 @@ get_ttest <- function(dt_input, ttest_cfg) {
   }
   cohensd <- rstatix::cohens_d(
     data = droplevels(dt_input),
-    formula = as.formula(ttest_cfg$formula),
+    formula = as.formula(sprintf("%s ~ %s", ttest_cfg$lhs, ttest_cfg$rhs)),
     paired = ttest_cfg$paired,
     mu = ttest_cfg$mu
   )
@@ -401,4 +412,47 @@ label_fill <- function(original, offset = 0, mod = 2, fill = "") {
   ii <- as.logical((seq_len(length(original)) - 1 + offset) %% mod)
   original[ii] <- fill
   return(original)
+}
+
+codeblock = function(text_list) {
+  codeblock = paste(c(
+    paste0("```"),
+    text_list,
+    "```"
+  ), collapse = "\n")
+  return(codeblock)
+}
+
+report_lme_stats <- function(num_df, den_df, f_value, p_value) {
+  latex <- sprintf(
+    fmt = "$F_{%#.2f, %#.2f} = %#.2f$, $p %s$",
+    round(num_df, 2), round(den_df, 2), round(f_value, 2), format_pvalue(p_value)
+  )
+  markdown <- sprintf(
+    fmt = "*F*<sup>%#.2f, %#.2f</sup> = %#.2f, *p* %s",
+    round(num_df, 2), round(den_df, 2), round(f_value, 2), format_pvalue(p_value)
+  )
+  return(list(latex = latex, markdown = markdown))
+}
+
+run_lme <- function(lme_formula, lme_data) {
+  model <- lmerTest::lmer(
+    formula = as.formula(lme_formula), 
+    data = lme_data,
+    control = cfg$lcctrl,
+    subset = NULL,
+    weights = NULL,
+    na.action = na.omit,
+    offset = NULL,
+    REML = TRUE
+  )
+  # summary(model)
+  model_stat <- broom::tidy(stats::anova(model))
+  report_lme_model <- report_lme_stats(
+    num_df = model_stat$NumDF,
+    den_df = model_stat$DenDF,
+    f_value = model_stat$statistic,
+    p_value = model_stat$p.value
+  )
+  cat(codeblock(text_list = report_lme_model$latex))
 }

@@ -9,13 +9,13 @@ plot_behavior <- function(cfg, paths) {
   figure <- plot_grid(
     plot_grid(
       plot_behavior_single_sequence_accuracy_mean(cfg, paths),
-      plot_behavior_sequence_run_rt(cfg, paths),
-      plot_behavior_main_accuracy_onestep(cfg, paths),
-      plot_behavior_main_response_time_onestep(cfg, paths),
+      plot_behavior_sequence_run_response_time(cfg, paths),
+      plot_behavior_sequence_accuracy_onestep(cfg, paths),
+      plot_behavior_sequence_response_time_onestep(cfg, paths),
       nrow = 1, ncol = 4, rel_widths = c(0.2, 0.2, 0.3, 0.3), labels = c("a", "b", "c", "d"), vjust = 1
     ),
     plot_grid(
-      plot_behavior_main_response_time_distance(cfg, paths),
+      plot_behavior_sequence_response_time_distance(cfg, paths),
       plot_demographics_seq_detect(cfg, paths),
       plot_demographics_seq_when(cfg, paths),
       plot_questionnaire_prob_ratings(cfg, paths),

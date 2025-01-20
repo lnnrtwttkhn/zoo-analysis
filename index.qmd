@@ -28,6 +28,21 @@ prep_sr_matrices(paths)
 
 ## Behavior
 
+### Sequence Condition
+
+```{r}
+source(here::here("code", "behavior", "zoo-analysis-behavior-sequence.R"))
+source(here::here("code", "figures", "zoo-analysis-figures-behavior.R"))
+get_behavior_sequence_run(cfg, paths)
+get_behavior_sequence_run_stat(cfg, paths)
+plot_behavior_sequence_run_accuracy(cfg, paths)
+plot_behavior_sequence_run_response_time(cfg, paths)
+get_behavior_sequence_onestep(cfg, paths)
+get_behavior_sequence_onestep_stat(cfg, paths)
+get_behavior_sequence_graph(cfg, paths)
+plot_behavior_sequence_response_time_distance(cfg, paths)
+```
+
 ### Questionnaire
 
 ```{r}
