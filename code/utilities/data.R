@@ -121,12 +121,12 @@ prepare_data_behavior <- function(cfg, paths) {
       "key_pressed", "finger_pressed", "hand_pressed"
     )) %>%
     setorder(., id, session, condition, run, trial_run) %>%
-    save_data(., paths$behav_task)
+    save_data(., paths$source$behavior_task)
 }
 
 prep_demographics_data <- function(cfg, paths) {
   # create a data table with the graph order for each participant:
-  data_task <- load_data(paths$behav_task)
+  data_task <- load_data(paths$source$behavior_task)
   data_order <- unique(data_task[, c("id", "order")])
   # prepare the demographics data:
   dt_output <- load_data(paths$input_demographics) %>%
@@ -150,7 +150,7 @@ prep_demographics_data <- function(cfg, paths) {
 }
 
 prepare_questionnaire_data <- function(cfg, paths) {
-  dt_input_task <- load_data(paths$behav_task)
+  dt_input_task <- load_data(paths$source$behavior_task)
   dt_task <- dt_input_task %>%
     .[condition == "Sequence"] %>%
     .[event_type == "stimulus"] %>%
@@ -211,7 +211,7 @@ prep_sr_modeling <- function(cfg, paths) {
 }
 
 prep_sr_matrices <- function(paths) {
-  dt_behav_task <- load_data(paths$behav_task)
+  dt_behav_task <- load_data(paths$source$behavior_task)
   dt_sr_params <- load_data(paths$source$behavior_sr_fit_parameters) %>%
     .[process == "model_fitting", ] %>%
     .[model_name == "Full", ] %>%

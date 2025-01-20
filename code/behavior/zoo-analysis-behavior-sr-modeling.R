@@ -1,5 +1,5 @@
 get_sr_grid <- function(cfg, paths) {
-  dt_input <- load_data(paths$behav_task)
+  dt_input <- load_data(paths$source$behavior_task)
   alpha <- 0.1
   gammas <- seq(0, 19, by = 1)
   colnames <- paste0("SR", gammas)
