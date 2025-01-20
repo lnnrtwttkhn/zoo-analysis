@@ -44,6 +44,9 @@ load_config <- function() {
   cfg$hand_levels <- c("left", "right", "n/a")
   cfg$condition_levels <- c("Training", "Single", "Sequence")
   cfg$graph_levels <- c("uni", "bi", "flat")
+  # set plotting colors:
+  cfg$colors_graph <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")[c(6,7)]
+  cfg$colors_sr <- hcl.colors(20, "Inferno")
   # configuration parameters for questionnaire data:
   cfg$questionnaire$num_trials <- 30
   # configuration parameters for sequence trial behavioral data:
@@ -64,6 +67,8 @@ create_paths <- function() {
   paths$input_behavior <- file.path(paths$input, "bids", "*", "*", "func", "*events")
   paths$input_demographics <- file.path(paths$input, "bids", "participants")
   paths$input_questionnaire <- file.path(paths$input, "bids", "*", "ses-02", "beh", "*beh.tsv")
+  paths$input_sr_modeling <- file.path(path_root, "input", "sr-modeling", "modeling", "sub-*-sr.csv")
+  paths$input_sr_base_modeling <- file.path(path_root, "input", "sr-modeling", "modeling", "sub-*-sr_base.csv")
   paths$input_mri_rest <- file.path(paths$input, "decoding", "sub-*", "decoding", "*scheme-7*_time_shift-4*decoding*")
   paths$graphs <- file.path(paths$code, "utilities", "graphs.yml")
   # outputs:
@@ -86,6 +91,27 @@ create_paths <- function() {
   paths$source$questionnaire_prob_ratings_onestep <- sprintf(source_path, "questionnaire_prob_ratings_onestep")
   paths$source$questionnaire_prob_ratings_correlation <- sprintf(source_path, "questionnaire_prob_ratings_correlation")
   paths$source$questionnaire_prob_ratings_correlation_stat <- sprintf(source_path, "questionnaire_prob_ratings_correlation_stat")
+  # paths: analysis of behavioral data from successor representation modeling (grid search):
+  paths$source$behavior_sr_grid <- sprintf(source_path, "behavior_sr_grid")
+  paths$source$behavior_sr_grid_seq <- sprintf(source_path, "behavior_sr_grid_seq")
+  paths$source$behavior_sr_grid_seq_lme <- sprintf(source_path, "behavior_sr_grid_seq_lme")
+  paths$source$behavior_sr_grid_seq_graph_lme <- sprintf(source_path, "behavior_sr_grid_seq_graph_lme")
+  paths$source$behavior_sr_grid_seq_graph_order_lme <- sprintf(source_path, "behavior_sr_grid_seq_graph_order_lme")
+  paths$source$behavior_sr_grid_seq_block_lme <- sprintf(source_path, "behavior_sr_grid_seq_block_lme")
+  paths$source$behavior_sr_grid_seq_mean <- sprintf(source_path, "behavior_sr_grid_seq_mean")
+  paths$source$behavior_sr_grid_seq_mean_lme <- sprintf(source_path, "behavior_sr_seq_mean_lme")
+  # paths: analysis of behavioral data from successor representation model fitting:
+  paths$source$behavior_sr_fit_parameters <- sprintf(source_path, "behavior_sr_fit_parameters")
+  paths$source$behavior_sr_fit_starting_values <- sprintf(source_path, "behavior_sr_fit_starting_values")
+  paths$source$behavior_sr_fit_parameter_dispersion <- sprintf(source_path, "behavior_sr_fit_parameter_dispersion")
+  paths$source$behavior_sr_fit_parameter_distribution <- sprintf(source_path, "behavior_sr_fit_parameter_distribution")
+  paths$source$behavior_sr_fit_model_comparison <- sprintf(source_path, "behavior_sr_fit_model_comparison")
+  paths$source$behavior_sr_fit_model_comparison_stat <- sprintf(source_path, "behavior_sr_fit_model_comparison_stat")
+  paths$source$behavior_sr_fit_parameter_conscious <- sprintf(source_path, "behavior_sr_fit_parameter_conscious")
+  paths$source$behavior_sr_fit_parameter_order <- sprintf(source_path, "behavior_sr_fit_parameter_order")
+  paths$source$behavior_sr_fit_suprise_effect <- sprintf(source_path, "behavior_sr_fit_suprise_effect")
+  paths$source$behavior_sr_fit_sr_matrices <- sprintf(source_path, "behavior_sr_fit_sr_matrices")
+  paths$source$behavior_sr_fit_sr_matrices_plot <- sprintf(source_path, "behavior_sr_fit_sr_matrices_plot")
   paths$behav_task <- sprintf(source_path, "behavior-task")
   paths$decoding_rest <- sprintf(source_path, "decoding-rest")
   # paths: analysis of behavioral data from sequence trials:
@@ -104,13 +130,13 @@ load_data <- function(paths_input) {
   tsv_files <- filter_paths(paths = paths_input, pattern = ".tsv")
   csv_files <- filter_paths(paths = paths_input, pattern = ".csv")
   if (length(rds_files) > 0) {
-    data <- data.table::rbindlist(lapply(rds_files, readRDS))
+    data <- data.table::rbindlist(lapply(rds_files, readRDS), fill = TRUE)
     file_type = ".rds"
   } else if (length(tsv_files) > 0) {
-    data <- data.table::rbindlist(lapply(Sys.glob(tsv_files), data.table::fread))
+    data <- data.table::rbindlist(lapply(Sys.glob(tsv_files), data.table::fread), fill = TRUE)
     file_type = ".tsv"
   } else if (length(csv_files) > 0) {
-    data <- data.table::rbindlist(lapply(Sys.glob(csv_files), data.table::fread))
+    data <- data.table::rbindlist(lapply(Sys.glob(csv_files), data.table::fread), fill = TRUE)
     file_type = ".csv"
   }
   message <- sprintf("successfully imported data from %s", file_type)
@@ -283,4 +309,90 @@ get_lme <- function(formulas, data, cfg) {
   })
   results_df <- bind_rows(models_output)
   return(results_df)
+}
+
+calc_bits = function(probability) {
+  bits = -log(probability, base = 2)
+  return(bits)
+}
+
+sr_fun <- function(node_previous, node, alpha, gamma, fig = FALSE){
+  num_nodes = 6
+  node_letters = LETTERS[1:num_nodes]
+  num_transitions = length(node_previous)
+  counter = num_transitions - 1
+  # pre-allocate an empty vector to hold the bits:
+  bits = rep(NA, counter)
+  # pre-allocate the successor matrix with baseline expectation
+  # baseline expectation could also be zero
+  expectation = 1 / num_nodes ^ 2
+  sr = matrix(expectation, num_nodes, num_nodes)
+  # add letters to the successor matrix:
+  colnames(sr) = rownames(sr) = LETTERS[1:6]
+  # loop through all trials (transitions):
+  for (i in 2:(counter + 1)) {
+    # determine the previous node and the current node:
+    node_x = which(node_previous[i] == node_letters)
+    node_y = which(node[i] == node_letters)
+    # normalize the successor matrix to express it in probabilities:
+    sr_norm = sr / matrix(rowSums(sr), num_nodes, num_nodes)
+    probability = sr_norm[node_x, node_y]
+    bits[i - 1] = calc_bits(probability = probability)
+    # update the successor representation:
+    occupancy = rep(0, num_nodes)
+    occupancy[node_y] = 1
+    sr[node_x,] = sr[node_x,] + alpha * (occupancy + gamma * sr[node_y,] - sr[node_x,])
+    if (fig == TRUE) {
+      dev.set(dev.prev())
+      image(sr, main = i, zlim = c(0, 1))
+      Sys.sleep(0.005)
+    }
+  }
+  bits = c(NA, bits)
+  return(bits)
+}
+
+sr_mat_fun = function(node_previous, node, alpha, gamma){
+  num_nodes = 6
+  node_letters = LETTERS[1:num_nodes]
+  num_transitions = length(node_previous)
+  counter = num_transitions - 1
+  # pre-allocate an empty vector to hold the bits:
+  bits = rep(NA, counter)
+  # pre-allocate an empty vector to hold the SR matrix
+  sr_mat = list()
+  # pre-allocate the successor matrix with baseline expectation
+  # baseline expectation could also be zero
+  expectation = 1 / num_nodes ^ 2
+  sr = matrix(expectation, num_nodes, num_nodes)
+  # add letters to the successor matrix:
+  colnames(sr) = rownames(sr) = LETTERS[1:6]
+  # loop through all trials (transitions):
+  for (i in 2:(counter + 1)) {
+    # determine the previous node and the current node:
+    node_x = which(node_previous[i] == node_letters)
+    node_y = which(node[i] == node_letters)
+    # normalize the successor matrix to express it in probabilities:
+    sr_norm = sr / matrix(rowSums(sr), num_nodes, num_nodes)
+    sr_tmp = as.data.frame(sr_norm, row.names = TRUE)
+    sr_tmp = rownames_to_column(sr_tmp, "previous")
+    sr_mat[[i - 1]] <- list(sr_tmp)
+    probability = sr_norm[node_x, node_y]
+    bits[i - 1] = calc_bits(probability = probability)
+    # update the successor representation:
+    occupancy = rep(0, num_nodes)
+    occupancy[node_y] = 1
+    sr[node_x,] = sr[node_x,] + alpha * (occupancy + gamma * sr[node_y,] - sr[node_x,])
+  }
+  sr_mat = c(list(sr_mat[[1]]), sr_mat)
+  bits = c(NA, bits)
+  return(list(sr_mat))
+}
+
+label_fill <- function(original, offset = 0, mod = 2, fill = "") {
+  # this function can be used to generate axis labels that omit e.g.,
+  # every second label. Solution was taken from [here](https://bit.ly/2VycSy0).
+  ii <- as.logical((seq_len(length(original)) - 1 + offset) %% mod)
+  original[ii] <- fill
+  return(original)
 }

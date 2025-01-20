@@ -188,6 +188,62 @@ prepare_questionnaire_data <- function(cfg, paths) {
     save_data(paths$source$questionnaire)
 }
 
+prep_sr_modeling <- function(cfg, paths) {
+  dt_input_sr <- load_data(paths$input_sr_modeling) %>%
+    .[, model_name := "sr" ]
+  dt_input_sr_base <- load_data(paths$input_sr_base_modeling) %>%
+    .[, model_name := "sr_base" ]
+  dt_input <- rbindlist(list(dt_input_sr, dt_input_sr_base), fill = TRUE)
+  dt_demographics <- load_data(paths$source$demographics) %>%
+    .[!(id %in% cfg$sub_exclude), ]
+  num_params <- 2
+  dt_output <- dt_input %>%
+    .[!(id %in% cfg$sub_exclude), ] %>%
+    merge.data.table(x = ., y = dt_demographics, by = c("id", "order")) %>%
+    .[, id := as.factor(as.character(id))] %>%
+    .[, neg_ll := as.numeric(neg_ll)] %>%
+    .[, model_name := dplyr::case_when(
+      model_name == "sr" ~ "Full",
+      model_name == "sr_base" ~ "Base"
+    )] %>%
+    .[, model_name := factor(as.factor(model_name), levels = c("Base", "Full"))] %>%
+    save_data(paths$source$behavior_sr_fit_parameters)
+}
+
+prep_sr_matrices <- function(paths) {
+  dt_behav_task <- load_data(paths$behav_task)
+  dt_sr_params <- load_data(paths$source$behavior_sr_fit_parameters) %>%
+    .[process == "model_fitting", ] %>%
+    .[model_name == "Full", ] %>%
+    .[mod == "model", ] %>%
+    .[iter == 1, ] %>%
+    .[variable %in% c("alpha", "gamma"), ] %>%
+    .[, c("id", "variable", "value")] %>%
+    pivot_wider(id_cols = c("id"), names_from = "variable")
+  # dt_demographics <- load_data(paths$source$demographics)
+  dt_behav_sr <- dt_behav_task %>%
+    .[!(id %in% cfg$sub_exclude), ] %>%
+    .[event_type == "response", ] %>%
+    .[trial_run > 1, ] %>%
+    merge.data.table(x = ., y = dt_sr_params, by = c("id")) %>%
+    # merge.data.table(x = ., y = dt_demographics, by = c("id")) %>%
+    .[, by = .(id, alpha, gamma), sr_mat := sr_mat_fun(node_previous, node, alpha = unique(alpha), gamma = unique(gamma))] %>%
+    unnest(., sr_mat) %>%
+    setDT(.) %>%
+    .[, c("id", "run", "condition", "trial_run", "graph", "alpha", "gamma", "sr_mat")] %>%
+    unnest(., sr_mat) %>%
+    setDT(.) %>%
+    .[, previous := unlist(lapply(previous, function(x) LETTERS[as.numeric(x)]))] %>%
+    pivot_longer(cols = LETTERS[1:6], names_to = "current", values_to = "sr_prob") %>%
+    setDT(.) %>%
+    .[, previous := as.factor(previous)] %>%
+    .[, current := as.factor(current)] %>%
+    .[, sr_prob := as.numeric(sr_prob)] %>%
+    merge.data.table(x = ., y = graphs, by.x = c("previous", "current"), by.y = c("node_previous", "node"), all.y = TRUE, sort = FALSE) %>%
+    # .[, dist_prob := paste(dist_current, prob_current)] %>%
+    save_data(paths$source$behavior_sr_fit_sr_matrices)
+}
+
 prepare_data_mri_rest <- function(cfg, paths) {
   dt_input <- load_data(paths$input_mri_rest)
   dt_output <- dt_input %>%

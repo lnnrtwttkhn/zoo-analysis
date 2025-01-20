@@ -22,9 +22,13 @@ prepare_data_behavior(cfg, paths)
 prepare_data_mri_rest(cfg, paths)
 prep_demographics_data(cfg, paths)
 prepare_questionnaire_data(cfg, paths)
+prep_sr_modeling(cfg, paths)
+prep_sr_matrices(paths)
 ```
 
-## Questionnaire
+## Behavior
+
+### Questionnaire
 
 ```{r}
 source(here::here("code", "behavior", "zoo-analysis-behavior-questionnaire.R"))
@@ -52,3 +56,41 @@ get_questionnaire_prob_ratings_model(cfg, paths)
 plot_questionnaire_all(cfg, paths)
 ```
 
+### Successor Representation Model Fitting
+
+```{r}
+source(file.path(paths$code, "behavior", "zoo-analysis-behavior-sr-modeling.R"))
+source(file.path(paths$code, "figures", "zoo-analysis-figures-sr-modeling.R"))
+```
+
+```{r}
+get_sr_grid(cfg, paths)
+get_sr_grid_seq(cfg, paths)
+get_sr_grid_seq_mean(cfg, paths)
+get_sr_grid_seq_lme(cfg, paths)
+plot_sr_grid_seq_lme(cfg, paths)
+```
+
+
+```{r}
+get_behavior_sr_fit_starting_values(cfg, paths)
+plot_behavior_sr_fit_starting_values(cfg, paths)
+get_behavior_sr_fit_parameter_dispersion(cfg, paths)
+plot_behavior_sr_fit_parameter_dispersion(cfg, paths)
+```
+
+```{r}
+get_behavior_sr_fit_model_comparison(cfg, paths)
+get_behavior_sr_fit_model_comparison_stat(cfg, paths)
+get_behavior_sr_fit_parameter_conscious(cfg, paths)
+get_behavior_sr_fit_parameter_order(cfg, paths)
+get_behavior_sr_fit_suprise_effect(cfg, paths)
+get_behavior_sr_fit_suprise_effect_num(cfg, paths)
+```
+
+
+```{r}
+plot_sr_modeling(cfg, paths)
+plot_sr_modeling_supplement(cfg, paths)
+plot_sr_fit_check(cfg, paths)
+```
