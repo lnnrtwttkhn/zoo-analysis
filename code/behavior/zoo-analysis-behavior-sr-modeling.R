@@ -317,7 +317,7 @@ get_behavior_sr_fit_response_time_alpha_stat <- function(cfg, paths) {
     save_data(paths$source$behavior_sr_fit_response_time_alpha_stat)
 }
 
-get_behavior_sr_fit_response_time_alpha_glm <- function(cfg, paths) {
+get_behavior_sr_fit_response_time_glm <- function(cfg, paths) {
   dt1 <- load_data(paths$source$behavior_sequence_run_glm) %>%
     .[predictor == "run_index", ]
   dt2 <- load_data(paths$source$behavior_sr_fit_parameters) %>%
@@ -332,7 +332,7 @@ get_behavior_sr_fit_response_time_alpha_glm <- function(cfg, paths) {
     unnest(cor) %>%
     setDT(.) %>%
     get_pvalue_adjust(., list(adjust_method = "fdr")) %>%
-    save_data(paths$source$behavior_sr_fit_response_time_alpha_glm)
+    save_data(paths$source$behavior_sr_fit_response_time_glm)
 }
 
 get_behavior_sr_fit_parameter_recovery <- function() {
