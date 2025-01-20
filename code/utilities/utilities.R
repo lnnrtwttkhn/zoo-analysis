@@ -38,6 +38,8 @@ load_config <- function() {
     calc.derivs = FALSE
   )
   cfg$sub_exclude = c("sub-08", "sub-09", "sub-13", "sub-14", "sub-17")
+  cfg$subjects = sprintf("sub-%02d", seq(1, 44))
+  cfg$num_subs = length(cfg$subjects) - length(cfg$sub_exclude)
   cfg$event_levels <- c("fixation", "stimulus", "sri", "response", "feedback", "iti")
   cfg$key_levels <- c("w", "n", "d", "z", "g", "r", "n/a")
   cfg$finger_levels <- c("index", "middle", "ring", "n/a")
@@ -112,6 +114,10 @@ create_paths <- function() {
   paths$source$behavior_sr_fit_suprise_effect <- sprintf(source_path, "behavior_sr_fit_suprise_effect")
   paths$source$behavior_sr_fit_sr_matrices <- sprintf(source_path, "behavior_sr_fit_sr_matrices")
   paths$source$behavior_sr_fit_sr_matrices_plot <- sprintf(source_path, "behavior_sr_fit_sr_matrices_plot")
+  paths$source$behavior_sr_fit_sr_matrices
+  paths$source$behavior_sr_fit_response_time_alpha <- sprintf(source_path, "behavior_sr_fit_response_time_alpha")
+  paths$source$behavior_sr_fit_response_time_alpha_stat  <- sprintf(source_path, "behavior_sr_fit_response_time_alpha_stat")
+  
   paths$behav_task <- sprintf(source_path, "behavior-task")
   paths$decoding_rest <- sprintf(source_path, "decoding-rest")
   # paths: analysis of behavioral data from sequence trials:

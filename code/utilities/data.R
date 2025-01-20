@@ -230,7 +230,7 @@ prep_sr_matrices <- function(paths) {
     .[, by = .(id, alpha, gamma), sr_mat := sr_mat_fun(node_previous, node, alpha = unique(alpha), gamma = unique(gamma))] %>%
     unnest(., sr_mat) %>%
     setDT(.) %>%
-    .[, c("id", "run", "condition", "trial_run", "graph", "alpha", "gamma", "sr_mat")] %>%
+    .[, c("id", "run", "condition", "trial_run", "graph", "response_time", "alpha", "gamma", "sr_mat")] %>%
     unnest(., sr_mat) %>%
     setDT(.) %>%
     .[, previous := unlist(lapply(previous, function(x) LETTERS[as.numeric(x)]))] %>%

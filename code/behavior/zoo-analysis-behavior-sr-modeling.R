@@ -285,6 +285,38 @@ get_behavior_sr_fit_suprise_effect_num <- function(cfg, paths) {
     )]
 }
 
+get_behavior_sr_fit_response_time_alpha <- function(cfg, paths) {
+  # correlation between alpha and mean response time:
+  dt_input <- load_data(paths$source$behavior_sr_fit_sr_matrices)
+  # get number of considered trials (5 less, because trial 1 is removed from each run)
+  num_trials <- cfg$sequence$num_trials_run * cfg$sequence$num_runs - cfg$sequence$num_runs
+  dt_output <- dt_input %>%
+    .[condition == "Sequence",] %>%
+    distinct(id, condition, run, trial_run, response_time, alpha) %>%
+    .[, by = .(id), .(
+      num_trials = .N,
+      alpha = unique(alpha),
+      mean_response_time = mean(response_time, na.rm = TRUE),
+      mean_log_response_time = mean(log(response_time), na.rm = TRUE)
+    )] %>%
+    verify(num_trials == num_trials) %>%
+    save_data(paths$source$behavior_sr_fit_response_time_alpha)
+}
+
+get_behavior_sr_fit_response_time_alpha_stat <- function(cfg, paths) {
+  dt_input <- load_data(paths$source$behavior_sr_fit_response_time_alpha)
+  dt_output <- dt_input %>%
+    .[, .(
+      num_subs = .N,
+      cor = list(broom::tidy(cor.test(alpha, mean_log_response_time, method = "pearson")))
+    )] %>%
+    verify(num_subs == cfg$num_subs) %>%
+    unnest(cor) %>%
+    setDT(.) %>%
+    get_pvalue_adjust(., list(adjust_method = "fdr")) %>%
+    save_data(paths$source$behavior_sr_fit_response_time_alpha_stat)
+}
+
 get_behavior_sr_fit_parameter_recovery <- function() {
   dt_input <- dt_input_sr
   dt_output <- dt_input %>%

@@ -346,6 +346,25 @@ plot_behavior_sr_fit_suprise_effect <- function(cfg, paths) {
   return(figure)
 }
 
+plot_behavior_sr_fit_response_time_alpha <- function(cfg, paths) {
+  dt_input <- load_data(paths$source$behavior_sr_fit_response_time_alpha)
+  figure <- ggplot(dt_input, aes(x = as.numeric(alpha), y = as.numeric(mean_log_response_time))) +
+    geom_point(aes(group = as.factor(id))) +
+    geom_smooth(method = "lm") +
+    ylab("Response time (log ms)") +
+    xlab("Alpha") +
+    theme_zoo() +
+    coord_capped_cart(left = "both", bottom = "both", expand = TRUE) +
+    # scale_color_manual(values = cfg$dist_colors, name = "Predictor") +
+    # scale_fill_manual(values = cfg$dist_colors, name = "Predictor") +
+    # scale_shape_manual(name = "Predictor") +
+    ggtitle("Correlation between alpha and response time") +
+    # ggtitle("Betas of SR + 1-step model\n(bidirectional graph)") +
+    theme(plot.title = element_text(hjust = 0.5, face = "bold"))
+  figure
+  return(figure)
+}
+
 plot_sr_mat <- function(df) {
   id <- unique(df$id)
   order <- unique(df$order)
