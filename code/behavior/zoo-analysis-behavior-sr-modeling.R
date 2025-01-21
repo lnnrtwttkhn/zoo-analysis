@@ -172,15 +172,15 @@ get_behavior_sr_fit_model_comparison <- function(cfg, paths) {
     )] %>%
     verify(.[, by = .(id, model_name), .(num_values = .N)]$num_values == length(variables)) %>%
     .[, by = .(id, variable), num_models := .N] %>%
-    .[num_models == 2, ] %>%
+    # .[num_models == 2, ] %>%
     save_data(paths$source$behavior_sr_fit_model_comparison)
 }
 
 get_behavior_sr_fit_model_comparison_stat <- function(cfg, paths) {
   dt_input <- load_data(paths$source$behavior_sr_fit_model_comparison)
   dt_output <-  dt_input %>%
-    .[, by = .(id, variable), num_models := .N] %>%
-    .[num_models == 2, ] %>%
+    # .[, by = .(id, variable), num_models := .N] %>%
+    # .[num_models == 2, ] %>%
     .[, num_params := ifelse(model_name == "Full", 2, NA)] %>%
     .[, num_params := ifelse(model_name == "Base", 1, num_params)] %>%
     .[variable == "aic", value := value + 2 * num_params] %>%
@@ -208,7 +208,8 @@ get_behavior_sr_fit_model_comparison_stat <- function(cfg, paths) {
 get_behavior_sr_fit_parameter_conscious <- function(cfg, paths) {
   dt_input <- load_data(paths$source$behavior_sr_fit_parameter_distribution)
   ttest_cfg <- list(
-    formula = "value ~ sequence_detected",
+    lhs = "value",
+    rhs = "sequence_detected",
     adjust_method = "none",
     paired = FALSE,
     mu = 0,
@@ -224,7 +225,8 @@ get_behavior_sr_fit_parameter_conscious <- function(cfg, paths) {
 get_behavior_sr_fit_parameter_order <- function(cfg, paths) {
   dt_input <- load_data(paths$source$behavior_sr_fit_parameter_distribution)
   ttest_cfg <- list(
-    formula = "value ~ order",
+    lhs = "value",
+    rhs = "order",
     adjust_method = "none",
     paired = FALSE,
     mu = 0,

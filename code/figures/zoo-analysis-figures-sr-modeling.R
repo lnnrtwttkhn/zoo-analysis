@@ -330,7 +330,8 @@ plot_behavior_sr_fit_parameter_conscious <- function(cfg, paths) {
 plot_behavior_sr_fit_suprise_effect <- function(cfg, paths) {
   dt_input <- load_data(paths$source$behavior_sr_fit_suprise_effect) %>%
     .[variable == "p_shannon_surprise", ] %>%
-    .[model_name == "Full",]
+    .[model_name == "Full", ] %>%
+    .[process == "model_fitting", ]
   figure <- ggplot(data = dt_input, aes(x = variable, y = value_log_20)) +
     geom_hline(yintercept = log(0.05, base = 20), linetype = "dashed", color = "black") +
     geom_boxplot(outlier.shape = NA, width = 0.5, color = "black") +
