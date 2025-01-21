@@ -181,6 +181,8 @@ prepare_questionnaire_data <- function(cfg, paths) {
     plyr::join(., dt_task, by = c("id", "stim_current", "stim_previous")) %>%
     dplyr::left_join(., dt_demographics, by = "id") %>%
     setDT(.) %>%
+    .[!(id %in% cfg$sub_exclude), ] %>%
+    # .[, by = .(id, node_previous), .(num_nodes = .N)] %>%
     verify(.[, by = .(id, node_previous), .(num_nodes = .N)]$num_nodes == (cfg$num_nodes - 1)) %>%
     .[, prob_uni_diff := probability_rating - prob_uni] %>%
     .[, prob_bi_diff :=  probability_rating - prob_bi] %>%
