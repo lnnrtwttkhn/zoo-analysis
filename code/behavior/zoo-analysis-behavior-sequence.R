@@ -109,6 +109,39 @@ get_behavior_sequence_halfrun_glm <- function(cfg, paths) {
     save_data(paths$source$behavior_sequence_halfrun_glm)
 }
 
+get_behavior_sequence_halfrun_glm <- function(cfg, paths) {
+  model_formulas <- c("mean_log_response_time ~ halfrun")
+  dt_input <- load_data(paths$source$behavior_task)
+  dt_output <- dt_input %>%
+    .[!(id %in% cfg$sub_exclude)] %>%
+    .[condition == "Sequence", ] %>%
+    .[event_type == "response", ] %>%
+    verify(.[, by = .(id, run), .(num_trials = .N)]$num_trials == cfg$sequence$num_trials_run) %>%
+    .[, halfrun := ifelse(trial_run <= cfg$sequence$num_trials_run / 2, 1, 2)] %>%
+    .[, by = .(run, halfrun), block := .GRP] %>%
+    verify(block %in% seq(1, cfg$sequence$num_runs * 2)) %>%
+    .[, graphblock := ifelse(block %in% seq(1, cfg$sequence$num_runs), "first graph", "second graph")] %>%
+    .[, by = .(id, run, halfrun), .(
+      num_trials = .N,
+      mean_response_time = mean(response_time[accuracy == 1]),
+      mean_log_response_time = mean(response_time[accuracy == 1]),
+      mean_accuracy = mean(accuracy) * 100
+    )] %>%
+    verify(num_trials == cfg$sequence$num_trials_run / 2) %>%
+    .[, by = .(id), {
+      model = lapply(model_formulas, run_glm, data = .SD, cfg = cfg, tidy = TRUE)
+      model_formula = model_formulas
+      model_number = seq_len(length(model_formulas))
+      num_halfruns = .N
+      list(model, model_formula, model_number, num_halfruns)
+    }] %>%
+    unnest(model) %>%
+    setDT(.) %>%
+    verify(num_halfruns == cfg$sequence$num_runs * 2) %>%
+    setnames(., old = "term", new = "predictor") %>%
+    save_data(paths$source$behavior_sequence_halfrun_glm)
+}
+
 get_behavior_sequence_onestep <- function(cfg, paths) {
   # analyze response times and behavioral accuracy during one-step transitions:
   dt_input <- load_data(paths$source$behavior_task)

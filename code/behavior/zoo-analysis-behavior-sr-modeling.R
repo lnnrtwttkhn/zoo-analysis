@@ -353,6 +353,23 @@ get_behavior_sr_fit_response_time_hafrun_glm <- function(cfg, paths) {
     get_pvalue_adjust(., list(adjust_method = "fdr"))
 }
 
+get_behavior_sr_fit_response_time_hafrun_glm <- function(cfg, paths) {
+  dt1 <- load_data(paths$source$behavior_sequence_halfrun_glm) %>%
+    .[predictor == "halfrun", ]
+  dt2 <- load_data(paths$source$behavior_sr_fit_parameters) %>%
+    .[iter %in% seq(3)] %>%
+    .[variable %in% c("alpha", "gamma"), ]
+  dt_output <- merge(dt1, dt2) %>%
+    .[, by = .(process, iter, model_name, variable), .(
+      num_subs = .N,
+      cor = list(broom::tidy(cor.test(estimate, value, method = "pearson")))
+    )] %>%
+    # verify(num_subs == cfg$num_subs) %>%
+    unnest(cor) %>%
+    setDT(.) %>%
+    get_pvalue_adjust(., list(adjust_method = "fdr"))
+}
+
 get_behavior_sr_fit_response_time_onestep <- function(cfg, paths) {
   dt1 <- load_data(paths$source$behavior_sequence_onestep)
   dt2 <- load_data(paths$source$behavior_sr_fit_parameters) %>%
