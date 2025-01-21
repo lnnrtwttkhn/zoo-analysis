@@ -88,6 +88,7 @@ create_paths <- function() {
   paths$source$behavior_sequence_run <- sprintf(source_path, "behavior_sequence_run")
   paths$source$behavior_sequence_run_stat <- sprintf(source_path, "behavior_sequence_run_stat")
   paths$source$behavior_sequence_run_glm <- sprintf(source_path, "behavior_sequence_run_glm")
+  paths$source$behavior_sequence_halfrun_glm <- sprintf(source_path, "behavior_sequence_halfrun_glm")
   paths$source$behavior_sequence_onestep <- sprintf(source_path, "behavior_sequence_onestep")
   paths$source$behavior_sequence_onestep_stat <- sprintf(source_path, "behavior_sequence_onestep_stat")
   paths$source$behavior_sequence_graph <- sprintf(source_path, "behavior_sequence_graph")
