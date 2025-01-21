@@ -15,4 +15,5 @@ Depends:
   rstatix,
   broom.mixed,
   lmerTest,
-  tibble
+  tibble,
+  cowplot

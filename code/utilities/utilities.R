@@ -24,10 +24,15 @@ load_packages <- function() {
   library("lmerTest")
   library("broom.mixed")
   library("tibble")
+  library("cowplot")
 }
 
 load_config <- function() {
   cfg <- list()
+  # study parameters:
+  cfg$sub_exclude = c("sub-08", "sub-09", "sub-13", "sub-14", "sub-17")
+  cfg$subjects = sprintf("sub-%02d", seq(1, 44))
+  cfg$num_subs = length(cfg$subjects) - length(cfg$sub_exclude)
   cfg$tr <- 1.25
   cfg$num_nodes <- 6
   cfg$num_graphs <- 2
@@ -58,6 +63,21 @@ load_config <- function() {
   cfg$sequence$num_trials_run <- 240
   # configuration parameters for resting-state decoding data:
   cfg$rest$num_trs <- c(233, 137)
+  # configuration parameters for single-trial interval decoding data:
+  cfg$decoding_single_interval$num_trs <- 15
+  cfg$decoding_single_interval$max_trials_run <- 80
+  # parameters for modeling of the sine-based response function:
+  cfg$sine_params$names <- c("frequency", "amplitude", "shift", "baseline")
+  cfg$sine_params$default_params <- c(0.2, 0.6, 0, 0.1)
+  cfg$sine_params$lower_bounds <- c(0.01, 0.1, 0, 0)
+  cfg$sine_params$upper_bounds <- c(0.5, 1, 8, 0.3)
+  cfg$sine_params$num_trs <- 10
+  cfg$sine_params$time <- seq(1, cfg$sine_params$num_trs, 1) - 1
+  cfg$sine_params$time_eval = seq(1, cfg$sine_params$num_trs, 0.1) - 1
+  cfg$sine_params$opts <- list("algorithm" = "NLOPT_LN_COBYLA", "xtol_rel" = 1.0e-8, "maxeval" = 1.0e+5)
+  # colors for plotting:
+  cfg$colors$class <- rev(hcl.colors(6, "Zissou 1"))
+  
   return(cfg)
 }
 
@@ -74,6 +94,10 @@ create_paths <- function() {
   paths$input_sr_modeling <- file.path(path_root, "input", "sr-modeling", "modeling", "sub-*-sr.csv")
   paths$input_sr_base_modeling <- file.path(path_root, "input", "sr-modeling", "modeling", "sub-*-sr_base.csv")
   paths$input_mri_rest <- file.path(paths$input, "decoding", "sub-*", "decoding", "*scheme-7*_time_shift-4*decoding*")
+  paths$input_mri_single_interval <- c(
+    file.path(path_root, "input", "decoding", "sub-*", "decoding", "*mask-vis_masking-anatomical_scheme-1*_time_shift-4*"),
+    file.path(path_root, "input", "decoding", "sub-*", "decoding", "*mask-mot_masking-anatomical_scheme-3*_time_shift-4*")
+  )
   paths$graphs <- file.path(paths$code, "utilities", "graphs.yml")
   # outputs:
   paths$figures <- file.path(paths$output, "figures")
@@ -135,10 +159,87 @@ create_paths <- function() {
   paths$source$behavior_sr_fit_response_time_onestep  <- sprintf(source_path, "behavior_sr_fit_response_time_onestep")
   
   paths$decoding_rest <- sprintf(source_path, "decoding-rest")
-  # paths: analysis of behavioral data from sequence trials:
-  paths$behavior_sequence_run <- sprintf(source_path, "behavior-sequence-run")
-  paths$behavior_sequence_run_stat  <- sprintf(source_path, "behavior-sequence-run-stat")
+  
+  # source data for decoding on single trials (interval):
+  paths$source$decoding_single_interval <- sprintf(source_path, "decoding_single_interval")
+  paths$source$decoding_single_interval_trial <- sprintf(source_path, "decoding_recall_interval_trial")
+  paths$source$decoding_single_interval_trial_mean <- sprintf(source_path, "decoding_recall_interval_trial_mean")
+  paths$source$decoding_single_interval_node <- sprintf(source_path, "decoding_recall_interval_node")
+  paths$source$decoding_single_interval_node_all <- sprintf(source_path, "decoding_recall_interval_node_all")
+  paths$source$decoding_single_interval_sine_fit <- sprintf(source_path, "decoding_recall_interval_sine_fit")
+  paths$source$decoding_single_interval_sine_fit_mean <- sprintf(source_path, "decoding_recall_interval_sine_fit_mean")
+  paths$source$decoding_single_interval_sine_fit_mean_eval <- sprintf(source_path, "decoding_recall_interval_sine_fit_mean_eval")
+  paths$source$decoding_single_interval_sine_fit_eval <- sprintf(source_path, "decoding_recall_interval_sine_fit_eval")
+  paths$source$decoding_single_interval_sine_fit_eval_mean <- sprintf(source_path, "decoding_recall_interval_sine_fit_eval_mean")
+  paths$source$decoding_single_interval_sine_fit_sub <- sprintf(source_path, "decoding_recall_interval_sine_fit_sub")
   return(paths)
+}
+
+check_ci <- function() {
+  status_report(text = Sys.getenv("CI"))
+  return_code <- Sys.getenv("CI")
+  if (return_code == "true") {
+    system2("echo", args = c("Running in CI environment"))
+  }
+  return(return_code)
+}
+
+check_tardis <- function() {
+  return_code = FALSE
+  nodename = Sys.info()['nodename']
+  if (nodename == "master") {
+    system2("echo", args = c("Running on MPIB cluster Tardis"))
+    return_code = TRUE
+  } else {
+    status_report("NOT running on MPIB cluster Tardis")
+  }
+  return(return_code)
+}
+
+check_singularity <- function() {
+  return_code = FALSE
+  path_container = Sys.getenv("SINGULARITY_CONTAINER")
+  if (path_container == "") {
+    status_report("NOT running inside Singularity container")
+  } else if (grepl(".singularity/zoo_latest.sif", path_container, fixed = TRUE)) {
+    status_report("Running inside Singularity container")
+    return_code = TRUE
+  }
+  return(return_code)
+}
+
+check_datalad <- function() {
+  return_code <- system2("datalad", args = c("--version"))
+  if (return_code != 0) {
+    warning("Please check if datalad is installed!")
+  }
+  return(return_code)
+}
+
+get_data <- function(paths) {
+  if (check_ci() == "true") {
+    return(NULL)
+  }
+  if (check_singularity() == TRUE) {
+    return(NULL)
+  }
+  if (check_datalad() != 0) {
+    return(NULL)
+  }
+  status_report(text = "retrieving data ...")
+  # datalad get commands are only needed locally, not in CI
+  for (path in paths) {
+    if (stringr::str_detect(string = path, pattern = "input")) {
+      if (check_tardis() == TRUE) {
+        setwd(path_root)
+        path = stringr::str_replace(path, paste0(here::here(), "/"), "")
+      }
+      status_report(text = paste("retrieving", path, "..."))
+      system2("datalad", args = c("get", "--jobs", 8, path), stdout = "", stderr = "")
+      status_report(text = "data retrieval was successful!")
+      status_report(text = "------------------------------")
+    }
+  }
 }
 
 load_data <- function(paths_input) {
@@ -215,6 +316,14 @@ load_graphs <- function(paths) {
     .[, prob_flat := as.numeric(prob_flat)] %>%
     .[, prob_uni := as.numeric(prob_uni)]
   return(graphs)
+}
+
+label_fill <- function(original, offset = 0, mod = 2, fill = "") {
+  # this function can be used to generate axis labels that omit e.g.,
+  # every second label. Solution was taken from [here](https://bit.ly/2VycSy0).
+  ii <- as.logical((seq_len(length(original)) - 1 + offset) %% mod)
+  original[ii] <- fill
+  return(original)
 }
 
 theme_zoo <- function() {
@@ -474,4 +583,21 @@ run_lme <- function(lme_formula, lme_data) {
     p_value = model_stat$p.value
   )
   cat(codeblock(text_list = report_lme_model$latex))
+
+sine_truncated <- function(params, time) {
+  if (!is.list(params)) {
+    params <- as.list(params)
+    names(params) = c("frequency", "amplitude", "shift", "baseline")
+  }
+  y <- params$amplitude/2 * sin(2*pi*params$frequency*time - 2*pi*params$frequency*params$shift - 0.5*pi) + params$baseline + params$amplitude/2
+  # flatten response function after one cycle:
+  y[time < (params$shift)] <- params$baseline
+  y[time > (params$shift + 1/params$frequency)] <- params$baseline  
+  return(y) 
+}
+
+sine_truncated_eval <- function(params, time, data) {
+  y <- sine_truncated(params, time)
+  SSE <- sum((data - y)^2)
+  return(SSE)
 }

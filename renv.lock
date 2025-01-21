@@ -485,6 +485,9 @@
         "utils"
       ],
       "Hash": "475771e3edb711591476be387c9a8c2e"
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "680887028577f3fa2a81e410ed0d6e42"
     },
     "generics": {
       "Package": "generics",
