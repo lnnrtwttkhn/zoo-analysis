@@ -129,8 +129,9 @@ create_paths <- function() {
   paths$source$behavior_sr_fit_sr_matrices_plot <- sprintf(source_path, "behavior_sr_fit_sr_matrices_plot")
   paths$source$behavior_sr_fit_sr_matrices
   paths$source$behavior_sr_fit_response_time_alpha <- sprintf(source_path, "behavior_sr_fit_response_time_alpha")
-  paths$source$behavior_sr_fit_response_time_alpha_stat  <- sprintf(source_path, "behavior_sr_fit_response_time_alpha_stat")
-  paths$source$behavior_sr_fit_response_time_glm  <- sprintf(source_path, "behavior_sr_fit_response_time_glm")
+  paths$source$behavior_sr_fit_response_time_alpha_stat <- sprintf(source_path, "behavior_sr_fit_response_time_alpha_stat")
+  paths$source$behavior_sr_fit_response_time_glm <- sprintf(source_path, "behavior_sr_fit_response_time_glm")
+  paths$source$behavior_sr_fit_response_time_onestep  <- sprintf(source_path, "behavior_sr_fit_response_time_onestep")
   
   paths$decoding_rest <- sprintf(source_path, "decoding-rest")
   # paths: analysis of behavioral data from sequence trials:
