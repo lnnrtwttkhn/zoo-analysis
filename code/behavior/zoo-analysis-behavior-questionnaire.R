@@ -250,7 +250,8 @@ get_questionnaire_prob_ratings_accuracy <- function(cfg, paths) {
 get_questionnaire_prob_ratings_accuracy_stat <- function(cfg, paths) {
   dt_input <- load_data(paths$source$questionnaire_prob_ratings_accuracy)
   ttest_cfg <- list(
-    formula = "value ~ sequence_detected",
+    lhs = "value",
+    rhs = "sequence_detected",
     adjust_method =  "bonferroni",
     paired = FALSE,
     mu = 0,
