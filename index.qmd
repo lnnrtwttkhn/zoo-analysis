@@ -20,5 +20,92 @@ graphs <- load_graphs(paths)
 source(here::here("code", "utilities", "data.R"))
 prepare_data_behavior(cfg, paths)
 prepare_data_mri_rest(cfg, paths)
+prep_demographics_data(cfg, paths)
+prepare_questionnaire_data(cfg, paths)
+prep_sr_modeling(cfg, paths)
+prep_sr_matrices(paths)
 ```
 
+## Behavior
+
+### Sequence Condition
+
+```{r}
+source(here::here("code", "behavior", "zoo-analysis-behavior-sequence.R"))
+source(here::here("code", "figures", "zoo-analysis-figures-behavior.R"))
+get_behavior_sequence_run(cfg, paths)
+get_behavior_sequence_run_stat(cfg, paths)
+plot_behavior_sequence_run_accuracy(cfg, paths)
+plot_behavior_sequence_run_response_time(cfg, paths)
+get_behavior_sequence_onestep(cfg, paths)
+get_behavior_sequence_onestep_stat(cfg, paths)
+get_behavior_sequence_graph(cfg, paths)
+plot_behavior_sequence_response_time_distance(cfg, paths)
+```
+
+### Questionnaire
+
+```{r}
+source(here::here("code", "behavior", "zoo-analysis-behavior-questionnaire.R"))
+get_questionnaire_seq_detect(cfg, paths)
+plot_questionnaire_seq_detect(cfg, paths)
+get_questionnaire_seq_detect_order(cfg, paths)
+plot_questionnaire_seq_detect_order(cfg, paths)
+get_questionnaire_seq_when(cfg, paths)
+plot_questionnaire_seq_when(cfg, paths)
+get_questionnaire_seq_when_order(cfg, paths)
+plot_questionnaire_seq_when_order(cfg, paths)
+get_questionnaire_prob_ratings(cfg, paths)
+plot_questionnaire_prob_ratings(cfg, paths)
+plot_questionnaire_prob_ratings_seq_detect(cfg, paths)
+plot_questionnaire_prob_ratings_seq_detect_overlay(cfg, paths)
+get_questionnaire_prob_ratings_accuracy(cfg, paths)
+get_questionnaire_prob_ratings_accuracy_stat(cfg, paths)
+plot_questionnaire_prob_ratings_accuracy(cfg, paths)
+get_questionnaire_prob_ratings_onestep(cfg, paths)
+plot_questionnaire_prob_ratings_onestep(cfg, paths)
+get_questionnaire_prob_ratings_correlation(cfg, paths)
+get_questionnaire_prob_ratings_correlation_stat(cfg, paths)
+plot_questionnaire_prob_ratings_correlation(cfg, paths)
+get_questionnaire_prob_ratings_model(cfg, paths)
+plot_questionnaire_all(cfg, paths)
+```
+
+### Successor Representation Model Fitting
+
+```{r}
+source(file.path(paths$code, "behavior", "zoo-analysis-behavior-sr-modeling.R"))
+source(file.path(paths$code, "figures", "zoo-analysis-figures-sr-modeling.R"))
+```
+
+```{r}
+get_sr_grid(cfg, paths)
+get_sr_grid_seq(cfg, paths)
+get_sr_grid_seq_mean(cfg, paths)
+get_sr_grid_seq_lme(cfg, paths)
+plot_sr_grid_seq_lme(cfg, paths)
+```
+
+
+```{r}
+get_behavior_sr_fit_starting_values(cfg, paths)
+plot_behavior_sr_fit_starting_values(cfg, paths)
+get_behavior_sr_fit_parameter_dispersion(cfg, paths)
+plot_behavior_sr_fit_parameter_dispersion(cfg, paths)
+```
+
+```{r}
+get_behavior_sr_fit_model_comparison(cfg, paths)
+get_behavior_sr_fit_model_comparison_stat(cfg, paths)
+get_behavior_sr_fit_parameter_conscious(cfg, paths)
+get_behavior_sr_fit_parameter_order(cfg, paths)
+get_behavior_sr_fit_suprise_effect(cfg, paths)
+get_behavior_sr_fit_suprise_effect_num(cfg, paths)
+```
+
+
+```{r}
+plot_sr_modeling(cfg, paths)
+plot_sr_modeling_supplement(cfg, paths)
+plot_sr_fit_check(cfg, paths)
+```

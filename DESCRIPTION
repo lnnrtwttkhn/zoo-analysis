@@ -11,4 +11,9 @@ Depends:
   ggplot2,
   ggbeeswarm
   lemon,
+  broom,
+  rstatix,
+  broom.mixed,
+  lmerTest,
+  tibble,
   cowplot
