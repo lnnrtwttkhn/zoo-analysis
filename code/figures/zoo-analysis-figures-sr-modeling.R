@@ -380,7 +380,7 @@ plot_behavior_sr_fit_response_time_onestep_diff <- function(cfg, paths) {
     facet_wrap(~ variable) +
     geom_point(aes(color = as.factor(id))) +
     geom_smooth(method = "lm", color = "black") +
-    geom_text(data = dt2, aes(y = Inf, x = 0.75, label = result, vjust = 2)) +
+    geom_text(data = dt2, aes(y = Inf, x = 0.65, label = result, vjust = 2)) +
     xlab("Parameter estimates") +
     ylab("Difference in learning slopes\nfor high vs. low probability transitions") +
     theme_zoo() +
