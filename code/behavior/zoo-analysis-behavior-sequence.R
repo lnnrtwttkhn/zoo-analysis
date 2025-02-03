@@ -178,6 +178,49 @@ get_behavior_sequence_onestep_stat <- function(cfg, paths) {
     save_data(paths$source$behavior_sequence_onestep_stat)
 }
 
+get_behavior_sequence_onestep_run <- function(cfg, paths) {
+  dt_input <- load_data(paths$source$behavior_task)
+  dt_output <- dt_input %>%
+    .[!(id %in% cfg$sub_exclude)] %>%
+    .[condition == "Sequence", ] %>%
+    .[event_type == "response", ] %>%
+    .[!(run == "run-03" & trial_run == 121), ] %>%
+    .[trial_run != 1, ] %>%
+    # rewrite the onestep variable (only high vs. low):
+    .[, onestep := ifelse(grepl("High", onestep), "High", "Low")] %>%
+    .[, onestep := factor(as.factor(onestep), levels = c("Low", "High"))] %>%
+    .[, by = .(id, run, onestep), .(
+      num_trials = .N,
+      mean_accuracy = mean(accuracy) * 100,
+      mean_log_response_time = mean(log_response_time[accuracy == 1], na.rm = TRUE)
+    )] %>%
+    .[, by = .(id, onestep), run_index := data.table::rleid(run)] %>%
+    save_data(paths$source$behavior_sequence_onestep_run)
+}
+  
+get_behavior_sequence_onestep_run_glm <- function(cfg, paths) {
+  model_formulas <- c("mean_log_response_time ~ run_index")
+  dt_input <- load_data(paths$source$behavior_sequence_onestep_run)
+  dt_output <- dt_input %>%
+    .[, by = .(id, onestep), {
+      model = lapply(model_formulas, run_glm, data = .SD, cfg = cfg, tidy = TRUE)
+      model_formula = model_formulas
+      model_number = seq_len(length(model_formulas))
+      num_runs = .N
+      list(model, model_formula, model_number, num_runs)
+    }] %>%
+    unnest(model) %>%
+    setDT(.) %>%
+    verify(num_runs == cfg$sequence$num_runs) %>%
+    setnames(., old = "term", new = "predictor") %>%
+    .[predictor == "run_index", ] %>%
+    .[, c("id", "onestep", "estimate")] %>%
+    pivot_wider(names_from = onestep, values_from = estimate) %>%
+    setDT(.) %>%
+    .[, slope_diff := Low - High] %>%
+    save_data(paths$source$behavior_sequence_onestep_run_glm)
+}
+
 get_behavior_sequence_graph <- function(cfg, paths) {
   dt_input <- load_data(paths$source$behavior_task)
   num_trials_run <- cfg$sequence$num_trials_run

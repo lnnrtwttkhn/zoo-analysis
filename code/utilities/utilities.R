@@ -115,6 +115,8 @@ create_paths <- function() {
   paths$source$behavior_sequence_halfrun_glm <- sprintf(source_path, "behavior_sequence_halfrun_glm")
   paths$source$behavior_sequence_onestep <- sprintf(source_path, "behavior_sequence_onestep")
   paths$source$behavior_sequence_onestep_stat <- sprintf(source_path, "behavior_sequence_onestep_stat")
+  paths$source$behavior_sequence_onestep_run <- sprintf(source_path, "behavior_sequence_onestep_run")
+  paths$source$behavior_sequence_onestep_run_glm <- sprintf(source_path, "behavior_sequence_onestep_run_glm")
   paths$source$behavior_sequence_graph <- sprintf(source_path, "behavior_sequence_graph")
   paths$source$behavior_sequence_graph_run <- sprintf(source_path, "behavior_sequence_graph_run")
   paths$source$behavior_sequence_previous <- sprintf(source_path, "behavior_sequence_previous")
@@ -156,8 +158,10 @@ create_paths <- function() {
   paths$source$behavior_sr_fit_response_time_alpha <- sprintf(source_path, "behavior_sr_fit_response_time_alpha")
   paths$source$behavior_sr_fit_response_time_alpha_stat <- sprintf(source_path, "behavior_sr_fit_response_time_alpha_stat")
   paths$source$behavior_sr_fit_response_time_glm <- sprintf(source_path, "behavior_sr_fit_response_time_glm")
-  paths$source$behavior_sr_fit_response_time_onestep  <- sprintf(source_path, "behavior_sr_fit_response_time_onestep")
-  
+  paths$source$behavior_sr_fit_response_time_onestep <- sprintf(source_path, "behavior_sr_fit_response_time_onestep")
+  paths$source$behavior_sr_fit_response_time_onestep_run <- sprintf(source_path, "behavior_sr_fit_response_time_onestep_run")
+  paths$source$behavior_sr_fit_response_time_onestep_diff <- sprintf(source_path, "behavior_sr_fit_response_time_onestep_diff")
+  paths$source$behavior_sr_fit_response_time_onestep_run_stat <- sprintf(source_path, "behavior_sr_fit_response_time_onestep_run_stat")
   paths$decoding_rest <- sprintf(source_path, "decoding-rest")
   
   # source data for decoding on single trials (interval):

@@ -103,6 +103,12 @@ get_behavior_sr_fit_suprise_effect(cfg, paths)
 get_behavior_sr_fit_suprise_effect_num(cfg, paths)
 ```
 
+```{r}
+get_behavior_sequence_onestep_run(cfg, paths)
+get_behavior_sequence_onestep_run_glm(cfg, paths)
+plot_behavior_sequence_response_time_onestep_run(cfg, paths)
+plot_behavior_sr_fit_response_time_onestep_diff(cfg, paths)
+```
 
 ```{r}
 plot_sr_modeling(cfg, paths)
