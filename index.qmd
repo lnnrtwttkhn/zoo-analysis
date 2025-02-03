@@ -118,6 +118,13 @@ plot_sr_matrices_select(cfg, paths)
 ```
 
 ```{r}
+get_behavior_sequence_onestep_run(cfg, paths)
+get_behavior_sequence_onestep_run_glm(cfg, paths)
+plot_behavior_sequence_response_time_onestep_run(cfg, paths)
+plot_behavior_sr_fit_response_time_onestep_diff(cfg, paths)
+```
+
+```{r}
 get_behavior_sr_fit_parameter_recovery(cfg, paths)
 plot_behavior_sr_fit_parameter_recovery(cfg, paths)
 get_behavior_sr_fit_parameter_recovery_corr(cfg, paths)

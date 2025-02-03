@@ -396,6 +396,27 @@ get_behavior_sr_fit_response_time_onestep <- function(cfg, paths) {
     save_data(paths$source$behavior_sr_fit_response_time_onestep)
 }
 
+get_behavior_sr_fit_response_time_onestep_diff <- function(cfg, paths) {
+  dt1 <- load_data(paths$source$behavior_sequence_onestep_run_glm)
+  dt2 <- load_data(paths$source$behavior_sr_fit_parameters) %>%
+    .[process == "Model Fitting", ] %>%
+    .[model_name == "Full", ] %>%
+    .[iter %in% 1] %>%
+    .[variable %in% c("alpha", "gamma"), ]
+  dt_output <- merge(dt1, dt2) %>%
+    save_data(paths$source$behavior_sr_fit_response_time_onestep_diff) %>%
+    .[, by = .(variable), .(
+      num_subs = .N,
+      cor = list(broom::tidy(cor.test(slope_diff, value, method = "pearson")))
+    )] %>%
+    verify(num_subs == cfg$num_subs) %>%
+    unnest(cor) %>%
+    setDT(.) %>%
+    get_pvalue_adjust(., list(adjust_method = "fdr")) %>%
+    .[, result := sprintf("r = %.2f, p = %.2f", estimate, p.value)] %>%
+    save_data(paths$source$behavior_sr_fit_response_time_onestep_run_stat)
+}
+
 get_behavior_sr_fit_parameter_recovery <- function(cfg, paths) {
   dt_input <-  load_data(paths$source$behavior_sr_fit_parameters)
   dt_output <- dt_input %>%
