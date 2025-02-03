@@ -444,3 +444,35 @@ plot_sr_matrices_select <- function(cfg, paths) {
   figure <- plot_grid(plotlist = figures_all, nrow = 2)
   return(figure)
 }
+
+plot_behavior_sr_fit_parameter_recovery <- function(cfg, paths) {
+  dt_input <- load_data(paths$source$behavior_sr_fit_parameter_recovery)
+  figure <- ggplot(data = dt_input) +
+    facet_grid(vars(variable), vars(model_name)) +
+    geom_point(mapping = aes(x = process, y = value, color = id)) +
+    geom_line(mapping = aes(x = process, y = value, group = id, color = id)) +
+    theme(legend.position = "none") +
+    scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
+    ylab("Parameter estimate") +
+    theme_zoo() +
+    coord_capped_cart(left = "both", bottom = "both", expand = TRUE) +
+    theme(axis.title.x = element_blank())
+   return(figure)
+}
+
+plot_behavior_sr_fit_parameter_recovery_corr <- function(cfg, paths) {
+  dt_input <- load_data(paths$source$behavior_sr_fit_parameter_recovery_corr)
+  figure <- ggplot(data = dt_input, aes(x = model_fitting, y = parameter_recovery)) +
+    facet_grid(vars(variable), vars(model_name)) +
+    # geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "gray") +
+    geom_smooth(method = "lm", fullrange = TRUE, color = "black") +
+    geom_point(aes(color = id)) +
+    theme(legend.position = "none") +
+    xlab("Parameter Recovery") +
+    ylab("Model fitting") +
+    theme_zoo() +
+    coord_capped_cart(left = "both", bottom = "both", expand = TRUE) +
+    scale_y_continuous(labels = label_fill(seq(0, 1, 0.25), mod = 4), breaks = seq(0, 1, 0.25)) +
+    scale_x_continuous(labels = label_fill(seq(0, 1, 0.25), mod = 4), breaks = seq(0, 1, 0.25))
+  return(figure)
+}

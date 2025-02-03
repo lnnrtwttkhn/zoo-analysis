@@ -157,7 +157,9 @@ create_paths <- function() {
   paths$source$behavior_sr_fit_response_time_alpha_stat <- sprintf(source_path, "behavior_sr_fit_response_time_alpha_stat")
   paths$source$behavior_sr_fit_response_time_glm <- sprintf(source_path, "behavior_sr_fit_response_time_glm")
   paths$source$behavior_sr_fit_response_time_onestep  <- sprintf(source_path, "behavior_sr_fit_response_time_onestep")
-  
+  paths$source$behavior_sr_fit_parameter_recovery  <- sprintf(source_path, "behavior_sr_fit_parameter_recovery")
+  paths$source$behavior_sr_fit_parameter_recovery_corr <- sprintf(source_path, "behavior_sr_fit_parameter_recovery_corr")
+  paths$source$behavior_sr_fit_parameter_recovery_corr_stat <- sprintf(source_path, "behavior_sr_fit_parameter_recovery_corr_stat")
   paths$decoding_rest <- sprintf(source_path, "decoding-rest")
   
   # source data for decoding on single trials (interval):
@@ -583,7 +585,8 @@ run_lme <- function(lme_formula, lme_data) {
     p_value = model_stat$p.value
   )
   cat(codeblock(text_list = report_lme_model$latex))
-
+}
+  
 sine_truncated <- function(params, time) {
   if (!is.list(params)) {
     params <- as.list(params)

@@ -391,18 +391,44 @@ get_behavior_sr_fit_response_time_onestep <- function(cfg, paths) {
     save_data(paths$source$behavior_sr_fit_response_time_onestep)
 }
 
-get_behavior_sr_fit_parameter_recovery <- function() {
-  dt_input <- dt_input_sr
+get_behavior_sr_fit_parameter_recovery <- function(cfg, paths) {
+  dt_input <-  load_data(paths$source$behavior_sr_fit_parameters)
   dt_output <- dt_input %>%
     .[iter == 1, ] %>%
+    .[, iter := paste("Iteration:", iter)] %>%
+    # .[model_name == "Full", ] %>%
+    .[!is.na(process), ] %>%
     .[mod == "model", ] %>%
     .[variable %in% c("alpha", "gamma"), ] %>%
-    .[, c("id", "process", "variable", "value")]
-  ggplot(data = dt_output) +
-    facet_wrap(~ variable) +
-    geom_point(mapping = aes(x = process, y = value, color = id)) +
-    geom_line(mapping = aes(x = process, y = value, group = id, color = id)) +
-    theme(legend.position = "none")
-  
-  
+    .[, variable := ifelse(variable == "alpha", "\u03B1", variable)] %>%
+    .[, variable := ifelse(variable == "gamma", "\u0263", variable)] %>%
+    .[, variable := factor(as.factor(variable), levels = c("\u03B1", "\u0263"))] %>%
+    .[, c("id", "iter", "process", "model_name", "variable", "value")] %>%
+    verify(length(unique(id)) == cfg$num_subs) %>%
+    save_data(paths$source$behavior_sr_fit_parameter_recovery)
+}
+
+get_behavior_sr_fit_parameter_recovery_corr <- function(cfg, paths) {
+  dt_input <-  load_data(paths$source$behavior_sr_fit_parameter_recovery)
+  dt_output <- dt_input %>%
+    .[!is.na(process), ] %>%
+    .[, process := dplyr::case_when(
+      process ==  "Model Fitting" ~ "model_fitting",
+      process == "Parameter Recovery" ~ "parameter_recovery"
+    )] %>%
+    pivot_wider(names_from = process, values_from = value) %>%
+    save_data(paths$source$behavior_sr_fit_parameter_recovery_corr)
+}
+
+get_behavior_sr_fit_parameter_recovery_corr_stat <- function(cfg, paths) {
+  dt_input <-  load_data(paths$source$behavior_sr_fit_parameter_recovery_corr)
+  dt_output <- dt_input %>%
+    group_by(iter, model_name, variable) %>%
+    do(cbind(
+      broom::tidy(cor.test(.$model_fitting, .$parameter_recovery, method = "pearson")),
+      data.table(num_subs = nrow(.)))) %>%
+    setDT(.) %>%
+    # TODO: FIX NUMBER OF PARTICIPANTS
+    # verify(num_subs == cfg$num_subs)
+    save_data(paths$source$behavior_sr_fit_parameter_recovery_corr_stat)
 }

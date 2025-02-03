@@ -103,6 +103,14 @@ get_behavior_sr_fit_suprise_effect(cfg, paths)
 get_behavior_sr_fit_suprise_effect_num(cfg, paths)
 ```
 
+```{r}
+get_behavior_sr_fit_parameter_recovery(cfg, paths)
+plot_behavior_sr_fit_parameter_recovery(cfg, paths)
+get_behavior_sr_fit_parameter_recovery_corr(cfg, paths)
+plot_behavior_sr_fit_parameter_recovery_corr(cfg, paths)
+get_behavior_sr_fit_parameter_recovery_corr_stat(cfg, paths)
+plot_sr_modeling_parameter_receovery(cfg, paths)
+```
 
 ```{r}
 plot_sr_modeling(cfg, paths)
