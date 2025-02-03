@@ -198,7 +198,8 @@ prep_sr_modeling <- function(cfg, paths) {
   dt_input <- rbindlist(list(dt_input_sr, dt_input_sr_base), fill = TRUE)
   dt_demographics <- load_data(paths$source$demographics) %>%
     .[!(id %in% cfg$sub_exclude), ]
-  num_params <- 2
+  parameter_names <- c("alpha", "gamma")
+  num_params <- length(parameter_names)
   dt_output <- dt_input %>%
     .[!(id %in% cfg$sub_exclude), ] %>%
     merge.data.table(x = ., y = dt_demographics, by = c("id", "order")) %>%
@@ -209,13 +210,21 @@ prep_sr_modeling <- function(cfg, paths) {
       model_name == "sr_base" ~ "Base"
     )] %>%
     .[, model_name := factor(as.factor(model_name), levels = c("Base", "Full"))] %>%
+    .[, process := dplyr::case_when(
+      process == "model_fitting" ~ "Model Fitting",
+      process == "parameter_recovery" ~ "Parameter Recovery"
+    )] %>%
+    # check if there are the expected number of parameter for each model:
+    verify(.[mod == "model" & variable %in% parameter_names, by = .(id, process, model_name, iter), .(
+      num_params = length(unique(variable))
+    )]$num_params <= num_params) %>%
     save_data(paths$source$behavior_sr_fit_parameters)
 }
 
-prep_sr_matrices <- function(paths) {
+prep_sr_matrices <- function(cfg, paths) {
   dt_behav_task <- load_data(paths$source$behavior_task)
   dt_sr_params <- load_data(paths$source$behavior_sr_fit_parameters) %>%
-    .[process == "model_fitting", ] %>%
+    .[process == "Model Fitting", ] %>%
     .[model_name == "Full", ] %>%
     .[mod == "model", ] %>%
     .[iter == 1, ] %>%
@@ -244,6 +253,7 @@ prep_sr_matrices <- function(paths) {
     merge.data.table(x = ., y = graphs, by.x = c("previous", "current"), by.y = c("node_previous", "node"), all.y = TRUE, sort = FALSE) %>%
     # .[, dist_prob := paste(dist_current, prob_current)] %>%
     save_data(paths$source$behavior_sr_fit_sr_matrices)
+  
 }
 
 prepare_data_mri_rest <- function(cfg, paths) {

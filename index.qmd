@@ -79,6 +79,11 @@ source(file.path(paths$code, "figures", "zoo-analysis-figures-sr-modeling.R"))
 ```
 
 ```{r}
+prep_sr_modeling(cfg, paths)
+prep_sr_matrices(cfg, paths)
+```
+
+```{r}
 get_sr_grid(cfg, paths)
 get_sr_grid_seq(cfg, paths)
 get_sr_grid_seq_mean(cfg, paths)
@@ -86,23 +91,40 @@ get_sr_grid_seq_lme(cfg, paths)
 plot_sr_grid_seq_lme(cfg, paths)
 ```
 
-
 ```{r}
 get_behavior_sr_fit_starting_values(cfg, paths)
 plot_behavior_sr_fit_starting_values(cfg, paths)
 get_behavior_sr_fit_parameter_dispersion(cfg, paths)
 plot_behavior_sr_fit_parameter_dispersion(cfg, paths)
+get_behavior_sr_fit_parameter_distribution(cfg, paths)
+plot_behavior_sr_fit_parameter_distribution(cfg, paths)
 ```
 
 ```{r}
 get_behavior_sr_fit_model_comparison(cfg, paths)
 get_behavior_sr_fit_model_comparison_stat(cfg, paths)
-get_behavior_sr_fit_parameter_conscious(cfg, paths)
+plot_behavior_sr_fit_model_comparison_sum_aic(cfg, paths)
+plot_behavior_sr_fit_parameter_mean(cfg, paths)
 get_behavior_sr_fit_parameter_order(cfg, paths)
+plot_behavior_sr_fit_parameter_order(cfg, paths)
+get_behavior_sr_fit_parameter_conscious(cfg, paths)
+plot_behavior_sr_fit_parameter_conscious(cfg, paths)
 get_behavior_sr_fit_suprise_effect(cfg, paths)
 get_behavior_sr_fit_suprise_effect_num(cfg, paths)
+plot_behavior_sr_fit_suprise_effect(cfg, paths)
+get_sr_matrices(cfg, paths)
+plot_sr_matrices(cfg, paths)
+plot_sr_matrices_select(cfg, paths)
 ```
 
+```{r}
+get_behavior_sr_fit_parameter_recovery(cfg, paths)
+plot_behavior_sr_fit_parameter_recovery(cfg, paths)
+get_behavior_sr_fit_parameter_recovery_corr(cfg, paths)
+plot_behavior_sr_fit_parameter_recovery_corr(cfg, paths)
+get_behavior_sr_fit_parameter_recovery_corr_stat(cfg, paths)
+plot_sr_modeling_parameter_receovery(cfg, paths)
+```
 
 ```{r}
 plot_sr_modeling(cfg, paths)
