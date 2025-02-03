@@ -583,6 +583,7 @@ run_lme <- function(lme_formula, lme_data) {
     p_value = model_stat$p.value
   )
   cat(codeblock(text_list = report_lme_model$latex))
+}
 
 sine_truncated <- function(params, time) {
   if (!is.list(params)) {
