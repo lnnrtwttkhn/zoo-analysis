@@ -71,6 +71,16 @@ plot_sr_modeling_supplement <- function(cfg, paths) {
   return(figure)
 }
 
+plot_sr_modeling_parameter_receovery <- function(cfg, paths) {
+  figure <- plot_grid(
+    plot_behavior_sr_fit_parameter_recovery_corr(cfg, paths),
+    plot_behavior_sr_fit_parameter_recovery(cfg, paths),
+    nrow = 1, ncol = 2, rel_heights = c(1/2, 1/2), labels = c("a", "b")
+  )
+  save_figure(plot = figure, "sr_modeling_parameter_recovery", width = 8, height = 4)
+  return(figure)
+}
+
 plot_sr_fit_check <- function(cfg, paths){
   figure <- plot_grid(
     plot_behavior_sr_fit_starting_values(cfg, paths),

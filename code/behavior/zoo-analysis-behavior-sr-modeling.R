@@ -132,12 +132,14 @@ get_behavior_sr_fit_starting_values <- function(cfg, paths) {
   dt_input <- load_data(paths$source$behavior_sr_fit_parameters)
   dt_output <- dt_input %>%
     .[mod == "model"] %>%
+    .[!is.na(process), ] %>%
     .[variable %in% c("x0_alpha", "x0_gamma")] %>%
     save_data(paths$source$behavior_sr_fit_starting_values) %>%
     .[, .(n_diff_sv = length(unique(value)), n_sv = length(value)),
-      by = .(id, iter, variable, model_name)] %>%
+      by = .(id, process, iter, variable, model_name)] %>%
     assertr::verify(., n_diff_sv == 1) %>%
     .[, n_diff_sv := NULL]
+  # tmp <- dt_output %>% .[n_diff_sv != 1]
 }
 
 get_behavior_sr_fit_parameter_dispersion <- function(cfg, paths) {
@@ -145,8 +147,9 @@ get_behavior_sr_fit_parameter_dispersion <- function(cfg, paths) {
   dt_input <- load_data(paths$source$behavior_sr_fit_parameters)
   dt_output <- dt_input %>%
     .[mod == "model"] %>%
+    .[!is.na(process), ] %>%
     .[variable %in% c("alpha", "gamma")] %>%
-    .[, by = .(id, variable, model_name), .(sd_estimate = sd(value)), ] %>%
+    .[, by = .(id, process, variable, model_name), .(sd_estimate = sd(value)), ] %>%
     save_data(paths$source$behavior_sr_fit_parameter_dispersion)
 }
 
@@ -154,6 +157,7 @@ get_behavior_sr_fit_parameter_distribution <- function(cfg, paths) {
   dt_input <- load_data(paths$source$behavior_sr_fit_parameters)
   dt_output <- dt_input %>%
     .[mod == "model"] %>%
+    .[!is.na(process), ] %>%
     .[variable %in% c("alpha", "gamma")] %>%
     .[iter == 1, ] %>%
     save_data(paths$source$behavior_sr_fit_parameter_distribution)
@@ -163,28 +167,29 @@ get_behavior_sr_fit_model_comparison <- function(cfg, paths) {
   dt_input <- load_data(paths$source$behavior_sr_fit_parameters)
   variables = c("aic", "bic")
   dt_output <- dt_input %>%
-    .[process == "model_fitting", ] %>%
-    .[iter == 1, ] %>%
+    .[process == "Model Fitting", ] %>%
+    # .[iter == 2, ] %>%
     .[variable %in% variables, ] %>%
-    .[, by = .(id, model_name, variable), .(
+    .[, by = .(id, process, model_name, iter, variable), .(
       value = unique(value),
       num_values = length(unique(value))
     )] %>%
-    verify(.[, by = .(id, model_name), .(num_values = .N)]$num_values == length(variables)) %>%
-    .[, by = .(id, variable), num_models := .N] %>%
-    # .[num_models == 2, ] %>%
+    verify(.[, by = .(id, model_name, iter), .(num_values = .N)]$num_values == length(variables)) %>%
+    verify(length(unique(id)) == cfg$num_subs) %>%
+    .[, by = .(id, variable, iter), num_models := .N] %>%
+    .[num_models == 2, ] %>%
     save_data(paths$source$behavior_sr_fit_model_comparison)
 }
 
 get_behavior_sr_fit_model_comparison_stat <- function(cfg, paths) {
   dt_input <- load_data(paths$source$behavior_sr_fit_model_comparison)
   dt_output <-  dt_input %>%
-    # .[, by = .(id, variable), num_models := .N] %>%
-    # .[num_models == 2, ] %>%
+    .[, by = .(id, process, variable, iter), num_models := .N] %>%
+    .[num_models == 2, ] %>%
     .[, num_params := ifelse(model_name == "Full", 2, NA)] %>%
     .[, num_params := ifelse(model_name == "Base", 1, num_params)] %>%
     .[variable == "aic", value := value + 2 * num_params] %>%
-    .[, by = .(model_name, variable), .(
+    .[, by = .(model_name, variable, iter), .(
       num_subs = .N,
       sum_value = sum(value)
     )] %>%
@@ -216,7 +221,7 @@ get_behavior_sr_fit_parameter_conscious <- function(cfg, paths) {
     alternative = "two.sided"
   )
   dt_output <- dt_input %>%
-    .[, by = .(model_name, variable), .(ttest = list(get_ttest(.SD, ttest_cfg)))] %>%
+    .[, by = .(process, model_name, variable), .(ttest = list(get_ttest(.SD, ttest_cfg)))] %>%
     unnest(ttest) %>%
     get_pvalue_adjust(., ttest_cfg) %>%
     save_data(paths$source$behavior_sr_fit_parameter_conscious)
@@ -233,7 +238,7 @@ get_behavior_sr_fit_parameter_order <- function(cfg, paths) {
     alternative = "two.sided"
   )
   dt_output <- dt_input %>%
-    .[, by = .(model_name, variable), .(ttest = list(get_ttest(.SD, ttest_cfg)))] %>%
+    .[, by = .(process, model_name, variable), .(ttest = list(get_ttest(.SD, ttest_cfg)))] %>%
     unnest(ttest) %>%
     get_pvalue_adjust(., ttest_cfg) %>%
     save_data(paths$source$behavior_sr_fit_parameter_order)
@@ -412,18 +417,44 @@ get_behavior_sr_fit_response_time_onestep_diff <- function(cfg, paths) {
     save_data(paths$source$behavior_sr_fit_response_time_onestep_run_stat)
 }
 
-get_behavior_sr_fit_parameter_recovery <- function() {
-  dt_input <- dt_input_sr
+get_behavior_sr_fit_parameter_recovery <- function(cfg, paths) {
+  dt_input <-  load_data(paths$source$behavior_sr_fit_parameters)
   dt_output <- dt_input %>%
     .[iter == 1, ] %>%
+    .[, iter := paste("Iteration:", iter)] %>%
+    # .[model_name == "Full", ] %>%
+    .[!is.na(process), ] %>%
     .[mod == "model", ] %>%
     .[variable %in% c("alpha", "gamma"), ] %>%
-    .[, c("id", "process", "variable", "value")]
-  ggplot(data = dt_output) +
-    facet_wrap(~ variable) +
-    geom_point(mapping = aes(x = process, y = value, color = id)) +
-    geom_line(mapping = aes(x = process, y = value, group = id, color = id)) +
-    theme(legend.position = "none")
-  
-  
+    .[, variable := ifelse(variable == "alpha", "\u03B1", variable)] %>%
+    .[, variable := ifelse(variable == "gamma", "\u0263", variable)] %>%
+    .[, variable := factor(as.factor(variable), levels = c("\u03B1", "\u0263"))] %>%
+    .[, c("id", "iter", "process", "model_name", "variable", "value")] %>%
+    verify(length(unique(id)) == cfg$num_subs) %>%
+    save_data(paths$source$behavior_sr_fit_parameter_recovery)
+}
+
+get_behavior_sr_fit_parameter_recovery_corr <- function(cfg, paths) {
+  dt_input <-  load_data(paths$source$behavior_sr_fit_parameter_recovery)
+  dt_output <- dt_input %>%
+    .[!is.na(process), ] %>%
+    .[, process := dplyr::case_when(
+      process ==  "Model Fitting" ~ "model_fitting",
+      process == "Parameter Recovery" ~ "parameter_recovery"
+    )] %>%
+    pivot_wider(names_from = process, values_from = value) %>%
+    save_data(paths$source$behavior_sr_fit_parameter_recovery_corr)
+}
+
+get_behavior_sr_fit_parameter_recovery_corr_stat <- function(cfg, paths) {
+  dt_input <-  load_data(paths$source$behavior_sr_fit_parameter_recovery_corr)
+  dt_output <- dt_input %>%
+    group_by(iter, model_name, variable) %>%
+    do(cbind(
+      broom::tidy(cor.test(.$model_fitting, .$parameter_recovery, method = "pearson")),
+      data.table(num_subs = nrow(.)))) %>%
+    setDT(.) %>%
+    # TODO: FIX NUMBER OF PARTICIPANTS
+    # verify(num_subs == cfg$num_subs)
+    save_data(paths$source$behavior_sr_fit_parameter_recovery_corr_stat)
 }

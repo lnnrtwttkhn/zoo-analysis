@@ -57,7 +57,7 @@ plot_behavior_sr_fit_starting_values <- function(cfg, paths) {
   dt_input <- load_data(paths$source$behavior_sr_fit_starting_values)
   figure <- ggplot(data = dt_input, aes(x = value, group = as.factor(iter), color = as.factor(iter))) +
     geom_freqpoly(bins = 30, position = position_dodge2()) +
-    facet_wrap(~ variable) +
+    facet_grid(vars(variable), vars(process)) +
     theme_zoo() +
     xlab("Starting values") +
     ylab("Number of participants") +
@@ -71,7 +71,7 @@ plot_behavior_sr_fit_starting_values <- function(cfg, paths) {
 plot_behavior_sr_fit_parameter_dispersion <- function(cfg, paths) {
   dt_input <- load_data(paths$source$behavior_sr_fit_parameter_dispersion)
   figure <- ggplot(data = dt_input, aes(x = sd_estimate)) +
-    geom_freqpoly(bins = 30) +
+    geom_freqpoly(aes(color = process), bins = 30) +
     # facet_wrap(~ variable) +
     facet_grid(vars(model_name), vars(variable)) +
     theme_zoo() +
@@ -82,7 +82,6 @@ plot_behavior_sr_fit_parameter_dispersion <- function(cfg, paths) {
     coord_capped_cart(left = "both", bottom = "both", expand = TRUE)
   return(figure)
 }
-
 
 plot_behavior_sr_fit_model_comparison <- function(cfg, paths) {
   dt1 <- load_data(paths$source$behavior_sr_fit_model_comparison)
@@ -113,9 +112,11 @@ plot_behavior_sr_fit_model_comparison <- function(cfg, paths) {
 
 plot_behavior_sr_fit_model_comparison_sum_aic <- function(cfg, paths) {
   dt_input <- load_data(paths$source$behavior_sr_fit_model_comparison) %>%
+    .[iter == 1, ] %>%
     .[variable == "aic", ]
   ymax <- -102000
   figure <- ggplot(data = dt_input, aes(x = model_name, y = value)) +
+    # facet_wrap(~ iter, scales = "free_y") +
     stat_summary(geom = "bar", fun = "sum") +
     ylab("AIC") +
     xlab("SR model") +
@@ -253,7 +254,9 @@ plot_sr_timecourse <- function() {
 
 plot_behavior_sr_fit_parameter_mean <- function(cfg, paths) {
   dt_input <- load_data(paths$source$behavior_sr_fit_parameter_distribution) %>%
-    .[model_name == "Full", ]
+    .[process == "Model Fitting", ] %>%
+    .[model_name == "Full", ] %>%
+    verify(length(unique(id)) == cfg$num_subs)
   figure <- ggplot(data = dt_input, aes(x = variable, y = value)) +
     geom_boxplot(outlier.shape = NA, width = 0.5, color = "black") +
     geom_beeswarm(alpha = 0.3) +
@@ -273,8 +276,10 @@ plot_behavior_sr_fit_parameter_mean <- function(cfg, paths) {
 
 plot_behavior_sr_fit_parameter_order <- function(cfg, paths) {
   dt1 <- load_data(paths$source$behavior_sr_fit_parameter_distribution) %>%
+    .[process == "Model Fitting", ] %>%
     .[model_name == "Full", ]
   dt2 <- load_data(paths$source$behavior_sr_fit_parameter_order) %>%
+    .[process == "Model Fitting", ] %>%
     .[model_name == "Full", ]
   figure <- ggplot(data = dt1, aes(x = order, y = value)) +
     geom_boxplot(outlier.shape = NA, width = 0.5, color = "black") +
@@ -301,8 +306,10 @@ plot_behavior_sr_fit_parameter_order <- function(cfg, paths) {
 
 plot_behavior_sr_fit_parameter_conscious <- function(cfg, paths) {
   dt1 <- load_data(paths$source$behavior_sr_fit_parameter_distribution) %>%
+    .[process == "Model Fitting", ] %>%
     .[model_name == "Full", ]
   dt2 <- load_data(paths$source$behavior_sr_fit_parameter_conscious) %>%
+    .[process == "Model Fitting", ] %>%
     .[model_name == "Full", ]
   figure <- ggplot(data = dt1, aes(x = sequence_detected, y = value)) +
     geom_boxplot(outlier.shape = NA, width = 0.5, color = "black") +
@@ -331,7 +338,7 @@ plot_behavior_sr_fit_suprise_effect <- function(cfg, paths) {
   dt_input <- load_data(paths$source$behavior_sr_fit_suprise_effect) %>%
     .[variable == "p_shannon_surprise", ] %>%
     .[model_name == "Full", ] %>%
-    .[process == "model_fitting", ]
+    .[process == "Model Fitting", ]
   figure <- ggplot(data = dt_input, aes(x = variable, y = value_log_20)) +
     geom_hline(yintercept = log(0.05, base = 20), linetype = "dashed", color = "black") +
     geom_boxplot(outlier.shape = NA, width = 0.5, color = "black") +
@@ -424,7 +431,7 @@ plot_sr_mat <- function(df) {
 }
 
 plot_sr_matrices <- function(cfg, paths) {
-  dt_input <- load_data(paths$source$behavior_sr_mat_plot)
+  dt_input <- load_data(paths$source$behavior_sr_fit_sr_matrices_plot)
   order_factor <- list()
   order_factor["uni - bi"] <- list(c("run-01 (uni)", "run-02 (uni)", "run-03 (uni)", "run-03 (bi)", "run-04 (bi)", "run-05 (bi)"))
   order_factor["bi - uni"] <- list(c("run-01 (bi)", "run-02 (bi)", "run-03 (bi)", "run-03 (uni)", "run-04 (uni)", "run-05 (uni)"))
@@ -468,5 +475,37 @@ plot_sr_matrices_select <- function(cfg, paths) {
     }
   }
   figure <- plot_grid(plotlist = figures_all, nrow = 2)
+  return(figure)
+}
+
+plot_behavior_sr_fit_parameter_recovery <- function(cfg, paths) {
+  dt_input <- load_data(paths$source$behavior_sr_fit_parameter_recovery)
+  figure <- ggplot(data = dt_input) +
+    facet_grid(vars(variable), vars(model_name)) +
+    geom_point(mapping = aes(x = process, y = value, color = id)) +
+    geom_line(mapping = aes(x = process, y = value, group = id, color = id)) +
+    theme(legend.position = "none") +
+    scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
+    ylab("Parameter estimate") +
+    theme_zoo() +
+    coord_capped_cart(left = "both", bottom = "both", expand = TRUE) +
+    theme(axis.title.x = element_blank())
+   return(figure)
+}
+
+plot_behavior_sr_fit_parameter_recovery_corr <- function(cfg, paths) {
+  dt_input <- load_data(paths$source$behavior_sr_fit_parameter_recovery_corr)
+  figure <- ggplot(data = dt_input, aes(x = model_fitting, y = parameter_recovery)) +
+    facet_grid(vars(variable), vars(model_name)) +
+    # geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "gray") +
+    geom_smooth(method = "lm", fullrange = TRUE, color = "black") +
+    geom_point(aes(color = id)) +
+    theme(legend.position = "none") +
+    xlab("Parameter Recovery") +
+    ylab("Model fitting") +
+    theme_zoo() +
+    coord_capped_cart(left = "both", bottom = "both", expand = TRUE) +
+    scale_y_continuous(labels = label_fill(seq(0, 1, 0.25), mod = 4), breaks = seq(0, 1, 0.25)) +
+    scale_x_continuous(labels = label_fill(seq(0, 1, 0.25), mod = 4), breaks = seq(0, 1, 0.25))
   return(figure)
 }
