@@ -396,7 +396,9 @@ get_pvalue_adjust <- function(dt_input, ttest_cfg = NA) {
     .[, estimate_round := round(estimate, 2)] %>%
     .[, statistic_round := round(statistic, 2)] %>%
     .[, conf.low_round := round(conf.low, 2)] %>%
+    .[, conf.low_latex := ifelse(conf.low == -Inf, "-\\infty", as.character(conf.low_round))] %>%
     .[, conf.high_round := round(conf.high, 2)] %>%
+    .[, conf.high_latex := ifelse(conf.high == Inf, "+\\infty", as.character(conf.high_round))] %>%
     .[, effsize_round := tryCatch(round(effsize, 2), error=function(err) NA)] %>%
     .[, p.value_round := round(p.value, 2)] %>%
     .[, p.value_round_label := format_pvalue(p.value_round)] %>%
@@ -405,7 +407,15 @@ get_pvalue_adjust <- function(dt_input, ttest_cfg = NA) {
     .[, p.value_adjust_round := as.numeric(round(p.value_adjust, 2))] %>%
     .[, p.value_adjust_round_label := format_pvalue(p.value_adjust_round)] %>%
     .[, p.value_adjust_significance := ifelse(p.value_adjust < 0.05, "*", "n.s.")] %>%
-    .[, adjust_method := ttest_cfg$adjust_method]
+    .[, adjust_method := ttest_cfg$adjust_method] %>%
+    .[, report_latex := paste(
+      sprintf("$M = %.2f$,", estimate),
+      sprintf("$SD = %.2f$,", std_value),
+      sprintf("$t_{%d} = %.2f$,", parameter, statistic),
+      sprintf("CI [$%s$, $%s$],", conf.low_latex, conf.high_latex),
+      sprintf("$p %s$", p.value_adjust_round_label),
+      sprintf("$d = %.2f$", effsize)
+    )]
   return(dt_output)
 }
 
