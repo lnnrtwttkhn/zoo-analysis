@@ -359,9 +359,14 @@ theme_zoo <- function() {
 
 get_ttest <- function(dt_input, ttest_cfg) {
   if (ttest_cfg$paired == TRUE) {
+    pair_factors <- unique(droplevels(dt_input[[ttest_cfg$rhs]]))
+    stopifnot(length(pair_factors) == 2)
+    lhs <- as.numeric(dt_input[[ttest_cfg$lhs]])
+    rhs <- dt_input[[ttest_cfg$rhs]]
     ttest <- broom::tidy(stats::t.test(
-      as.formula(sprintf("Pair(%s, %s) ~ 1", ttest_cfg$lhs, ttest_cfg$rhs)),
-      data = droplevels(dt_input),
+      lhs[rhs == pair_factors[1]],
+      lhs[rhs == pair_factors[2]],
+      paired = TRUE,
       alternative = ttest_cfg$alternative
     ))
   } else if (ttest_cfg$paired == FALSE) {
