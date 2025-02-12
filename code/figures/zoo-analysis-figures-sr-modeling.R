@@ -478,6 +478,39 @@ plot_sr_matrices_select <- function(cfg, paths) {
   return(figure)
 }
 
+plot_sr_matrices_select_extreme <- function(cfg, paths) {
+  sub_order <- c("sub-02", "sub-34", "sub-07", "sub-36", "sub-15", "sub-41")
+  dt_input <- load_data(paths$source$behavior_sr_fit_sr_matrices_plot)
+  order_factor <- list()
+  order_factor["uni - bi"] <- list(c("run-01 (uni)", "run-02 (uni)", "run-03 (uni)", "run-03 (bi)", "run-04 (bi)", "run-05 (bi)"))
+  order_factor["bi - uni"] <- list(c("run-01 (bi)", "run-02 (bi)", "run-03 (bi)", "run-03 (uni)", "run-04 (uni)", "run-05 (uni)"))
+  figures_all <- list()
+  i <- 0
+  for (sub in sub_order) {
+    i <- i + 1
+    dt_sub <- dt_input %>%
+      .[id == sub]
+    order_index <- unique(dt_sub$order)
+    dt_order <- dt_sub %>%
+      .[, run_cond := factor(run_cond, levels = order_factor[order_index][[1]])]
+    figures_all[[i]] <- plot_sr_mat(dt_order)
+  }
+  title1 <- ggdraw() + draw_label("Low \u03B1 and medium to high \u03B3 yield SR matrices that reflect multi-step transitions", fontface = "bold")
+  title2 <- ggdraw() + draw_label("Low \u03B3 yields SR matrices that emphasize one-step transitions", fontface = "bold")
+  title3 <- ggdraw() + draw_label("\u03B1 = 1 yields SR matrices that mainly reflect the last observed transition", fontface = "bold")
+  figure <- plot_grid(
+    plot_grid(title1, plot_grid(figures_all[[1]], figures_all[[2]], ncol = 2),
+              nrow = 2, ncol = 1, labels = "a", rel_heights = c(0.1, 0.9)),
+    plot_grid(title2, plot_grid(figures_all[[3]], figures_all[[4]], ncol = 2),
+              nrow = 2, ncol = 1, labels = "b", rel_heights = c(0.1, 0.9)),
+    plot_grid(title3, plot_grid(figures_all[[5]], figures_all[[6]], ncol = 2),
+              nrow = 2, ncol = 1, labels = "c", rel_heights = c(0.1, 0.9)),
+    nrow = 3, ncol = 1
+  )
+  save_figure(plot = figure, filename = "behavior_sr_matrices_extreme", width = 15, height = 8)
+  return(figure)
+}
+
 plot_behavior_sr_fit_parameter_recovery <- function(cfg, paths) {
   dt_input <- load_data(paths$source$behavior_sr_fit_parameter_recovery)
   figure <- ggplot(data = dt_input) +
