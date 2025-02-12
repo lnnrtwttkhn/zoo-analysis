@@ -414,6 +414,19 @@ prepare_data_decoding <- function(dt_input) {
   return(dt_output)
 }
 
+prepare_data_decoding_single_peak <- function(cfg, paths) {
+  get_data(paths$input_mri_single_peak)
+  dt_input <- load_data(paths$input_mri_single_peak)
+  dt_output <- dt_input %>%
+    .[!(id %in% cfg$sub_exclude), ] %>%
+    .[classification == "ensemble", ] %>%
+    .[class != "other", ] %>%
+    .[stringr::str_detect(test_set, "decode-peak"), ] %>%
+    prepare_data_decoding(.) %>%
+    verify(run_index %in% seq(1, 9)) %>%
+    save_data(paths$source$decoding_single_peak)
+}
+
 prepare_data_decoding_single_interval <- function(cfg, paths) {
   get_data(paths$input_mri_single_interval)
   dt_input <- load_data(paths$input_mri_single_interval)

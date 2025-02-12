@@ -53,9 +53,11 @@ load_config <- function() {
   cfg$graph_levels <- c("uni", "bi", "flat")
   # set plotting colors:
   cfg$colors_probability = hcl.colors(4, "Dark Mint")
+  cfg$colors_class <- rev(hcl.colors(6, "Zissou 1"))
   cfg$colors_graph <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")[c(6,7)]
   cfg$colors_sr <- hcl.colors(20, "Inferno")
   cfg$colors_conscious <- hcl.colors(5, "Plasma")[c(1, 4)]
+  cfg$colors_decoding_current <- rev(hcl.colors(5, "Inferno")[c(1,3)])
   # configuration parameters for questionnaire data:
   cfg$questionnaire$num_trials <- 30
   # configuration parameters for sequence trial behavioral data:
@@ -63,6 +65,11 @@ load_config <- function() {
   cfg$sequence$num_trials_run <- 240
   # configuration parameters for resting-state decoding data:
   cfg$rest$num_trs <- c(233, 137)
+  # configuration parameters for decoding data on single trials:
+  cfg$single$num_runs <- 9
+  cfg$single$max_trials_run <- 60
+  cfg$single$max_trials <- cfg$single$num_runs * cfg$single$max_trials_run
+  cfg$single$num_trs <- 15
   # configuration parameters for single-trial interval decoding data:
   cfg$decoding_single_interval$num_trs <- 15
   cfg$decoding_single_interval$max_trials_run <- 80
@@ -94,6 +101,12 @@ create_paths <- function() {
   paths$input_sr_modeling <- file.path(path_root, "input", "sr-modeling", "modeling", "sub-*-sr.csv")
   paths$input_sr_base_modeling <- file.path(path_root, "input", "sr-modeling", "modeling", "sub-*-sr_base.csv")
   paths$input_mri_rest <- file.path(paths$input, "decoding", "sub-*", "decoding", "*scheme-7*_time_shift-4*decoding*")
+  paths$input_mri_single_peak <- c(
+    file.path(paths$input, "decoding", "sub-*", "decoding", "*scheme-0*_time_shift-4*decoding*"),
+    file.path(paths$input, "decoding", "sub-*", "decoding", "*scheme-2*_time_shift-4*decoding*"),
+    file.path(paths$input, "decoding", "sub-*", "decoding", "*scheme-4*_time_shift-4*decoding*"),
+    file.path(paths$input, "decoding", "sub-*", "decoding", "*scheme-5*_time_shift-4*decoding*")
+  )
   paths$input_mri_single_interval <- c(
     file.path(path_root, "input", "decoding", "sub-*", "decoding", "*mask-vis_masking-anatomical_scheme-1*_time_shift-4*"),
     file.path(path_root, "input", "decoding", "sub-*", "decoding", "*mask-mot_masking-anatomical_scheme-3*_time_shift-4*")
@@ -167,7 +180,11 @@ create_paths <- function() {
   paths$source$behavior_sr_fit_parameter_recovery_corr_stat <- sprintf(source_path, "behavior_sr_fit_parameter_recovery_corr_stat")
   
   paths$decoding_rest <- sprintf(source_path, "decoding-rest")
-  
+  # source data for decoding on single trials (peaks):
+  paths$source$decoding_single_peak <- sprintf(source_path, "decoding_single_peak")
+  paths$source$decoding_single_peak_accuracy <- sprintf(source_path, "decoding_single_peak_accuracy")
+  paths$source$decoding_single_peak_accuracy_mean <- sprintf(source_path, "decoding_single_peak_accuracy_mean")
+  paths$source$decoding_single_peak_accuracy_run <- sprintf(source_path, "decoding_single_peak_accuracy_run")
   # source data for decoding on single trials (interval):
   paths$source$decoding_single_interval <- sprintf(source_path, "decoding_single_interval")
   paths$source$decoding_single_interval_trial <- sprintf(source_path, "decoding_recall_interval_trial")

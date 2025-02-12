@@ -138,3 +138,70 @@ plot_sr_modeling(cfg, paths)
 plot_sr_modeling_supplement(cfg, paths)
 plot_sr_fit_check(cfg, paths)
 ```
+
+## fMRI
+
+### Single Trials
+
+```{r}
+source(here::here("code", "utilities", "data.R"))
+source(file.path(paths$code, "decoding", "zoo-analysis-decoding-single-peak.R"))
+source(file.path(paths$code, "decoding", "zoo-analysis-decoding-single-interval.R"))
+source(file.path(paths$code, "figures", "zoo-analysis-figures-decoding-single.R"))
+prepare_data_decoding_single_peak(cfg, paths)
+```
+
+#### Peak
+
+```{r}
+get_single_decoding_peak_accuracy(cfg, paths)
+get_single_decoding_peak_accuracy_mean(cfg, paths)
+get_single_decoding_peak_accuracy_stat(cfg, paths)
+get_single_decoding_peak_run(cfg, paths)
+get_single_decoding_peak_run_lme(cfg, paths, mask_input = "visual")
+get_single_decoding_peak_run_lme(cfg, paths, mask_input = "motor")
+dt_output <- get_single_decoding_peak_run_stat(cfg, paths)
+```
+
+```{r}
+plot_decoding_single_accuracy_mean(cfg, paths)
+plot_decoding_single_accuracy_run(cfg, paths)
+```
+
+#### Interval
+
+```{r}
+get_decoding_single_interval_trial(cfg, paths)
+dt_output <- get_decoding_single_interval_stat(cfg, paths)
+get_decoding_single_interval_trial_mean(cfg, paths)
+plot_decoding_single_interval(cfg, paths)
+```
+
+
+```{r}
+get_decoding_single_interval_node(cfg, paths)
+plot_decoding_single_interval_node(cfg, paths)
+```
+
+```{r}
+get_decoding_single_fit(cfg, paths)
+plot_decoding_single_fit(cfg, paths)
+```
+
+```{r}
+get_decoding_single_fit_mean(cfg, paths)
+plot_decoding_single_fit_mean(cfg, paths)
+```
+
+```{r}
+get_decoding_single_fit_eval(cfg, paths)
+get_decoding_single_fit_eval_mean(cfg, paths)
+get_decoding_single_fit_sub(cfg, paths)
+get_decoding_single_fit_mean_eval(cfg, paths)
+plot_decoding_single_fit_sub(cfg, paths)
+```
+
+```{r}
+plot_decoding_single(cfg, paths)
+plot_sequentiality_illustration(cfg, paths)
+```
