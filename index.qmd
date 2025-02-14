@@ -206,3 +206,25 @@ plot_decoding_single_fit_sub(cfg, paths)
 plot_decoding_single(cfg, paths)
 plot_sequentiality_illustration(cfg, paths)
 ```
+
+### Sequence Trials
+
+```{r}
+source(file.path(paths$code, "decoding", "zoo-analysis-decoding-sequence-current.R"))
+source(file.path(paths$code, "figures", "zoo-analysis-figures-decoding-sequence.R"))
+```
+
+#### Current
+
+```{r}
+get_decoding_main_current_mean(cfg, paths)
+dt_output <- get_decoding_main_current_stat(cfg, paths)
+plot_decoding_main_current_mean(cfg, paths)
+```
+
+## Figures
+
+```{r}
+source(here::here("code", "figures", "zoo-analysis-figures.R"))
+figure4 <- plot_decoding_current(cfg, paths)
+```

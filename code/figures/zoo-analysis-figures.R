@@ -102,9 +102,6 @@ plot_behavior_graph_run = function() {
   return(figure)
 }
 
-figure = plot_decoding_recall()
-save_figure(plot = figure, "decoding_recall", width = 7, height = 4)
-
 plot_decoding_current <- function(cfg, paths) {
   title_upper <- ggdraw() + 
     draw_label("Single trials", hjust = 0.5, fontface = "bold")
