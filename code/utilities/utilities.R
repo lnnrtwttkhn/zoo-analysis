@@ -73,6 +73,15 @@ load_config <- function() {
   # configuration parameters for single-trial interval decoding data:
   cfg$decoding_single_interval$num_trs <- 15
   cfg$decoding_single_interval$max_trials_run <- 80
+  # configuration parameters for decoding data on sequence trials:
+  cfg$decoding_sequence$num_trs <- 8
+  cfg$decoding_sequence$num_prev <- 9
+  cfg$decoding_sequence$num_next <- 10
+  cfg$decoding_sequence$max_stim_evoked <- cfg$decoding_sequence$num_prev + 1 + cfg$decoding_sequence$num_next
+  cfg$decoding_sequence$max_trials <- 120
+  cfg$decoding_sequence$max_trials_graph <- cfg$decoding_sequence$max_trials / cfg$num_graphs
+  cfg$decoding_sequence_interval$max_trials_run <- 24
+  cfg$decoding_sequence_interval$max_trials_run_node <- 4
   # parameters for modeling of the sine-based response function:
   cfg$sine_params$names <- c("frequency", "amplitude", "shift", "baseline")
   cfg$sine_params$default_params <- c(0.2, 0.6, 0, 0.1)
@@ -110,6 +119,10 @@ create_paths <- function() {
   paths$input_mri_single_interval <- c(
     file.path(path_root, "input", "decoding", "sub-*", "decoding", "*mask-vis_masking-anatomical_scheme-1*_time_shift-4*"),
     file.path(path_root, "input", "decoding", "sub-*", "decoding", "*mask-mot_masking-anatomical_scheme-3*_time_shift-4*")
+  )
+  paths$input_mri_sequence <- c(
+    file.path(paths$input, "decoding", "sub-*", "decoding", "*scheme-6*_time_shift-4*decoding*"),
+    file.path(paths$input, "decoding", "sub-*", "decoding", "*scheme-8*_time_shift-4*decoding*")
   )
   paths$graphs <- file.path(paths$code, "utilities", "graphs.yml")
   # outputs:
@@ -197,6 +210,38 @@ create_paths <- function() {
   paths$source$decoding_single_interval_sine_fit_eval <- sprintf(source_path, "decoding_recall_interval_sine_fit_eval")
   paths$source$decoding_single_interval_sine_fit_eval_mean <- sprintf(source_path, "decoding_recall_interval_sine_fit_eval_mean")
   paths$source$decoding_single_interval_sine_fit_sub <- sprintf(source_path, "decoding_recall_interval_sine_fit_sub")
+  # source data for decoding on sequence trials:
+  paths$source$decoding_main <- sprintf(source_path, "decoding_main")
+  paths$source$decoding_main_current_mean <- sprintf(source_path, "decoding_main_current_mean")
+  paths$source$decoding_main_current_stat <- sprintf(source_path, "decoding_main_current_stat")
+  paths$source$decoding_main_current_interval <- sprintf(source_path, "decoding_main_current_interval")
+  paths$source$decoding_main_sine <- sprintf(source_path, "decoding_main_sine")
+  paths$source$decoding_main_sine_mean <- sprintf(source_path, "decoding_main_sine_mean")
+  paths$source$decoding_main_seq_prev <- sprintf(source_path, "decoding_main_seq_prev")
+  paths$source$decoding_main_stim_modeled <- sprintf(source_path, "decoding_main_stim_modeled")
+  paths$source$decoding_main_no_evoked <- sprintf(source_path, "decoding_main_no_evoked")
+  paths$source$decoding_main_no_evoked_phase <- sprintf(source_path, "decoding_main_no_evoked_phase")
+  paths$source$decoding_main_no_evoked_late_trs <- sprintf(source_path, "decoding_main_no_evoked_late_trs")
+  paths$source$decoding_main_no_evoked_num_class_trials <- sprintf(source_path, "decoding_main_no_evoked_num_class_trials")
+  paths$source$decoding_main_no_evoked_num_dist_trials <- sprintf(source_path, "decoding_main_no_evoked_num_dist_trials")
+  paths$source$decoding_main_model_input <- sprintf(source_path, "decoding_main_model_input")
+  paths$source$decoding_main_model_raw_prob <- sprintf(source_path, "decoding_main_model_raw_prob")
+  paths$source$decoding_main_model_results <- sprintf(source_path, "decoding_main_model_results")
+  paths$source$decoding_main_model_results_run <- sprintf(source_path, "decoding_main_model_results_run")
+  paths$source$decoding_main_model_residuals <- sprintf(source_path, "decoding_main_model_residuals")
+  paths$source$decoding_main_model_betas <- sprintf(source_path, "decoding_main_model_betas")
+  paths$source$decoding_main_model_betas_id <- sprintf(source_path, "decoding_main_model_betas_id")
+  paths$source$decoding_main_model_betas_behav <- sprintf(source_path, "decoding_main_model_betas_behav")
+  paths$source$decoding_main_model_betas_behav_cor <- sprintf(source_path, "decoding_main_model_betas_behav_cor")
+  paths$source$decoding_main_model_betas_behav_cor_mean <- sprintf(source_path, "decoding_main_model_betas_behav_cor_mean")
+  paths$source$decoding_main_model_prediction <- sprintf(source_path, "decoding_main_model_prediction")
+  paths$source$decoding_main_model_residuals_slope <- sprintf(source_path, "decoding_main_model_residuals_slope")
+  paths$source$decoding_main_model_residuals_slope_stat <- sprintf(source_path, "decoding_main_model_residuals_slope_stat")
+  paths$source$decoding_main_model_residuals_slope_stat_consciousness <- sprintf(source_path, "decoding_main_model_residuals_slope_stat_consciousness")
+  paths$source$decoding_main_model_comp <- sprintf(source_path, "decoding_main_model_comp")
+  paths$source$decoding_main_model_diff_run <- sprintf(source_path, "decoding_main_model_diff_run")
+  paths$source$decoding_main_model_no_evoked_slope <- sprintf(source_path, "decoding_main_model_no_evoked_slope")
+  paths$source$decoding_main_model_no_evoked_slope_stat <- sprintf(source_path, "decoding_main_model_no_evoked_slope_stat")
   return(paths)
 }
 
@@ -642,3 +687,31 @@ sine_truncated_eval <- function(params, time, data) {
   SSE <- sum((data - y)^2)
   return(SSE)
 }
+
+get_class_dist <- function(trial_run, onset, node) {
+  num_letters <- 6
+  dist_time <- matrix(NA, length(node), num_letters, dimnames = list(node, LETTERS[1:num_letters]))
+  dist_trial <- matrix(NA, length(node), num_letters, dimnames = list(node, LETTERS[1:num_letters]))
+  for (i in seq_along(node)) {
+    element <- node[i]
+    prev_seq <- node[1:i]
+    for (j in seq(num_letters)) {
+      letter_pos <- which(prev_seq == LETTERS[j])
+      if (length(letter_pos) != 0) {
+        dist_trial[i, j] <- max(letter_pos - i)
+        # dist_time[i, j] <- onset[i] - onset[max(letter_pos)]
+        dist_time[i, j] <- onset[max(letter_pos)]
+      }
+    }
+  }
+  dt_trial <- data.table(node = rownames(dist_trial), dist_trial) %>%
+    .[, trial_run := trial_run] %>%
+    melt(id.vars = c("trial_run", "node"), variable.name = "class", value.name = "class_dist_trial")
+  dt_time <- data.table(node = rownames(dist_time), dist_time) %>%
+    .[, trial_run := trial_run] %>%
+    melt(id.vars = c("trial_run", "node"), variable.name = "class", value.name = "class_dist_onset")
+  dt <- merge.data.table(x = dt_trial, y = dt_time, by = c("trial_run", "node", "class")) %>%
+    setorder(trial_run, node, class)
+  return(dt)
+}
+
