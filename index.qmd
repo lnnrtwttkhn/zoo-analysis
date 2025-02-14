@@ -222,6 +222,11 @@ dt_output <- get_decoding_main_current_stat(cfg, paths)
 plot_decoding_main_current_mean(cfg, paths)
 ```
 
+```{r}
+get_decoding_main_current_interval(cfg, paths)
+plot_decoding_main_current_interval(cfg, paths)
+```
+
 ## Figures
 
 ```{r}
