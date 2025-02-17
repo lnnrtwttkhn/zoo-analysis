@@ -54,6 +54,7 @@ load_config <- function() {
   # set plotting colors:
   cfg$colors_probability = hcl.colors(4, "Dark Mint")
   cfg$colors_class <- rev(hcl.colors(6, "Zissou 1"))
+  cfg$colors_dist <- hcl.colors(5, "Viridis")
   cfg$colors_graph <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")[c(6,7)]
   cfg$colors_sr <- hcl.colors(20, "Inferno")
   cfg$colors_conscious <- hcl.colors(5, "Plasma")[c(1, 4)]
@@ -91,9 +92,69 @@ load_config <- function() {
   cfg$sine_params$time <- seq(1, cfg$sine_params$num_trs, 1) - 1
   cfg$sine_params$time_eval = seq(1, cfg$sine_params$num_trs, 0.1) - 1
   cfg$sine_params$opts <- list("algorithm" = "NLOPT_LN_COBYLA", "xtol_rel" = 1.0e-8, "maxeval" = 1.0e+5)
-  # colors for plotting:
-  cfg$colors$class <- rev(hcl.colors(6, "Zissou 1"))
-  
+  # model configuration for decoding LME models:
+  cfg$decoding_sequence$models <- list()
+  cfg$decoding_sequence$models$suite1 <- c(
+    "prob_class ~ prob_stim + (1 | id)",
+    "prob_class ~ prob_stim + prob_graph + (1 | id)",
+    "prob_class ~ prob_stim + dist_graph + (1 | id)",
+    "prob_class ~ prob_stim + prob_graph + dist_graph + (1 | id)",
+    "prob_class ~ prob_stim + prob_sr + (1 | id)",
+    "prob_class ~ prob_stim + prob_sr + prob_graph + (1 | id)"
+  )
+  cfg$decoding_sequence$models$suite2 <- c(
+    "prob_class_scale ~ prob_stim_scale + (1 | id)",
+    "prob_class_scale ~ prob_stim_scale + prob_graph + (1 | id)",
+    "prob_class_scale ~ prob_stim_scale + dist_graph + (1 | id)",
+    "prob_class_scale ~ prob_stim_scale + prob_graph + dist_graph + (1 | id)",
+    "prob_class_scale ~ prob_stim_scale + prob_sr_scale + (1 | id)",
+    "prob_class_scale ~ prob_stim_scale + prob_sr_scale + prob_graph + (1 | id)"
+  )
+  cfg$decoding_sequence$models$suite3 <- c(
+    "prob_class_scale ~ prob_stim_scale + (1 | id)",
+    "prob_class_scale ~ prob_stim_scale + prob_graph + sequence_detected + (1 | id)",
+    "prob_class_scale ~ prob_stim_scale + dist_graph + sequence_detected + (1 | id)",
+    "prob_class_scale ~ prob_stim_scale + prob_graph + sequence_detected + dist_graph + (1 | id)",
+    "prob_class_scale ~ prob_stim_scale + prob_sr_scale + sequence_detected + (1 | id)",
+    "prob_class_scale ~ prob_stim_scale + prob_sr_scale + prob_graph + sequence_detected + (1 | id)"
+  )
+  cfg$decoding_sequence$models$suite4 <- c(
+    "logit(prob_class) ~ prob_stim_norm + (1 | id)",
+    "logit(prob_class) ~ prob_stim_norm + prob_graph + (1 | id)",
+    "logit(prob_class) ~ prob_stim_norm + prob_sr + (1 | id)",
+    "logit(prob_class) ~ prob_stim_norm + prob_sr + prob_graph + (1 | id)"
+  )
+  cfg$decoding_sequence$models$suite5 <- c(
+    "prob_class_scale ~ prob_stim_scale + (1 | id)",
+    "prob_class_scale ~ prob_stim_scale + prob_graph + (1 | id)",
+    "prob_class_scale ~ prob_stim_scale + prob_sr_scale + (1 | id)",
+    "prob_class_scale ~ prob_stim_scale + prob_sr_scale + prob_graph + (1 | id)"
+  )
+  cfg$decoding_sequence$models$suite6 <- c(
+    "prob_class ~ prob_stim + (1 | id)",
+    "prob_class ~ prob_stim + prob_graph + (1 | id)",
+    "prob_class ~ prob_stim + prob_sr + (1 | id)",
+    "prob_class ~ prob_stim + prob_sr + prob_graph + (1 | id)"
+  )
+  cfg$decoding_sequence$models$suite7 <- c(
+    # "prob_class ~ prob_stim + (prob_stim | id)",
+    # "prob_class ~ prob_stim + prob_graph + (prob_stim + prob_graph | id)",
+    # "prob_class ~ prob_stim + prob_sr + (prob_stim + prob_sr | id)",
+    "prob_class ~ prob_stim + prob_sr + prob_graph + (prob_sr | id)"
+  )
+  cfg$decoding_sequence$models$suite8 <- c(
+    "prob_class ~ prob_stim",
+    "prob_class ~ prob_stim + prob_graph",
+    "prob_class ~ prob_stim + prob_sr",
+    "prob_class ~ prob_stim + prob_sr + prob_graph"
+  )
+  cfg$decoding_sequence$models$model_names <- c(
+    "Stimulus",
+    "1-step",
+    "SR (multi-step)",
+    "SR + 1-step"
+  )
+  cfg$decoding_sequence$models$model_formulas <- cfg$decoding_sequence$models$suite6
   return(cfg)
 }
 
@@ -539,6 +600,24 @@ get_lme <- function(formulas, data, cfg) {
   })
   results_df <- bind_rows(models_output)
   return(results_df)
+}
+
+run_lmer <- function(formula, data, cfg, tidy = TRUE) {
+  model <- lmerTest::lmer(
+    formula = as.formula(formula),
+    data = data,
+    subset = NULL,
+    weights = NULL,
+    REML = FALSE,
+    na.action = na.omit,
+    offset = NULL,
+    control = cfg$lcctrl
+  )
+  # return a tidy model if TRUE
+  if (tidy == TRUE) {
+    model <- broom::tidy(model)
+  }
+  return(model)
 }
 
 calc_bits = function(probability) {

@@ -227,6 +227,54 @@ get_decoding_main_current_interval(cfg, paths)
 plot_decoding_main_current_interval(cfg, paths)
 ```
 
+#### Modeling
+
+```{r}
+source(file.path(paths$code, "decoding", "zoo-analysis-decoding-sequence-modeling.R"))
+source(file.path(paths$code, "figures", "zoo-analysis-figures-decoding-sequence-modeling.R"))
+```
+
+```{r}
+get_decoding_main_sine(cfg, paths)
+get_decoding_main_sine_mean(cfg, paths)
+get_decoding_main_modeled(cfg, paths)
+```
+
+```{r}
+get_decoding_main_model_input(cfg, paths)
+```
+
+```{r}
+get_decoding_main_model_raw_prob(cfg, paths)
+plot_decoding_main_model_raw_prob(cfg, paths)
+plot_decoding_main_model_raw_prob_all(cfg, paths)
+```
+
+```{r}
+get_decoding_main_model_results(cfg, paths)
+```
+
+```{r}
+get_decoding_main_model_residuals(cfg, paths)
+plot_decoding_main_model_residuals(cfg, paths, roi_input = "visual", graph_input = "uni")
+plot_decoding_main_model_residuals(cfg, paths, roi_input = "visual", graph_input = "bi")
+```
+
+```{r}
+get_decoding_main_model_residuals_slope(cfg, paths)
+dt_output <- get_decoding_main_model_residuals_slope_stat(cfg, paths) %>%
+  .[p.value < 0.05] %>%
+  .[roi == "visual"] %>%
+  .[graph == "uni"] %>%
+  .[model_name == "Stimulus", ]
+plot_decoding_main_model_residuals_slope(cfg, paths, roi_input = "visual", graph_input = "uni")
+plot_decoding_main_model_residuals_slope(cfg, paths, roi_input = "visual", graph_input = "bi")
+```
+
+```{r}
+plot_decoding_main_model_residuals_consciousness(cfg, paths, roi_input = "visual", graph_input = "uni")
+plot_decoding_main_model_residuals_slope_consciousness(cfg, paths, roi_input = "visual", graph_input = "uni")
+```
 ## Figures
 
 ```{r}

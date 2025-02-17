@@ -1,0 +1,263 @@
+get_decoding_main_sine <- function(cfg, paths) {
+  # convolve the sine wave with the stimulus onsets
+  dt_sine <- load_data(paths$source$decoding_single_interval_sine_fit)
+  dt_main <- load_data(paths$source$decoding_main)
+  max_num_stim <- cfg$decoding_sequence$max_stim_evoked
+  dt_main_sine <- dt_main %>%
+    .[, c("id", "run", "trial_run", "mask_test", "seq_total", "seq_total_onsets")] %>%
+    unique(.) %>%
+    .[, by = .(id, run, trial_run, mask_test), .(
+      node = unlist(strsplit(seq_total, "-")),
+      onset = unlist(strsplit(seq_total_onsets, "-"))
+    )] %>%
+    .[, node := ifelse(node == "NA", NA, as.character(node))] %>%
+    .[, onset := as.numeric(ifelse(onset == "NA", NA, onset))] %>%
+    .[, by = .(id, run, trial_run, mask_test), stim_num := seq_len(.N)] %>%
+    .[, by = .(id, onset, mask_test, run, trial_run, node),
+      interval_location := ifelse(stim_num > cfg$num_next, "after", "before")] %>%
+    verify(.[, by = .(id, run, trial_run, mask_test), .(max_counter = max(stim_num))]$max_counter == max_num_stim) %>%
+    # add fitted parameters of the sine modeling:
+    merge.data.table(x = ., y = dt_sine, by = c("id", "mask_test", "node")) %>%
+    setorder(., id, mask_test, run, trial_run, stim_num) %>%
+    .[, params := lapply(transpose(.SD), c), .SDcols = cfg$sine_params$names] %>%
+    # fit sine waves to sequence items:
+    .[, by = .(id, run, trial_run, mask_test, node, stim_num, onset, interval_location), .(
+      probability_sine = sine_truncated(params = unlist(params), cfg$sine_params$time_eval)
+    )] %>%
+    verify(!(is.na(probability_sine))) %>%
+    # calculate onsets for sine wave from onset of current node:
+    .[, by = .(id, mask_test, run, trial_run, node, stim_num, onset, interval_location),
+      onset := onset + cfg$sine_params$time_eval
+    ] %>%
+    # get onsets in TR:
+    .[, by = .(id, onset, mask_test, run, trial_run, node), ":="(
+      onset_tr = onset / cfg$tr,
+      onset_tr_round = floor(onset / cfg$tr) + 1
+    )] %>%
+    save_data(paths$source$decoding_main_sine)
+}
+
+get_decoding_main_sine_mean <- function(cfg, paths) {
+  # calculate the mean activation from the convolving
+  dt_input <- load_data(paths$source$decoding_main_sine)
+  dt_output <- dt_input %>%
+    .[, by = .(id, mask_test, run, node, stim_num, onset_tr_round), .(
+      probability_sine = mean(probability_sine)
+    )] %>%
+    .[, by = .(id, mask_test, run, node, onset_tr_round), .(
+      probability_sine_mean = mean(probability_sine),
+      probability_sine_sum = sum(probability_sine)
+    )] %>%
+    setorder(., id, mask_test, run, node, onset_tr_round) %>%
+    save_data(paths$source$decoding_main_sine_mean)
+}
+
+get_decoding_main_modeled <- function(cfg, paths) {
+  # create dataframe that combines main data and stim modeled data
+  dt_main <- load_data(paths$source$decoding_main)
+  dt_main_sine_mean <- load_data(paths$source$decoding_main_sine_mean)
+  column_names <- c(
+    "id", "mask_test", "run", "trial_index", "trial_index_run", "trial_run", "node_classifier", "node",
+    "node_dist_time", "node_dist_trial", "class_dist_trial", "class_dist_time", "graph", "prob_uni", "prob_bi",
+    "dist_uni", "dist_bi", "prob_graph", "dist_graph", "interval_tr",
+    "onset_interval", "onset", "probability", "probability_norm", "probability_sine_sum")
+  dt_main_modeled <- dt_main %>%
+    merge.data.table(x = ., y = dt_main_sine_mean,
+                     by.x = c("id", "mask_test", "run", "node_classifier", "onset_interval_tr"),
+                     by.y = c("id", "mask_test", "run", "node", "onset_tr_round"),
+                     all.x = TRUE) %>%
+    .[, ..column_names] %>%
+    setorder(., id, mask_test, run, trial_run, trial_index, trial_index_run, node_classifier, node, interval_tr, onset_interval, onset) %>%
+    .[, probability_modeled := as.numeric(ifelse(is.na(probability_sine_sum), 0, probability_sine_sum))] %>%
+    verify(!(is.na(probability_modeled))) %>%
+    .[, probability_sine_sum := NULL] %>%
+    # .[, dist_uni := ifelse(is.na(dist_uni), 0, dist_uni)] %>%
+    # .[, dist_bi := ifelse(is.na(dist_bi), 0, dist_bi)] %>%
+    # .[, dist_bi := ifelse(dist_bi == 1 & dist_uni == 5, -1, dist_bi)] %>%
+    # .[, dist_bi := ifelse(dist_bi == 2 & dist_uni == 4, -2, dist_bi)] %>%
+    .[, dist_combined := as.factor(paste0(dist_uni, " | ", dist_bi))] %>%
+    .[, phase := ifelse(interval_tr %in% seq(1, 4), "TRs 1 - 4\n(early)", "TRs 5 - 8\n(late)")] %>%
+    .[, phase := as.factor(phase)] %>%
+    # .[, dummy := 1] %>%
+    # pivot_wider(names_from = dist_graph, values_from = dummy, values_fill = 0, names_prefix = "dist_") %>%
+    save_data(paths$source$decoding_main_stim_modeled)
+}
+
+get_decoding_main_model_input <- function(cfg, paths) {
+  col_names_x <- c("id", "run", "trial_run", "graph", "node", "node_classifier",
+                   "prob_uni", "dist_uni", "prob_bi", "dist_bi")
+  col_names_y <- c("id", "run", "trial_run", "graph", "previous", "current",
+                   "prob_uni", "dist_uni", "prob_bi", "dist_bi")
+  dt_main_stim <- load_data(paths$source$decoding_main_stim_modeled)
+  dt_demographics <- load_data(paths$source$demographics) %>%
+    .[, c("id", "sequence_detected")]
+  dt_behav_sr <- load_data(paths$source$behavior_sr_fit_sr_matrices) %>%
+    .[condition == "Sequence", ]
+  dt_model <- dt_main_stim %>%
+    merge.data.table(., dt_behav_sr, by.x = col_names_x, by.y = col_names_y, all.x = TRUE) %>%
+    merge.data.table(., dt_demographics, by = c("id")) %>%
+    .[!(id %in% cfg$sub_exclude), ] %>%
+    .[interval_tr %in% seq(1, 8), ] %>%
+    .[trial_run > 1, ] %>%
+    .[, run_half := (as.numeric(substr(run, 6, 6)) - 1) * 2 + ceiling(trial_run / 120)] %>%
+    .[, onset_interval := NULL] %>%
+    .[, onset := NULL] %>%
+    .[, dist_flat := NULL] %>%
+    .[, prob_flat := NULL] %>%
+    .[, condition := NULL] %>%
+    setnames(., "mask_test", "roi") %>%
+    setnames(., "probability", "prob_class") %>%
+    setnames(., "probability_norm", "prob_class_norm") %>%
+    setnames(., "probability_modeled", "prob_stim") %>%
+    setnames(., "sr_prob", "prob_sr") %>%
+    .[, prob_stim_norm := exp(prob_stim * 1) / sum(exp(prob_stim * 1)), by = .(id, roi, trial_index, interval_tr)] %>%
+    .[, dist_graph_scale := scale(dist_graph, center = TRUE, scale = TRUE), by = .(id, roi)] %>%
+    .[, dist_graph_scale := scale(dist_graph, center = TRUE, scale = TRUE), by = .(id, roi)] %>%
+    .[, prob_graph_scale := scale(prob_graph, center = TRUE, scale = TRUE), by = .(id, roi)] %>%
+    .[, prob_class_scale := scale(prob_class, center = TRUE, scale = TRUE), by = .(id, roi)] %>%
+    .[, prob_stim_scale := scale(prob_stim, center = TRUE, scale = TRUE), by = .(id, roi)] %>%
+    .[, prob_sr_scale := scale(prob_sr, center = TRUE, scale = TRUE), by = .(id, roi)] %>%
+    setcolorder(., c(
+      "id", "run", "run_half", "trial_run", "trial_index", "graph", "node", "prob_graph", "dist_graph", "roi", "node_classifier", "interval_tr"
+    )) %>%
+    setorder(id, run, run_half, trial_run, node_classifier, interval_tr) %>%
+    save_data(paths$source$decoding_main_model_input)
+}
+
+get_decoding_main_model_raw_prob <- function(cfg, paths) {
+  dt_input <- load_data(paths$source$decoding_main_model_input) %>%
+    .[, dist_graph := ifelse(node_classifier == node, 0, dist_graph)] %>%
+    melt(.,
+         id.vars = c("id", "roi", "interval_tr", "graph", "dist_graph"),
+         measure.vars = c("prob_class", "prob_stim_norm"),
+         variable.name = "datatype",
+         value.name = "prob") %>%
+    .[, datatype := dplyr::case_when(
+      datatype == "prob_class" ~ "Data",
+      datatype == "prob_stim_norm" ~ "Stimulus Model"
+    )] %>%
+    .[, by = .(id, roi, interval_tr, graph, dist_graph, datatype), .(
+      mean_prob = mean(prob)
+    )] %>%
+    save_data(paths$source$decoding_main_model_raw_prob)
+}
+
+get_decoding_main_model_results <- function(cfg, paths) {
+  dt_input <- load_data(paths$source$decoding_main_model_input)
+  model_formulas <- cfg$decoding_sequence$models$model_formulas
+  model_names <- cfg$decoding_sequence$models$model_names
+  dt_output <- dt_input %>%
+    .[!(node_classifier == node), ] %>%
+    .[, by = .(roi, interval_tr), {
+      model_tidy = lapply(model_formulas, run_lmer, data = .SD, cfg = cfg, tidy = TRUE)
+      model = lapply(model_formulas, run_lmer, data = .SD, cfg = cfg, tidy = FALSE)
+      model_formula = model_formulas
+      model_name = model_names
+      model_number = seq_len(length(model_formulas))
+      aic = unlist(lapply(model, AIC))
+      N = .N
+      list(model_tidy, model_formula, model_name, model_number, aic, N)
+    }] %>%
+    unnest(model_tidy) %>%
+    setDT(.) %>%
+    verify(length(unique(N)) == 1) %>%
+    .[, model_label := paste("Model", model_number)] %>%
+    save_data(paths$source$decoding_main_model_results)
+}
+
+get_decoding_main_model_p_stim <- function(cfg, paths) {
+  dt_input <- load_data(paths$source$decoding_main_model_results)
+  dt_output <- dt_input %>%
+    .[interval_tr == 4, ] %>%
+    .[model_name == "Stimulus", ] %>%
+    .[roi == "visual", ] %>%
+    .[term == "prob_stim", ]
+  print(format_pvalue(dt_output$p.value))
+}
+
+get_decoding_main_model_residuals <- function(cfg, paths) {
+  dt_input <- load_data(paths$source$decoding_main_model_input)
+  model_formulas <- cfg$decoding_sequence$models$model_formulas
+  model_names <- cfg$decoding_sequence$models$model_names
+  dt_output <- dt_input %>%
+    .[!(node_classifier == node), ] %>%
+    .[, by = .(roi, graph, interval_tr), {
+      model = lapply(model_formulas, run_lmer, data = .SD, cfg = cfg, tidy = FALSE)
+      model_formula = model_formulas
+      model_name = model_names
+      model_number = seq_len(length(model_formulas))
+      residual = lapply(model, residuals)
+      prediction = lapply(model, predict)
+      dist_graph = list(dist_graph)
+      id = list(id)
+      sequence_detected = list(as.character(sequence_detected))
+      trial_index = list(trial_index)
+      N = .N
+      list(model_formula, model_name, model_number, residual, prediction, dist_graph, id, sequence_detected, trial_index, N)
+    }] %>%
+    unnest(., c(residual, prediction, dist_graph, id, sequence_detected, trial_index)) %>%
+    setDT(.) %>%
+    .[, model_label := paste("Model", model_number)] %>%
+    save_data(paths$source$decoding_main_model_residuals)
+}
+
+get_decoding_main_model_residuals_slope <- function(cfg, paths) {
+  dt_input <- load_data(paths$source$decoding_main_model_residuals)
+  dt_output <- dt_input %>%
+    .[, by = .(id, roi, sequence_detected, model_name, graph, trial_index, interval_tr), .(
+      num_nodes = .N,
+      slope = coef(lm(residual ~ dist_graph))[2] * (-1)
+    )] %>%
+    verify(num_nodes == cfg$num_nodes - 1) %>%
+    .[, num_nodes := NULL] %>%
+    .[, by = .(id, roi, sequence_detected, model_name, graph, interval_tr), .(
+      num_trials = .N,
+      mean_slope = mean(slope)
+    )] %>%
+    verify(num_trials <= cfg$decoding_sequence$max_trials_graph) %>%
+    .[, num_trials := NULL] %>%
+    save_data(paths$source$decoding_main_model_residuals_slope)
+}
+
+get_decoding_main_model_residuals_slope_stat <- function(cfg, paths) {
+  dt_input <- load_data(paths$source$decoding_main_model_residuals_slope)
+  ttest_cfg <- list(
+    lhs = "value",
+    rhs = "1",
+    adjust_method = "none",
+    paired = FALSE,
+    mu = 0,
+    alternative = "two.sided"
+  )
+  dt_output <- dt_input %>%
+    melt(id.vars = c("roi", "model_name", "graph", "interval_tr"), measure.vars = c("mean_slope")) %>%
+    .[, by = .(roi, model_name, graph, interval_tr, variable), .(ttest = list(get_ttest(.SD, ttest_cfg)))] %>%
+    unnest(ttest) %>%
+    get_pvalue_adjust(., ttest_cfg) %>%
+    save_data(paths$source$decoding_main_model_residuals_slope_stat)
+  return(dt_output)
+}
+
+get_decoding_main_model_residuals_slope_stat_consciousness <- function(cfg, paths) {
+  dt_input <- load_data(paths$source$decoding_main_model_residuals_slope)
+  ttest_cfg <- list(
+    lhs = "value",
+    rhs = "1",
+    adjust_method = "none",
+    paired = FALSE,
+    mu = 0,
+    alternative = "two.sided"
+  )
+  dt_output <- dt_input %>%
+    melt(id.vars = c("roi", "sequence_detected", "model_name", "graph", "interval_tr"), measure.vars = c("mean_slope")) %>%
+    .[graph == "uni", ] %>%
+    .[ roi == "visual", ] %>%
+    .[model_name == "Stimulus", ] %>%
+    .[, by = .(sequence_detected, roi, model_name, graph, interval_tr, variable), .(ttest = list(get_ttest(.SD, ttest_cfg)))] %>%
+    unnest(ttest) %>%
+    get_pvalue_adjust(., ttest_cfg) %>%
+    setorder(., sequence_detected, roi, model_name, graph, interval_tr) %>%
+    save_data(paths$source$decoding_main_model_residuals_slope_stat_consciousness)
+  print(dt_output %>% .[sequence_detected == "no"] %>% .$p.value_round)
+  print(round(dt_output %>% .[sequence_detected == "no"] %>% .$mean_value, 4))
+}
