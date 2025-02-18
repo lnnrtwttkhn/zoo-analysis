@@ -275,6 +275,36 @@ plot_decoding_main_model_residuals_slope(cfg, paths, roi_input = "visual", graph
 plot_decoding_main_model_residuals_consciousness(cfg, paths, roi_input = "visual", graph_input = "uni")
 plot_decoding_main_model_residuals_slope_consciousness(cfg, paths, roi_input = "visual", graph_input = "uni")
 ```
+
+```{r}
+get_decoding_main_model_betas(cfg, paths)
+plot_decoding_main_model_betas(cfg, paths, roi_input = "visual", graph_input = "uni")
+plot_decoding_main_model_betas(cfg, paths, roi_input = "motor", graph_input = "uni")
+```
+
+```{r}
+plot_decoding_main_model_results_stim(cfg, paths, roi_input = "visual")
+plot_decoding_main_model_results_stim(cfg, paths, roi_input = "motor")
+```
+
+```{r}
+get_decoding_main_model_results_diff(cfg, paths)
+plot_decoding_main_model_results_diff(cfg, paths, roi_input = "visual")
+plot_decoding_main_model_results_diff(cfg, paths, roi_input = "motor")
+```
+
+```{r}
+get_decoding_main_model_results_run(cfg, paths)
+get_decoding_main_model_results_run_diff(cfg, paths)
+plot_decoding_main_model_results_run_diff(cfg, paths, roi_input = "visual")
+plot_decoding_main_model_results_run_diff(cfg, paths, roi_input = "motor")
+plot_decoding_main_model_results_run_diff_all(cfg, paths)
+```
+
+```{r}
+get_decoding_main_model_results_run_trs(cfg, paths)
+plot_decoding_main_model_results_run_trs(cfg, paths)
+```
 ## Figures
 
 ```{r}

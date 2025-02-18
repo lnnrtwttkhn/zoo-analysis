@@ -289,6 +289,7 @@ create_paths <- function() {
   paths$source$decoding_main_model_raw_prob <- sprintf(source_path, "decoding_main_model_raw_prob")
   paths$source$decoding_main_model_results <- sprintf(source_path, "decoding_main_model_results")
   paths$source$decoding_main_model_results_run <- sprintf(source_path, "decoding_main_model_results_run")
+  paths$source$decoding_main_model_run_trs <- sprintf(source_path, "decoding_main_model_results_trs")
   paths$source$decoding_main_model_residuals <- sprintf(source_path, "decoding_main_model_residuals")
   paths$source$decoding_main_model_betas <- sprintf(source_path, "decoding_main_model_betas")
   paths$source$decoding_main_model_betas_id <- sprintf(source_path, "decoding_main_model_betas_id")

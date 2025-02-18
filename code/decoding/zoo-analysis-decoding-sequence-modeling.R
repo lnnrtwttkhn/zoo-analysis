@@ -261,3 +261,239 @@ get_decoding_main_model_residuals_slope_stat_consciousness <- function(cfg, path
   print(dt_output %>% .[sequence_detected == "no"] %>% .$p.value_round)
   print(round(dt_output %>% .[sequence_detected == "no"] %>% .$mean_value, 4))
 }
+
+get_decoding_main_model_prediction <- function(cfg, paths) {
+  dt_input <- load_data(paths$source$decoding_main_model_input)
+  model_formulas <- cfg$decoding_sequence$models$model_formulas
+  model_names <- cfg$decoding_sequence$models$model_names
+  dt_output <- dt_input %>%
+    .[!(node_classifier == node), ] %>%
+    .[, by = .(roi, graph, interval_tr), {
+      model = lapply(model_formulas, run_lmer, data = .SD, cfg = cfg, tidy = FALSE)
+      model_formula = model_formulas
+      model_name = model_names
+      model_number = seq_len(length(model_formulas))
+      prob_pred = lapply(model, predict)
+      prob_class = list(prob_class)
+      dist_graph = list(dist_graph)
+      id = list(id)
+      trial_index = list(trial_index)
+      N = .N
+      list(model_formula, model_name, model_number, prob_pred, prob_class, dist_graph, id, trial_index, N)
+    }] %>%
+    .[, model_label := paste("Model", model_number)] %>%
+    unnest(., c(prob_pred, prob_class, dist_graph, id, trial_index)) %>%
+    setDT(.) %>%
+    melt(.,
+         measure.vars = c("prob_class", "prob_pred"),
+         variable.name = "datatype",
+         value.name = "prob") %>%
+    .[, datatype := dplyr::case_when(
+      datatype == "prob_class" ~ "Data",
+      datatype == "prob_pred" ~ "Stimulus Model"
+    )] %>%
+    .[, by = .(id, roi, model_formula, model_name, model_number, interval_tr, graph, dist_graph, datatype), .(
+      num_trials = .N,
+      mean_prob = mean(prob)
+    )] %>%
+    verify(num_trials <= cfg$decoding_sequence$max_trials) %>%
+    .[, num_trials := NULL] %>%
+    save_data(paths$source$decoding_main_model_prediction)
+}
+
+get_decoding_main_model_betas <- function(cfg, paths) {
+  dt_input <- load_data(paths$source$decoding_main_model_input)
+  model_formulas <- cfg$decoding_sequence$models$model_formulas
+  model_names <- cfg$decoding_sequence$models$model_names
+  dt_output <- dt_input %>%
+    .[!(node_classifier == node), ] %>%
+    .[, by = .(roi, graph, interval_tr), {
+      model = lapply(model_formulas, run_lmer, data = .SD, cfg = cfg, tidy = FALSE)
+      model_formula = model_formulas
+      model_name = model_names
+      model_number = seq_len(length(model_formulas))
+      random_effects = lapply(model, ranef)
+      beta = lapply(model, fixef)
+      N = .N
+      list(model_formula, model_name, model_number, beta, random_effects, N)
+    }] %>%
+    verify(.[, by = .(graph), .(uniqueN = length(unique(N)))]$uniqueN == 1) %>%
+    .[, model_label := paste("Model", model_number)] %>%
+    unnest_wider(., beta, names_sep = "_") %>%
+    setnames(old = "beta_(Intercept)", new = "beta_intercept") %>%
+    setDT(.) %>%
+    .[, random_effects := lapply(random_effects, broom::augment)] %>%
+    unnest(random_effects) %>%
+    setDT(.) %>%
+    .[, grp := NULL] %>%
+    setnames(., old = "level", new = "id") %>%
+    melt(., measure.vars = patterns("^beta_"), variable.name = "predictor", value.name = "beta") %>%
+    .[, predictor := dplyr::case_when(
+      stringr::str_detect(predictor, "intercept") ~ "Intercept",
+      stringr::str_detect(predictor, "prob_graph") ~ "1-step",
+      stringr::str_detect(predictor, "prob_sr") ~ "SR",
+      stringr::str_detect(predictor, "prob_stim") ~ "Stimulus"
+    )] %>%
+    .[, id := factor(as.factor(id), levels = cfg$subjects)] %>%
+    setorder(id) %>%
+    .[, beta_id := beta + estimate] %>%
+    save_data(paths$source$decoding_main_model_betas)
+}
+
+get_decoding_main_model_betas_id <- function(cfg, paths) {
+  dt_input <- load_data(paths$source$decoding_main_model_input)
+  model_formulas <- cfg$decoding_sequence$models$suite8
+  model_names <- cfg$decoding_sequence$models$model_names
+  dt_output <- dt_input %>%
+    .[!(node_classifier == node), ] %>%
+    # .[, by = .(id, roi, interval_tr), {
+    .[, by = .(id, roi, graph, interval_tr), {
+      model = lapply(model_formulas, run_glm, data = .SD, cfg = cfg, tidy = TRUE)
+      model_formula = model_formulas
+      model_name = model_names
+      model_number = seq_len(length(model_formulas))
+      N = .N
+      list(model, model_formula, model_name, model_number, N)
+    }] %>%
+    unnest(model) %>%
+    setDT(.) %>%
+    .[, term := dplyr::case_when(
+      stringr::str_detect(term, "(Intercept)") ~ "Intercept",
+      stringr::str_detect(term, "prob_graph") ~ "1-step",
+      stringr::str_detect(term, "prob_sr") ~ "SR",
+      stringr::str_detect(term, "prob_stim") ~ "Stimulus"
+    )] %>%
+    setnames(., old = "term", new = "predictor") %>%
+    save_data(paths$source$decoding_main_model_betas_id)
+}
+
+get_decoding_main_model_betas_behav <- function(cfg, paths) {
+  dt_sr_fits <- load_data(paths$source$behavior_sr_fit_parameter_distribution) %>%
+    .[model_name == "Full"] %>%
+    .[, c("id", "variable", "value")] %>%
+    verify(.[, by = .(id), num_var := length(unique(variable))]$num_var == 2) %>%
+    pivot_wider(id_cols = c("id"), names_from = variable, values_from = value)
+  dt_sr_beta <- load_data(paths$source$decoding_main_model_betas_id) %>%
+    .[model_number == 4] %>%
+    merge.data.table(x = ., y = dt_sr_fits, by = c("id")) %>%
+    save_data(paths$source$decoding_main_model_betas_behav)
+  dt_output <- dt_sr_beta %>%
+    .[, estimate_abs := abs(estimate)] %>%
+    melt(measure.vars = c("estimate", "estimate_abs")) %>%
+    # .[, by = .(roi, interval_tr, predictor, variable), .(
+    .[, by = .(roi, graph, interval_tr, predictor, variable), .(
+      num_subs = .N,
+      cor = list(broom::tidy(cor.test(value, gamma, method = "pearson")))
+    )] %>%
+    verify(num_subs == cfg$num_subs) %>%
+    unnest(cor) %>%
+    setDT(.) %>%
+    .[predictor == "SR" & variable == "estimate" & roi == "visual", ] %>%
+    get_pvalue_adjust(., list(adjust_method = "fdr")) %>%
+    save_data(paths$source$decoding_main_model_betas_behav_cor) %>%
+    .[p.value_adjust_round <= 0.05, ] %>%
+    setorder(roi, graph, interval_tr)
+}
+
+get_decoding_main_model_betas_behav_cor_mean <- function(cfg, paths) {
+  dt_input <- load_data(paths$source$decoding_main_model_betas_behav) %>%
+    .[, by = .(id, roi, graph, predictor), .(
+      num_trs = .N,
+      mean_estimate = mean(abs(estimate)),
+      gamma = unique(gamma)
+    )] %>%
+    verify(num_trs == cfg$decoding_sequence$num_trs) %>%
+    save_data(paths$source$decoding_main_model_betas_behav_cor_mean)
+  dt_sd <- dt_input %>%
+    .[, by = .(roi, graph, predictor), ":="(
+      num_subs = .N,
+      sd_group = sd(mean_estimate, na.rm = TRUE),
+      mean_group = mean(mean_estimate, na.rm = TRUE)
+    )] %>%
+    verify(num_subs == cfg$num_subs) %>%
+    .[, outlier_cutoff := abs(mean_estimate + 1 * sd_group)] %>%
+    .[, outlier := mean_estimate >= outlier_cutoff]
+  dt_output <- dt_input %>%
+    # .[mean_estimate <= 1, ] %>%
+    .[, by = .(roi, graph, predictor), .(
+      num_subs = .N,
+      cor = list(broom::tidy(cor.test(mean_estimate, gamma, method = "pearson")))
+    )] %>%
+    # verify(num_subs == cfg$num_subs) %>%
+    unnest(cor) %>%
+    setDT(.) %>%
+    .[predictor == "SR", ] %>%
+    get_pvalue_adjust(., list(adjust_method = "bonferroni"))
+    # .[predictor != "SR", ] %>%
+    # .[, by = .(predictor), .(min_p = min(p.value))]
+}
+
+get_decoding_main_model_results_diff <- function(cfg, paths) {
+  # calculate the AIC score differences of all models against the baseline model:
+  dt_input <- load_data(paths$source$decoding_main_model_results) 
+  dt_output <- dt_input %>%
+    .[, c("roi", "interval_tr",  "model_name", "model_number", "aic")] %>%
+    unique(.) %>%
+    # remember that smaller (i.e., more negative) AIC means better fit!
+    .[, by = .(roi, interval_tr), aic_diff := aic - aic[model_number == 1]] %>%
+    save_data(paths$source$decoding_main_model_comp)
+}
+
+get_decoding_main_model_results_report <- function(cfg, paths) {
+  # reduce AICs of model comparison to the ones used in reporting
+  dt_input <- load_data(paths$source$decoding_main_model_comp) 
+  dt_output <- dt_input %>%
+    .[roi == "visual", ] %>%
+    .[interval_tr %in% c(2, 5)]
+}
+
+get_decoding_main_model_results_run <- function(cfg, paths) {
+  dt_input <- load_data(paths$source$decoding_main_model_input)
+  model_formulas <- cfg$decoding_sequence$models$suite6
+  model_names <- cfg$decoding_sequence$models$model_names
+  dt_output <- dt_input %>%
+    .[!(node_classifier == node), ] %>%
+    .[, by = .(roi, run_half, interval_tr), {
+      model_tidy = lapply(model_formulas, run_lmer, data = .SD, cfg = cfg, tidy = TRUE)
+      model = lapply(model_formulas, run_lmer, data = .SD, cfg = cfg, tidy = FALSE)
+      model_formula = model_formulas
+      model_name = model_names
+      model_number = seq_len(length(model_formulas))
+      aic = unlist(lapply(model, AIC))
+      N = .N
+      list(model_tidy, model_formula, model_name, model_number, aic, N)
+    }] %>%
+    unnest(model_tidy) %>%
+    setDT(.) %>%
+    .[, model_label := paste("Model", model_number)] %>%
+    save_data(paths$source$decoding_main_model_results_run)
+}
+
+get_decoding_main_model_results_run_trs <- function(cfg, paths) {
+  dt_input <- load_data(paths$source$decoding_main_model_results_run) 
+  dt_output <- dt_input %>%
+    .[, c("roi", "run_half", "interval_tr",  "model_name", "model_number", "aic")] %>%
+    unique(.) %>%
+    .[, by = .(roi, run_half, interval_tr), aic_diff := aic - aic[model_number == 1]] %>%
+    save_data(paths$source$decoding_main_model_run_trs)
+}
+
+get_decoding_main_model_results_run_diff <- function(cfg, paths) {
+  dt_input <- load_data(paths$source$decoding_main_model_results_run) 
+  dt_output <- dt_input %>%
+    .[, c("roi", "run_half", "interval_tr",  "model_name", "model_number", "aic")] %>%
+    unique(.) %>%
+    # .[, by = .(roi, run_half, model_name, model_number), .(
+    #   num_trs = .N,
+    #   aic = aic[which.max(abs(aic))]
+    # )] %>%
+    # verify(num_trs == cfg$decoding_sequence$num_trs) %>%
+    # .[, by = .(roi, run_half), aic_diff := aic - aic[model_number == 1]] %>%
+    .[, by = .(roi, run_half, interval_tr), aic_diff := aic - aic[model_number == 1]] %>%
+    .[, by = .(roi, run_half, model_name, model_number), .(
+      num_trs = .N,
+      aic_diff = aic_diff[which.max(abs(aic_diff))]
+    )] %>%
+    verify(num_trs == cfg$decoding_sequence$num_trs) %>%
+    save_data(paths$source$decoding_main_model_diff_run)
+}
