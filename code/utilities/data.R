@@ -220,6 +220,8 @@ prep_sr_modeling <- function(cfg, paths) {
     verify(.[mod == "model" & variable %in% parameter_names, by = .(id, process, model_name, iter), .(
       num_params = length(unique(variable))
     )]$num_params <= num_params) %>%
+    # .[, by = .(process), .(num_subs = length(unique(id)))]
+    verify(.[, by = .(process), .(num_subs = length(unique(id)))]$num_subs == cfg$num_subs) %>%
     save_data(paths$source$behavior_sr_fit_parameters)
 }
 

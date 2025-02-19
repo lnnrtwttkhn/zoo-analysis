@@ -178,6 +178,8 @@ get_behavior_sr_fit_model_comparison <- function(cfg, paths) {
     verify(length(unique(id)) == cfg$num_subs) %>%
     .[, by = .(id, variable, iter), num_models := .N] %>%
     .[num_models == 2, ] %>%
+    .[, .(num_subs = length(unique(id)))]
+    verify(.[, .(num_subs = length(unique(id)))]$num_subs == cfg$num_subs) %>%
     save_data(paths$source$behavior_sr_fit_model_comparison)
 }
 

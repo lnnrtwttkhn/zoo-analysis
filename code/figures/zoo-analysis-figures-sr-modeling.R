@@ -266,6 +266,7 @@ plot_behavior_sr_fit_parameter_mean <- function(cfg, paths) {
     ylab("Parameter estimate") +
     theme_zoo() +
     coord_capped_cart(left = "both", bottom = "both", expand = TRUE) +
+    scale_y_continuous(labels = c(0.01, seq(0.25, 1.0, 0.25)), breaks = c(0.01, seq(0.25, 1.0, 0.25))) +
     theme(axis.line.x = element_line(color = "white")) +
     theme(axis.ticks.x = element_line(color = "white")) +
     theme(axis.title.x = element_text(colour = "black")) +
@@ -290,6 +291,7 @@ plot_behavior_sr_fit_parameter_order <- function(cfg, paths) {
     geom_text(data = dt2,
               aes(x = 1.5, y = 1.3, label = paste("p", p.value_adjust_round_label)),
               color = "black", parse = FALSE, size = rel(2.5)) +
+    scale_y_continuous(labels = c(0.01, seq(0.25, 1.0, 0.25)), breaks = c(0.01, seq(0.25, 1.0, 0.25))) +
     facet_wrap(~ variable) +
     ylab("Parameter estimate") +
     xlab("Graph order") +
@@ -325,6 +327,7 @@ plot_behavior_sr_fit_parameter_conscious <- function(cfg, paths) {
     xlab('"Did you notice any\nsequential structure?"') +
     theme_zoo() +
     coord_capped_cart(left = "both", bottom = "both", expand = TRUE) +
+    scale_y_continuous(labels = c(0.01, seq(0.25, 1.0, 0.25)), breaks = c(0.01, seq(0.25, 1.0, 0.25))) +
     theme(axis.line.x = element_line(color = "white")) +
     theme(axis.ticks.x = element_line(color = "white")) +
     theme(axis.title.x = element_text(colour = "black")) +
