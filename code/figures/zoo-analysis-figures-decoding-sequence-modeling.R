@@ -67,6 +67,7 @@ plot_decoding_main_model_residuals <- function(cfg, paths, roi_input, graph_inpu
     .[graph == graph_input, ] %>%
     .[ roi == roi_input, ] %>%
     .[model_number == 1, ]
+  title_text <- sprintf("Residuals of stimulus model\n(%sdirectional graph)", graph_input)
   figure <- ggplot(dt_input, aes(x = as.factor(interval_tr), y = as.numeric(residual))) +
     # annotate("rect", xmin = 1, xmax = 4.5, ymin = -Inf, ymax = Inf, alpha = 0.2, fill = "lightgray") +
     # annotate("rect", xmin = 4.5, xmax = 8, ymin = -Inf, ymax = Inf, alpha = 0.2, fill = "darkgray") +
@@ -90,7 +91,7 @@ plot_decoding_main_model_residuals <- function(cfg, paths, roi_input, graph_inpu
     guides(color = guide_legend(nrow = 1, ncol = 6)) +
     theme(legend.margin = margin(t = 0, r = 0, b = 0, l = 0)) +
     theme(legend.box.margin = margin(t = 0, r = 0, b = 0, l = 0)) +
-    ggtitle("Residuals of stimulus model\n(unidirectional graph)") +
+    ggtitle(title_text) +
     theme(plot.title = element_text(hjust = 0.5, face = "bold")) +
     theme(legend.position = "none")
   return(figure)
@@ -108,6 +109,7 @@ plot_decoding_main_model_residuals_slope <- function(cfg, paths, roi_input, grap
     .[, p.value_significance := ifelse(p.value_significance == "n.s.", " ", p.value_significance)]
   arrow_ymax <- 0.01
   arrow_xpos <- 0.5
+  title_text <- sprintf("Sequentiality in residuals\n(%sdirectional graph)", graph_input)
   figure <- ggplot(dt1, aes(x = as.numeric(interval_tr), y = as.numeric(mean_slope))) +
     # annotate("rect", xmin = 1, xmax = 4.5, ymin = -Inf, ymax = Inf, alpha = 0.2, fill = "lightgray") +
     # annotate("rect", xmin = 4.5, xmax = 8, ymin = -Inf, ymax = Inf, alpha = 0.2, fill = "darkgray") +
@@ -130,7 +132,7 @@ plot_decoding_main_model_residuals_slope <- function(cfg, paths, roi_input, grap
     guides(color = guide_legend(nrow = 1, ncol = 6)) +
     theme(legend.margin = margin(t = 0, r = 0, b = 0, l = 0)) +
     theme(legend.box.margin = margin(t = 0, r = 0, b = 0, l = 0)) +
-    ggtitle("Sequentiality in residuals\n(unidirectional graph)") +
+    ggtitle(title_text) +
     theme(plot.title = element_text(hjust = 0.5, face = "bold")) +
     theme(legend.position = "none") +
     annotate(geom = "segment",
@@ -417,9 +419,9 @@ plot_decoding_main_model_betas_behav_cor_mean <- function(cfg, paths, roi_input)
   return(figure)
 }
 
-plot_decoding_main_model_prediction <- function(cfg, paths, roi_input) {
+plot_decoding_main_model_prediction <- function(cfg, paths, roi_input, graph_input) {
   dt_input <- load_data(paths$source$decoding_main_model_prediction) %>%
-    .[graph == "uni"] %>%
+    .[graph == graph_input] %>%
     .[roi == roi_input, ] %>%
     .[model_name == "Stimulus", ]
   figure <- ggplot(dt_input, aes(x = as.factor(interval_tr), y = as.numeric(mean_prob) * 100)) +
@@ -440,8 +442,8 @@ plot_decoding_main_model_prediction <- function(cfg, paths, roi_input) {
     scale_x_discrete(labels = label_fill(seq(1, 8, 1), mod = 1), breaks = seq(1, 8, 1)) +
     # scale_color_manual(values = c("gray", cfg$dist_colors), name = "Node distance") +
     # scale_fill_manual(values = c("gray", cfg$dist_colors), name = "Node distance") +
-    scale_color_manual(values = c(cfg$dist_colors), name = "Node distance") +
-    scale_fill_manual(values = c(cfg$dist_colors), name = "Node distance") +
+    scale_color_manual(values = c(cfg$colors_dist), name = "Node distance") +
+    scale_fill_manual(values = c(cfg$colors_dist), name = "Node distance") +
     theme(legend.position = "bottom", legend.box = "horizontal") +
     guides(fill = guide_legend(title.position = "top", title.hjust = 0.5)) +
     guides(color = guide_legend(title.position = "top", title.hjust = 0.5)) +
@@ -489,7 +491,7 @@ plot_decoding_main_model_results_diff <- function(cfg, paths, roi_input) {
     xlab("Time from inter-trial interval onset") +
     ylab("Relative AIC") +
     theme_zoo() +
-    coord_capped_cart(left = "both", bottom = "both", expand = TRUE, ylim = c(-10, 10)) +
+    coord_capped_cart(left = "both", bottom = "both", expand = TRUE, ylim = c(-30, 10)) +
     scale_x_continuous(limits = c(0, 8), labels = label_fill(seq(1, 8, 1), mod = 1), breaks = seq(1, 8, 1)) +
     theme(legend.position = c(0.7, 0.85)) +
     theme(legend.title = element_blank()) +

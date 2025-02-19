@@ -126,22 +126,23 @@ plot_decoding_current <- function(cfg, paths) {
   return(figure)
 }
 
-plot_decoding_main_model <- function(cfg, paths, roi_input) {
+plot_decoding_main_model <- function(cfg, paths, roi_input, graph_input) {
   figure <- plot_grid(
-    plot_grid(plot_decoding_main_model_prediction(cfg, paths, roi_input),
+    ggdraw() + draw_label(sprintf("%s ROI", tools::toTitleCase(roi_input)), hjust = 0.5, fontface = "bold"),
+    plot_grid(plot_decoding_main_model_prediction(cfg, paths, roi_input, graph_input),
               labels = c("a"), ncol = 1, nrow = 1),
     plot_grid(plot_decoding_main_model_results_stim(cfg, paths, roi_input),
               plot_decoding_main_model_results_diff(cfg, paths, roi_input),
               labels = c("b", "c"), ncol = 2, nrow = 1),
-    plot_grid(plot_decoding_main_model_residuals(cfg, paths, roi_input),
-              plot_decoding_main_model_residuals_slope(cfg, paths, roi_input),
+    plot_grid(plot_decoding_main_model_residuals(cfg, paths, roi_input, graph_input),
+              plot_decoding_main_model_residuals_slope(cfg, paths, roi_input, graph_input),
               labels = c("d", "e"), ncol = 2, nrow = 1),
-    plot_grid(plot_decoding_main_model_no_evoked_prob(cfg, paths) + theme(legend.position = "none"),
-              plot_decoding_main_model_no_evoked_slope(cfg, paths),
+    plot_grid(plot_decoding_main_model_no_evoked_prob(cfg, paths, roi_input, graph_input) + theme(legend.position = "none"),
+              plot_decoding_main_model_no_evoked_slope(cfg, paths, roi_input, graph_input),
               labels = c("f", "g"), ncol = 2, nrow = 1, vjust = 0.5),
-    ncol = 1, nrow = 4
+    ncol = 1, nrow = 5, rel_heights = c(0.1, 1, 1, 1, 1)
   )
-  filename = sprintf("decoding_main_model_%s", roi_input)
+  filename = sprintf("decoding_main_model_%s_%s", roi_input, graph_input)
   save_figure(plot = figure, filename, width = 7, height = 10)
   return(figure)
 }
