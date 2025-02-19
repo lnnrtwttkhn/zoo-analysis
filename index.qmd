@@ -277,6 +277,11 @@ plot_decoding_main_model_residuals_slope_consciousness(cfg, paths, roi_input = "
 ```
 
 ```{r}
+get_decoding_main_model_prediction(cfg, paths)
+plot_decoding_main_model_prediction(cfg, paths, roi_input = "visual", graph_input = "uni")
+```
+
+```{r}
 get_decoding_main_model_betas(cfg, paths)
 plot_decoding_main_model_betas(cfg, paths, roi_input = "visual", graph_input = "uni")
 plot_decoding_main_model_betas(cfg, paths, roi_input = "motor", graph_input = "uni")
@@ -305,9 +310,41 @@ plot_decoding_main_model_results_run_diff_all(cfg, paths)
 get_decoding_main_model_results_run_trs(cfg, paths)
 plot_decoding_main_model_results_run_trs(cfg, paths)
 ```
+
+```{r}
+get_decoding_main_model_no_evoked(cfg, paths)
+plot_decoding_main_model_no_evoked_prob(cfg, paths, mask_input = "visual", graph_input = "uni")
+plot_decoding_main_model_no_evoked_prob(cfg, paths, mask_input = "visual", graph_input = "bi")
+plot_decoding_main_model_no_evoked_all(cfg, paths)
+```
+
+```{r}
+get_decoding_main_model_no_evoked_slope(cfg, paths)
+get_decoding_main_model_no_evoked_slope_stat(cfg, paths)
+dt_output <- get_decoding_main_model_no_evoked_slope_stat_select(cfg, paths)
+plot_decoding_main_model_no_evoked_slope(cfg, paths, mask_input = "visual", graph_input = "uni")
+plot_decoding_main_model_no_evoked_slope(cfg, paths, mask_input = "visual", graph_input = "bi")
+plot_decoding_main_model_no_evoked_slope(cfg, paths, mask_input = "motor", graph_input = "uni")
+plot_decoding_main_model_no_evoked_slope(cfg, paths, mask_input = "motor", graph_input = "bi")
+plot_decoding_main_model_no_evoked_slope_all(cfg, paths, mask_input = "visual")
+plot_decoding_main_model_no_evoked_slope_all(cfg, paths, mask_input = "motor")
+```
+
+```{r}
+get_decoding_main_model_no_evoked_num_class_trials(cfg, paths)
+plot_decoding_main_model_no_evoked_num_class_trials(cfg, paths)
+get_decoding_main_model_no_evoked_num_dist_trials(cfg, paths)
+plot_decoding_main_model_no_evoked_num_dist_trials(cfg, paths)
+plot_decoding_main_model_no_evoked(cfg, paths)
+```
+
 ## Figures
 
 ```{r}
 source(here::here("code", "figures", "zoo-analysis-figures.R"))
 figure4 <- plot_decoding_current(cfg, paths)
+plot_decoding_main_model(cfg, paths, roi_input = "visual", graph_input = "uni")
+plot_decoding_main_model(cfg, paths, roi_input = "visual", graph_input = "bi")
+plot_decoding_main_model(cfg, paths, roi_input = "motor", graph_input = "uni")
+plot_decoding_main_model(cfg, paths, roi_input = "motor", graph_input = "bi")
 ```

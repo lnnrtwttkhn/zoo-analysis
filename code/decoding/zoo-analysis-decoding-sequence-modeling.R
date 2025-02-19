@@ -497,3 +497,153 @@ get_decoding_main_model_results_run_diff <- function(cfg, paths) {
     verify(num_trs == cfg$decoding_sequence$num_trs) %>%
     save_data(paths$source$decoding_main_model_diff_run)
 }
+
+get_decoding_main_model_no_evoked <- function(cfg, paths) {
+  # analyze sequentiality only in periods with no stimulus driven activity
+  dt_main_stim <- load_data(paths$source$decoding_main_stim_modeled)
+  dt_demographics <- load_data(paths$source$demographics) %>%
+    .[, c("id", "sequence_detected")]
+  dt_input <- dt_main_stim %>%
+    merge.data.table(., dt_demographics, by = c("id"))
+  dt_output <- dt_input %>%
+    .[probability_modeled == 0, ] %>%
+    .[!(node == node_classifier),] %>%
+    .[, by = .(id, mask_test, graph, interval_tr, dist_combined), .(
+      num_trials = .N,
+      mean_prob = mean(probability_norm)
+    )] %>%
+    verify(num_trials <= cfg$decoding_sequence$max_trials) %>%
+    .[, num_trials := NULL] %>%
+    save_data(paths$source$decoding_main_model_no_evoked)
+}
+
+get_decoding_main_model_no_evoked_slope <- function(cfg, paths) {
+  dt_input <- load_data(paths$source$decoding_main_stim_modeled)
+  variable <- "probability_norm"
+  cor_method <- cfg$decoding_sequence$cor_method
+  dt_output <- dt_input %>%
+    .[probability_modeled == 0, ] %>%
+    .[!(node == node_classifier),] %>%
+    # order positions by decreasing probability and calculate step size
+    # calculate correlation and slope between position and probability
+    # verify that there are five probabilities (one for each class) per volume
+    # verify that all correlations range between -1 and 1
+    .[, by = .(id, mask_test, trial_index, graph, interval_tr), {
+      # order the probabilities in decreasing order (first = highest):
+      prob_order_index = order(get(variable), decreasing = TRUE)
+      # order the sequential positions by probability:
+      pos_order = dist_graph[prob_order_index]
+      # order the probabilities:
+      prob_order = get(variable)[prob_order_index]
+      list(
+        # calculate the number of events:
+        num_nodes = .N,
+        # calculate the mean step size between probability-ordered events:
+        step = mean(diff(pos_order)),
+        # calculate the mean correlation between positions and their probabilities:
+        cor = ifelse(.N <= 2, NA_real_, cor.test(pos_order, prob_order, method = cor_method)$estimate  * (-1)),
+        # calculate the slope of a linear regression between position and probabilities:
+        slope = coef(lm(prob_order ~ pos_order))[2] * (-1)
+        # verify that the number of events matches selection and correlations -1 < r < 1
+      )}] %>%
+    verify(num_nodes <= cfg$num_nodes) %>% 
+    verify(between(cor[!is.na(cor)], -1, 1)) %>%
+    setorder(., id, mask_test, trial_index, graph, interval_tr) %>%
+    pivot_longer(cols = c("step", "cor", "slope"), names_to = "variable", values_to = "value") %>%
+    setDT(.) %>%
+    .[, variable := dplyr::case_when(
+      variable == "step" ~ "Step",
+      variable == "cor" ~ "Correlation",
+      variable == "slope" ~ "Slope"
+    )] %>%
+    .[, variable := factor(as.factor(variable), levels = c("Slope", "Correlation", "Step"))] %>%
+    .[, by = .(id, mask_test, graph, interval_tr, variable), .(
+      num_trials = .N,
+      value = mean(value, na.rm = TRUE)
+    )] %>%
+    verify(num_trials <= cfg$decoding_sequence$max_trials_graph) %>%
+    .[, num_trials := NULL] %>%
+    save_data(paths$source$decoding_main_model_no_evoked_slope)
+}
+
+get_decoding_main_model_no_evoked_slope_stat <- function(cfg, paths) {
+  dt_input <- load_data(paths$source$decoding_main_model_no_evoked_slope)
+  ttest_cfg <- list(
+    lhs = "value",
+    rhs = "1",
+    adjust_method = "fdr",
+    paired = FALSE,
+    mu = 0,
+    alternative = "greater"
+  )
+  dt_output <- dt_input %>%
+    .[, by = .(mask_test, graph, interval_tr, variable), .(ttest = list(get_ttest(.SD, ttest_cfg)))] %>%
+    unnest(ttest) %>%
+    get_pvalue_adjust(., ttest_cfg) %>%
+    save_data(paths$source$decoding_main_model_no_evoked_slope_stat)
+}
+
+get_decoding_main_model_no_evoked_slope_stat_select <- function(cfg, paths) {
+  dt_input <- load_data(paths$source$decoding_main_model_no_evoked_slope_stat)
+  dt_output <- dt_input %>%
+    .[variable == "Slope", ] %>%
+    .[p.value_significance != "n.s.", ]
+  return(dt_output)
+}
+
+get_decoding_main_model_no_evoked_num_class_trials <- function(cfg, paths) {
+  # classes: how many trials are there without stimulus driven activity?
+  dt_input <- load_data(paths$source$decoding_main_stim_modeled)
+  dt_output <- dt_input %>%
+    .[, by = .(id, mask_test, graph, interval_tr, node_classifier),
+      num_trials := length(unique(trial_index_run))
+    ] %>%
+    verify(num_trials <= cfg$decoding_sequence$max_trials_graph) %>%
+    .[probability_modeled == 0, ] %>%
+    .[!(node == node_classifier),] %>%
+    .[, by = .(id, mask_test, graph, interval_tr, node_classifier), .(
+      num_trials = .N,
+      ratio_trials = .N/num_trials
+    )] %>%
+    save_data(paths$source$decoding_main_no_evoked_num_class_trials)
+}
+
+get_decoding_main_model_no_evoked_num_dist_trials <- function(cfg, paths) {
+  # node distance: how many trials are there without stimulus driven activity
+  dt_input <- load_data(paths$source$decoding_main_stim_modeled)
+  dt_output <- dt_input %>%
+    # add total number of trials across entire experiment
+    group_by(id, run, trial_index) %>%
+    mutate(index = cur_group_id()) %>%
+    ungroup() %>%
+    setDT(.) %>%
+    .[, by = .(id, mask_test, graph, interval_tr, dist_combined), num_trials := length(unique(index))] %>%
+    verify(num_trials <= cfg$decoding_sequence$max_trials) %>%
+    # we remove all data where the modeling of stimulus-evoked activity indicates 0:
+    .[probability_modeled == 0, ] %>%
+    # we remove data of the current node:
+    .[!(node == node_classifier),] %>%
+    .[, by = .(id, mask_test, graph, interval_tr, dist_combined), .(
+      num_trials = .N,
+      ratio_trials = .N/num_trials
+    )] %>%
+    save_data(paths$source$decoding_main_no_evoked_num_dist_trials)
+}
+
+get_decoding_main_model_no_evoked_consc <- function(cfg, paths) {
+  dt_main_stim <- load_data(paths$source$decoding_main_stim_modeled)
+  dt_demographics <- load_data(paths$source$demographics) %>%
+    .[, c("id", "sequence_detected")]
+  dt_input <- dt_main_stim %>%
+    merge.data.table(., dt_demographics, by = c("id"))
+  dt_output <- dt_input %>%
+    .[probability_modeled == 0, ] %>%
+    .[!(node == node_classifier),] %>%
+    .[, by = .(id, mask_test, graph, interval_tr, dist_combined, sequence_detected), .(
+      num_trials = .N,
+      mean_prob = mean(probability_norm * 100)
+    )] %>%
+    verify(num_trials <= cfg$decoding_sequence$max_trials) %>%
+    .[, num_trials := NULL] %>%
+    save_data(paths$source$decoding_main_no_evoked)
+}

@@ -83,6 +83,7 @@ load_config <- function() {
   cfg$decoding_sequence$max_trials_graph <- cfg$decoding_sequence$max_trials / cfg$num_graphs
   cfg$decoding_sequence_interval$max_trials_run <- 24
   cfg$decoding_sequence_interval$max_trials_run_node <- 4
+  cfg$decoding_sequence$cor_method <- "pearson"
   # parameters for modeling of the sine-based response function:
   cfg$sine_params$names <- c("frequency", "amplitude", "shift", "baseline")
   cfg$sine_params$default_params <- c(0.2, 0.6, 0, 0.1)
@@ -280,11 +281,6 @@ create_paths <- function() {
   paths$source$decoding_main_sine_mean <- sprintf(source_path, "decoding_main_sine_mean")
   paths$source$decoding_main_seq_prev <- sprintf(source_path, "decoding_main_seq_prev")
   paths$source$decoding_main_stim_modeled <- sprintf(source_path, "decoding_main_stim_modeled")
-  paths$source$decoding_main_no_evoked <- sprintf(source_path, "decoding_main_no_evoked")
-  paths$source$decoding_main_no_evoked_phase <- sprintf(source_path, "decoding_main_no_evoked_phase")
-  paths$source$decoding_main_no_evoked_late_trs <- sprintf(source_path, "decoding_main_no_evoked_late_trs")
-  paths$source$decoding_main_no_evoked_num_class_trials <- sprintf(source_path, "decoding_main_no_evoked_num_class_trials")
-  paths$source$decoding_main_no_evoked_num_dist_trials <- sprintf(source_path, "decoding_main_no_evoked_num_dist_trials")
   paths$source$decoding_main_model_input <- sprintf(source_path, "decoding_main_model_input")
   paths$source$decoding_main_model_raw_prob <- sprintf(source_path, "decoding_main_model_raw_prob")
   paths$source$decoding_main_model_results <- sprintf(source_path, "decoding_main_model_results")
@@ -302,6 +298,11 @@ create_paths <- function() {
   paths$source$decoding_main_model_residuals_slope_stat_consciousness <- sprintf(source_path, "decoding_main_model_residuals_slope_stat_consciousness")
   paths$source$decoding_main_model_comp <- sprintf(source_path, "decoding_main_model_comp")
   paths$source$decoding_main_model_diff_run <- sprintf(source_path, "decoding_main_model_diff_run")
+  paths$source$decoding_main_model_no_evoked <- sprintf(source_path, "decoding_main_model_no_evoked")
+  paths$source$decoding_main_model_no_evoked_phase <- sprintf(source_path, "decoding_main_model_no_evoked_phase")
+  paths$source$decoding_main_model_no_evoked_late_trs <- sprintf(source_path, "decoding_main_model_no_evoked_late_trs")
+  paths$source$decoding_main_model_no_evoked_num_class_trials <- sprintf(source_path, "decoding_main_model_no_evoked_num_class_trials")
+  paths$source$decoding_main_model_no_evoked_num_dist_trials <- sprintf(source_path, "decoding_main_model_no_evoked_num_dist_trials")
   paths$source$decoding_main_model_no_evoked_slope <- sprintf(source_path, "decoding_main_model_no_evoked_slope")
   paths$source$decoding_main_model_no_evoked_slope_stat <- sprintf(source_path, "decoding_main_model_no_evoked_slope_stat")
   return(paths)
