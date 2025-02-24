@@ -535,13 +535,29 @@ get_pvalue_adjust <- function(dt_input, ttest_cfg = NA) {
     .[, p.value_adjust_round_label := format_pvalue(p.value_adjust_round)] %>%
     .[, p.value_adjust_significance := ifelse(p.value_adjust < 0.05, "*", "n.s.")] %>%
     .[, adjust_method := ttest_cfg$adjust_method] %>%
-    .[, report_latex := paste(
+    .[, adjust_method := dplyr::case_when(
+      adjust_method == "fdr" ~ "FDR",
+      adjust_method == "bonferroni" ~ "Bonferroni"
+    )] %>%
+    .[, alternative := dplyr::case_when(
+      alternative == "two.sided" ~ "two-sided"
+    )] %>%
+    # adjust latex reporting depending on the type of test:
+    .[grepl("correlation", method), report_latex := paste(
+      sprintf("$r(%d) = %.2f$,", parameter, estimate),
+      sprintf("$p %s$,", p.value_adjust_round_label),
+      sprintf("%s %s,", alternative, method),
+      sprintf("$p$-values %s-corrected", adjust_method)
+    )] %>%
+    .[grepl("t-test", method), report_latex := paste(
       sprintf("$M = %.2f$,", estimate),
       sprintf("$SD = %.2f$,", std_value),
       sprintf("$t_{%d} = %.2f$,", parameter, statistic),
       sprintf("CI [$%s$, $%s$],", conf.low_latex, conf.high_latex),
       sprintf("$p %s$", p.value_adjust_round_label),
-      sprintf("$d = %.2f$", effsize)
+      sprintf("$d = %.2f,$", effsize),
+      sprintf("%s %s,", alternative, method),
+      sprintf("$p$-values %s-corrected", adjust_method)
     )]
   return(dt_output)
 }
