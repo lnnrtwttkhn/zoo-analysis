@@ -51,6 +51,8 @@ load_config <- function() {
   cfg$hand_levels <- c("left", "right", "n/a")
   cfg$condition_levels <- c("Training", "Single", "Sequence")
   cfg$graph_levels <- c("uni", "bi", "flat")
+  cfg$alpha_utf <- "\u03B1"
+  cfg$gamma_utf <- "\u0263"
   # set plotting colors:
   cfg$colors_probability = hcl.colors(4, "Dark Mint")
   cfg$colors_class <- rev(hcl.colors(6, "Zissou 1"))
@@ -293,9 +295,9 @@ create_paths <- function() {
   paths$source$decoding_main_model_betas_behav_cor <- sprintf(source_path, "decoding_main_model_betas_behav_cor")
   paths$source$decoding_main_model_betas_behav_cor_mean <- sprintf(source_path, "decoding_main_model_betas_behav_cor_mean")
   paths$source$decoding_main_model_prediction <- sprintf(source_path, "decoding_main_model_prediction")
+  paths$source$decoding_main_model_residuals_mean <- sprintf(source_path, "decoding_main_model_residuals_mean")
   paths$source$decoding_main_model_residuals_slope <- sprintf(source_path, "decoding_main_model_residuals_slope")
   paths$source$decoding_main_model_residuals_slope_stat <- sprintf(source_path, "decoding_main_model_residuals_slope_stat")
-  paths$source$decoding_main_model_residuals_slope_stat_consciousness <- sprintf(source_path, "decoding_main_model_residuals_slope_stat_consciousness")
   paths$source$decoding_main_model_comp <- sprintf(source_path, "decoding_main_model_comp")
   paths$source$decoding_main_model_diff_run <- sprintf(source_path, "decoding_main_model_diff_run")
   paths$source$decoding_main_model_no_evoked <- sprintf(source_path, "decoding_main_model_no_evoked")

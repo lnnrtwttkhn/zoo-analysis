@@ -254,26 +254,40 @@ plot_decoding_main_model_raw_prob_all(cfg, paths)
 get_decoding_main_model_results(cfg, paths)
 ```
 
+##### Residuals of stimulus model
+
 ```{r}
 get_decoding_main_model_residuals(cfg, paths)
+get_decoding_main_model_residuals_mean(cfg, paths)
 plot_decoding_main_model_residuals(cfg, paths, roi_input = "visual", graph_input = "uni")
 plot_decoding_main_model_residuals(cfg, paths, roi_input = "visual", graph_input = "bi")
 ```
+
+##### Sequentiality in residuals
 
 ```{r}
 get_decoding_main_model_residuals_slope(cfg, paths)
 dt_output <- get_decoding_main_model_residuals_slope_stat(cfg, paths) %>%
   .[p.value < 0.05] %>%
   .[roi == "visual"] %>%
-  .[graph == "uni"] %>%
-  .[model_name == "Stimulus", ]
+  .[graph == "uni"]
+plot_decoding_main_model_residuals(cfg, paths, roi_input = "visual", graph_input = "uni")
 plot_decoding_main_model_residuals_slope(cfg, paths, roi_input = "visual", graph_input = "uni")
 plot_decoding_main_model_residuals_slope(cfg, paths, roi_input = "visual", graph_input = "bi")
 ```
 
+##### Residuals in subgroups
+
 ```{r}
-plot_decoding_main_model_residuals_consciousness(cfg, paths, roi_input = "visual", graph_input = "uni")
-plot_decoding_main_model_residuals_slope_consciousness(cfg, paths, roi_input = "visual", graph_input = "uni")
+get_decoding_main_model_residuals_slope_stat_group(cfg, paths, group = "alpha_group")
+get_decoding_main_model_residuals_slope_stat_group(cfg, paths, group = "gamma_group")
+get_decoding_main_model_residuals_slope_stat_group(cfg, paths, group = "sequence_detected")
+plot_decoding_main_model_residuals(cfg, paths, roi_input = "visual", graph_input = "uni", group = "alpha_group")
+plot_decoding_main_model_residuals(cfg, paths, roi_input = "visual", graph_input = "uni", group = "gamma_group")
+plot_decoding_main_model_residuals(cfg, paths, roi_input = "visual", graph_input = "uni", group = "sequence_detected")
+plot_decoding_main_model_residuals_slope(cfg, paths, roi_input = "visual", graph_input = "uni", group = "alpha_group")
+plot_decoding_main_model_residuals_slope(cfg, paths, roi_input = "visual", graph_input = "uni", group = "gamma_group")
+plot_decoding_main_model_residuals_slope(cfg, paths, roi_input = "visual", graph_input = "uni", group = "sequence_detected")
 ```
 
 ```{r}

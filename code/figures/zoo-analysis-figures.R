@@ -161,6 +161,26 @@ plot_decoding_main_model_no_evoked <- function(cfg, paths) {
   return(figure)
 }
 
+plot_decoding_main_residuals_slope_alpha_gamma <- function(cfg, paths, roi_input, graph_input) {
+  # supplementary figure: number of trials after removing evoked trials
+  figure <- plot_grid(
+    plot_grid(
+      ggdraw() + draw_label(sprintf("%s", cfg$alpha_utf), hjust = 0.5, fontface = "bold"),
+      plot_decoding_main_model_residuals(cfg, paths, roi_input = "visual", graph_input = "uni", group = "alpha_group"),
+      plot_decoding_main_model_residuals_slope(cfg, paths, roi_input = "visual", graph_input = "uni", group = "alpha_group"),
+      labels = c("", "a", "c"), ncol = 1, nrow = 3, rel_heights = c(0.1, 1, 1)
+    ),
+    plot_grid(
+      ggdraw() + draw_label(sprintf("%s", cfg$gamma_utf), hjust = 0.5, fontface = "bold"),
+      plot_decoding_main_model_residuals(cfg, paths, roi_input = "visual", graph_input = "uni", group = "gamma_group"),
+      plot_decoding_main_model_residuals_slope(cfg, paths, roi_input = "visual", graph_input = "uni", group = "gamma_group"),
+      labels = c("", "b", "d"), ncol = 1, nrow = 3, rel_heights = c(0.1, 1, 1)
+    ), nrow = 1, ncol = 2
+  )
+  save_figure(plot = figure, "decoding_main_residuals_slope_alpha_gamma", width = 11, height = 7)
+  return(figure)
+}
+
 plot_brain_behavior <- function(cfg, paths, roi_input) {
   figure <- plot_grid(
     plot_grid(

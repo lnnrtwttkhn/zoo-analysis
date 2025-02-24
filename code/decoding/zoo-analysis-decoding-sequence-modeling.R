@@ -190,27 +190,52 @@ get_decoding_main_model_residuals <- function(cfg, paths) {
       prediction = lapply(model, predict)
       dist_graph = list(dist_graph)
       id = list(id)
+      alpha = list(alpha)
+      gamma = list(gamma)
       sequence_detected = list(as.character(sequence_detected))
       trial_index = list(trial_index)
       N = .N
-      list(model_formula, model_name, model_number, residual, prediction, dist_graph, id, sequence_detected, trial_index, N)
+      list(model_formula, model_name, model_number, residual, prediction, dist_graph, id, alpha, gamma, sequence_detected, trial_index, N)
     }] %>%
-    unnest(., c(residual, prediction, dist_graph, id, sequence_detected, trial_index)) %>%
+    unnest(., c(residual, prediction, dist_graph, id, alpha, gamma, sequence_detected, trial_index)) %>%
     setDT(.) %>%
+    .[, sequence_detected := ifelse(sequence_detected == "yes", "conscious knowledge", "no conscious knowledge")] %>%
+    .[, alpha_group := dplyr::case_when(
+      round(alpha, 2) == 0.01 ~ sprintf("%s ~ 0.01", cfg$alpha_utf),
+      round(alpha, 2) > 0.01 & round(alpha, 2) < 1 ~ sprintf("0.01 < %s < 1.00", cfg$alpha_utf),
+      round(alpha, 2) == 1 ~ sprintf("%s ~ 1.00", cfg$alpha_utf)
+    )] %>%
+    .[, gamma_group := dplyr::case_when(
+      round(gamma, 2) == 0.01 ~ sprintf("%s ~ 0.01", cfg$gamma_utf),
+      round(gamma, 2) > 0.01 & round(gamma, 2) < 1  ~ sprintf("0.01 < %s < 1.00", cfg$gamma_utf),
+      round(gamma, 2) == 1 ~ sprintf("%s ~ 1.00", cfg$gamma_utf)
+    )] %>%
     .[, model_label := paste("Model", model_number)] %>%
     save_data(paths$source$decoding_main_model_residuals)
+}
+
+get_decoding_main_model_residuals_mean <- function(cfg, paths) {
+  dt_input <- load_data(paths$source$decoding_main_model_residuals)
+  dt_output <- dt_input %>%
+    .[, by = .(id, roi, sequence_detected, alpha_group, gamma_group, model_name, graph, interval_tr, dist_graph), .(
+      num_trials = .N,
+      mean_residual = mean(residual)
+    )] %>%
+    verify(num_trials <= cfg$decoding_sequence$max_trials_graph * 2) %>%
+    .[, num_trials := NULL] %>%
+    save_data(paths$source$decoding_main_model_residuals_mean)
 }
 
 get_decoding_main_model_residuals_slope <- function(cfg, paths) {
   dt_input <- load_data(paths$source$decoding_main_model_residuals)
   dt_output <- dt_input %>%
-    .[, by = .(id, roi, sequence_detected, model_name, graph, trial_index, interval_tr), .(
+    .[, by = .(id, roi, sequence_detected, alpha_group, gamma_group, model_name, graph, trial_index, interval_tr), .(
       num_nodes = .N,
       slope = coef(lm(residual ~ dist_graph))[2] * (-1)
     )] %>%
     verify(num_nodes == cfg$num_nodes - 1) %>%
     .[, num_nodes := NULL] %>%
-    .[, by = .(id, roi, sequence_detected, model_name, graph, interval_tr), .(
+    .[, by = .(id, roi, sequence_detected, alpha_group, gamma_group, model_name, graph, interval_tr), .(
       num_trials = .N,
       mean_slope = mean(slope)
     )] %>%
@@ -230,36 +255,39 @@ get_decoding_main_model_residuals_slope_stat <- function(cfg, paths) {
     alternative = "two.sided"
   )
   dt_output <- dt_input %>%
-    melt(id.vars = c("roi", "model_name", "graph", "interval_tr"), measure.vars = c("mean_slope")) %>%
+    melt(id.vars = c("id", "roi", "model_name", "graph", "interval_tr"), measure.vars = c("mean_slope")) %>%
+    .[model_name == "Stimulus", ] %>%
     .[, by = .(roi, model_name, graph, interval_tr, variable), .(ttest = list(get_ttest(.SD, ttest_cfg)))] %>%
     unnest(ttest) %>%
     get_pvalue_adjust(., ttest_cfg) %>%
+    setorder(., roi, model_name, graph, interval_tr) %>%
     save_data(paths$source$decoding_main_model_residuals_slope_stat)
-  return(dt_output)
 }
 
-get_decoding_main_model_residuals_slope_stat_consciousness <- function(cfg, paths) {
+get_decoding_main_model_residuals_slope_stat_group <- function(cfg, paths, group = NULL) {
   dt_input <- load_data(paths$source$decoding_main_model_residuals_slope)
   ttest_cfg <- list(
     lhs = "value",
     rhs = "1",
-    adjust_method = "none",
+    adjust_method = "fdr",
     paired = FALSE,
     mu = 0,
     alternative = "two.sided"
   )
+  save_path <- paste(paths$source$decoding_main_model_residuals_slope_stat, group, sep = "_")
+  dt_input$group <- dt_input[, ..group]
   dt_output <- dt_input %>%
-    melt(id.vars = c("roi", "sequence_detected", "model_name", "graph", "interval_tr"), measure.vars = c("mean_slope")) %>%
-    .[graph == "uni", ] %>%
-    .[ roi == "visual", ] %>%
+    melt(id.vars = c("id", "roi", "group", "model_name", "graph", "interval_tr"), measure.vars = c("mean_slope")) %>%
     .[model_name == "Stimulus", ] %>%
-    .[, by = .(sequence_detected, roi, model_name, graph, interval_tr, variable), .(ttest = list(get_ttest(.SD, ttest_cfg)))] %>%
+    # remove subgroups with n = 1:
+    .[, by = .(roi, group, model_name, graph, interval_tr), group_id := rleid(id)] %>%
+    .[, by = .(group), num_subs := length(unique(group_id))] %>%
+    .[num_subs > 1, ] %>%
+    .[, by = .(group, roi, model_name, graph, interval_tr, variable), .(ttest = list(get_ttest(.SD, ttest_cfg)))] %>%
     unnest(ttest) %>%
     get_pvalue_adjust(., ttest_cfg) %>%
-    setorder(., sequence_detected, roi, model_name, graph, interval_tr) %>%
-    save_data(paths$source$decoding_main_model_residuals_slope_stat_consciousness)
-  print(dt_output %>% .[sequence_detected == "no"] %>% .$p.value_round)
-  print(round(dt_output %>% .[sequence_detected == "no"] %>% .$mean_value, 4))
+    setorder(., group, roi, model_name, graph, interval_tr) %>%
+    save_data(save_path)
 }
 
 get_decoding_main_model_prediction <- function(cfg, paths) {
