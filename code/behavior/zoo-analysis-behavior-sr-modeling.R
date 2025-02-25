@@ -428,9 +428,9 @@ get_behavior_sr_fit_parameter_recovery <- function(cfg, paths) {
     .[!is.na(process), ] %>%
     .[mod == "model", ] %>%
     .[variable %in% c("alpha", "gamma"), ] %>%
-    .[, variable := ifelse(variable == "alpha", "\u03B1", variable)] %>%
-    .[, variable := ifelse(variable == "gamma", "\u0263", variable)] %>%
-    .[, variable := factor(as.factor(variable), levels = c("\u03B1", "\u0263"))] %>%
+    .[, variable := ifelse(variable == "alpha", cfg$alpha_utf, variable)] %>%
+    .[, variable := ifelse(variable == "gamma", cfg$gamma_utf, variable)] %>%
+    .[, variable := factor(as.factor(variable), levels = c(cfg$alpha_utf, cfg$gamma_utf))] %>%
     .[, c("id", "iter", "process", "model_name", "variable", "value")] %>%
     verify(length(unique(id)) == cfg$num_subs) %>%
     save_data(paths$source$behavior_sr_fit_parameter_recovery)

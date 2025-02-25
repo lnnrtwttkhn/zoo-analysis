@@ -352,6 +352,13 @@ plot_decoding_main_model_no_evoked_num_dist_trials(cfg, paths)
 plot_decoding_main_model_no_evoked(cfg, paths)
 ```
 
+```{r}
+plot_decoding_main_model_betas_behav_cor_mean(cfg, paths, roi_input = "visual", graph_input = "uni", predictor_input = "SR")
+plot_decoding_main_model_betas_behav_cor_mean(cfg, paths, roi_input = "visual", graph_input = "uni", predictor_input = "1-step")
+plot_decoding_main_model_betas_behav_cor_mean(cfg, paths, roi_input = "visual", graph_input = "uni", sr_input = "alpha", predictor_input = "SR")
+plot_decoding_main_model_betas_behav_cor_mean(cfg, paths, roi_input = "visual", graph_input = "uni", sr_input = "gamma", predictor_input = "SR")
+```
+
 ## Figures
 
 ```{r}

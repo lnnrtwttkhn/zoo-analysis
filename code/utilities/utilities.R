@@ -53,6 +53,7 @@ load_config <- function() {
   cfg$graph_levels <- c("uni", "bi", "flat")
   cfg$alpha_utf <- "\u03B1"
   cfg$gamma_utf <- "\u0263"
+  cfg$beta_utf <- "\u03B2"
   # set plotting colors:
   cfg$colors_probability = hcl.colors(4, "Dark Mint")
   cfg$colors_class <- rev(hcl.colors(6, "Zissou 1"))
@@ -61,6 +62,8 @@ load_config <- function() {
   cfg$colors_sr <- hcl.colors(20, "Inferno")
   cfg$colors_conscious <- hcl.colors(5, "Plasma")[c(1, 4)]
   cfg$colors_decoding_current <- rev(hcl.colors(5, "Inferno")[c(1,3)])
+  cfg$colors_predictors <- c("darkblue", "darkred", "darkgray")
+  cfg$shapes_predictors <- c(15, 16, 17)
   # configuration parameters for questionnaire data:
   cfg$questionnaire$num_trials <- 30
   # configuration parameters for sequence trial behavioral data:

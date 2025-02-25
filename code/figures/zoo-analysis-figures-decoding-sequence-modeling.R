@@ -300,7 +300,7 @@ plot_decoding_main_model_betas_behav <- function(cfg, paths, roi_input) {
 plot_decoding_main_model_betas_behav_cor <- function(cfg, paths, roi_input) {
   dt_input <- load_data(paths$source$decoding_main_model_betas_behav_cor) %>%
     .[roi == "visual", ] %>%
-    .[variable == "estimate"] %>%
+    .[beta == "estimate"] %>%
     .[predictor == "SR"] %>%
     .[graph == "uni", ]
   figure <- ggplot(dt_input, aes(x = as.factor(interval_tr), y = as.numeric(estimate))) +
@@ -310,7 +310,7 @@ plot_decoding_main_model_betas_behav_cor <- function(cfg, paths, roi_input) {
                    shape = as.factor(predictor))) +
     # geom_point(data = dt_input, aes(fill = significance, y = estimate), color = "black", pch = 21) +
     # geom_text(data = dt_input, aes(label = as.factor(significance), y = as.numeric(estimate)), vjust = -3) +
-    # facet_wrap(~ graph) +
+    facet_wrap(~ sr_parameter) +
     ylab("Correlation (Pearson's r)") +
     xlab("Time from inter-trial interval onset") +
     theme_zoo() +
@@ -326,28 +326,36 @@ plot_decoding_main_model_betas_behav_cor <- function(cfg, paths, roi_input) {
   return(figure)
 }
 
-plot_decoding_main_model_betas_behav_cor_mean <- function(cfg, paths, roi_input) {
-  dt_input <- load_data(paths$source$decoding_main_model_betas_behav_cor_mean) %>%
-    .[roi == "visual", ] %>%
-    .[predictor == "SR", ] %>%
-    .[graph == "uni", ]
-  figure <- ggplot(dt_input, aes(x = as.numeric(gamma), y = as.numeric(mean_estimate))) +
+plot_decoding_main_model_betas_behav_cor_mean <- function(cfg, paths, roi_input, graph_input, predictor_input = NULL, sr_input = NULL) {
+  dt_input <- load_data(paths$source$decoding_main_model_betas_behav_cor_mean)
+  if (!is.null(sr_input)) {
+    dt_input <- dt_input %>% .[sr_parameter == sr_input]
+  }
+  dt_input <- dt_input %>%
+    .[beta == "estimate_abs", ] %>%
+    .[roi == roi_input, ] %>%
+    .[predictor == predictor_input, ] %>%
+    .[graph == graph_input, ] %>%
+    .[, sr_parameter := dplyr::case_when(
+      sr_parameter == "alpha" ~ cfg$alpha_utf,
+      sr_parameter == "gamma" ~ cfg$gamma_utf
+    )]
+  figure <- ggplot(dt_input, aes(x = as.numeric(sr_parameter_value), y = as.numeric(beta_value))) +
     geom_point(aes(color = as.factor(predictor), group = as.factor(id),
                    shape = as.factor(predictor))) +
     geom_smooth(method = "lm", aes(color = as.factor(predictor),
                                    fill = as.factor(predictor))) +
-    # facet_wrap(~ graph) +
-    ylab(expression(beta)) +
-    xlab(expression(gamma)) +
+    ylab(sprintf("Absolute %s (of %s component)", cfg$beta_utf, predictor_input)) +
+    xlab("Parameter estimate") +
     theme_zoo() +
+    facet_wrap(~ sr_parameter) +
     coord_capped_cart(left = "both", bottom = "both", expand = TRUE) +
     scale_color_manual(name = "Predictor", values = cfg$colors_predictors) +
+    scale_x_continuous(labels = label_fill(seq(0, 1, 0.25), mod = 2), breaks = seq(0, 1, 0.25)) +
     scale_fill_manual(name = "Predictor", values = cfg$colors_predictors) +
     scale_shape_manual(name = "Predictor", values = cfg$shapes_predictors) +
     ggtitle("Relationship between SR fits\nand betas of SR + 1-step model") +
-    # ggtitle("Betas of SR + 1-step model\n(bidirectional graph)") +
     theme(plot.title = element_text(hjust = 0.5, face = "bold")) +
-    theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
     theme(legend.position = "none")
   return(figure)
 }

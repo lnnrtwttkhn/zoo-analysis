@@ -162,22 +162,27 @@ plot_decoding_main_model_no_evoked <- function(cfg, paths) {
 }
 
 plot_decoding_main_residuals_slope_alpha_gamma <- function(cfg, paths, roi_input, graph_input) {
-  # supplementary figure: number of trials after removing evoked trials
   figure <- plot_grid(
     plot_grid(
-      ggdraw() + draw_label(sprintf("%s", cfg$alpha_utf), hjust = 0.5, fontface = "bold"),
-      plot_decoding_main_model_residuals(cfg, paths, roi_input = "visual", graph_input = "uni", group = "alpha_group"),
-      plot_decoding_main_model_residuals_slope(cfg, paths, roi_input = "visual", graph_input = "uni", group = "alpha_group"),
-      labels = c("", "a", "c"), ncol = 1, nrow = 3, rel_heights = c(0.1, 1, 1)
-    ),
+      plot_grid(
+        ggdraw() + draw_label(sprintf("%s", cfg$alpha_utf), hjust = 0.5, fontface = "bold"),
+        plot_decoding_main_model_residuals(cfg, paths, roi_input = "visual", graph_input = "uni", group = "alpha_group"),
+        plot_decoding_main_model_residuals_slope(cfg, paths, roi_input = "visual", graph_input = "uni", group = "alpha_group"),
+        labels = c("", "a", "c"), ncol = 1, nrow = 3, rel_heights = c(0.1, 1, 1)
+      ),
+      plot_grid(
+        ggdraw() + draw_label(sprintf("%s", cfg$gamma_utf), hjust = 0.5, fontface = "bold"),
+        plot_decoding_main_model_residuals(cfg, paths, roi_input = "visual", graph_input = "uni", group = "gamma_group"),
+        plot_decoding_main_model_residuals_slope(cfg, paths, roi_input = "visual", graph_input = "uni", group = "gamma_group"),
+        labels = c("", "b", "d"), ncol = 1, nrow = 3, rel_heights = c(0.1, 1, 1)
+      ), nrow = 1, ncol = 2),
     plot_grid(
-      ggdraw() + draw_label(sprintf("%s", cfg$gamma_utf), hjust = 0.5, fontface = "bold"),
-      plot_decoding_main_model_residuals(cfg, paths, roi_input = "visual", graph_input = "uni", group = "gamma_group"),
-      plot_decoding_main_model_residuals_slope(cfg, paths, roi_input = "visual", graph_input = "uni", group = "gamma_group"),
-      labels = c("", "b", "d"), ncol = 1, nrow = 3, rel_heights = c(0.1, 1, 1)
-    ), nrow = 1, ncol = 2
+      plot_decoding_main_model_betas_behav_cor_mean(cfg, paths, roi_input = roi_input, graph_input = graph_input, predictor_input = "SR"),
+      plot_decoding_main_model_betas_behav_cor_mean(cfg, paths, roi_input = roi_input, graph_input = graph_input, predictor_input = "1-step"),
+      labels = c("e", "f"), ncol = 2, nrow = 1
+    ), ncol = 1, nrow = 2, rel_heights = c(2/3, 1/3)
   )
-  save_figure(plot = figure, "decoding_main_residuals_slope_alpha_gamma", width = 11, height = 7)
+  save_figure(plot = figure, "decoding_main_residuals_slope_alpha_gamma", width = 11, height = 10)
   return(figure)
 }
 
