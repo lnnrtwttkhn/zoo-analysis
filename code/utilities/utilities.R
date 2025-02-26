@@ -547,7 +547,7 @@ get_pvalue_adjust <- function(dt_input, ttest_cfg = NA) {
     )] %>%
     # adjust latex reporting depending on the type of test:
     .[grepl("correlation", method), report_latex := paste(
-      sprintf("$r(%d) = %.2f$,", parameter, estimate),
+      sprintf("$r(%.0f) = %.2f$,", parameter, estimate),
       sprintf("$p %s$,", p.value_adjust_round_label),
       sprintf("%s %s,", alternative, method),
       sprintf("$p$-values %s-corrected", adjust_method)
@@ -555,7 +555,7 @@ get_pvalue_adjust <- function(dt_input, ttest_cfg = NA) {
     .[grepl("t-test", method), report_latex := paste(
       sprintf("$M = %.2f$,", estimate),
       sprintf("$SD = %.2f$,", std_value),
-      sprintf("$t_{%d} = %.2f$,", parameter, statistic),
+      sprintf("$t_{%.0f} = %.2f$,", parameter, statistic),
       sprintf("CI [$%s$, $%s$],", conf.low_latex, conf.high_latex),
       sprintf("$p %s$", p.value_adjust_round_label),
       sprintf("$d = %.2f,$", effsize),

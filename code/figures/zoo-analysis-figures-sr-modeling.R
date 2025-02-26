@@ -114,7 +114,7 @@ plot_behavior_sr_fit_model_comparison_sum_aic <- function(cfg, paths) {
   dt_input <- load_data(paths$source$behavior_sr_fit_model_comparison) %>%
     .[iter == 1, ] %>%
     .[variable == "aic", ]
-  ymax <- -102000
+  ymax <- -105300
   figure <- ggplot(data = dt_input, aes(x = model_name, y = value)) +
     # facet_wrap(~ iter, scales = "free_y") +
     stat_summary(geom = "bar", fun = "sum") +
