@@ -548,7 +548,7 @@ plot_decoding_main_model_results_run_diff_all <- function(cfg, paths) {
 }
 
 plot_decoding_main_model_no_evoked_prob <- function(cfg, paths, mask_input, graph_input) {
-  dt <- load_data(paths$source$decoding_main_no_evoked) %>%
+  dt <- load_data(paths$source$decoding_main_model_no_evoked) %>%
     .[mask_test == mask_input, ] %>%
     .[graph == graph_input]
   title_text <- sprintf("Sequentiality in probabilities\n(%sdirectional graph)", graph_input)
