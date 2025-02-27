@@ -415,50 +415,31 @@ plot_decoding_main_model_results_stim <- function(cfg, paths, roi_input) {
   return(figure)
 }
 
-plot_decoding_main_model_results_diff <- function(cfg, paths, roi_input, graph_input = NULL) {
-  # plot aics compared to baseline model
-  arrow_xpos <- 0.75
-  if (!is.null(graph_input)) {
-    dt_input <- load_data(paths$source$decoding_main_model_diff_graph) %>%
-      .[roi == roi_input, ] %>%
-      .[model_number != 1, ]
-    arrow_ymax <- 30
-  } else {
-    dt_input <- load_data(paths$source$decoding_main_model_diff) %>%
-      .[roi == roi_input, ] %>%
-      .[model_number != 1, ]
-    arrow_ymax <- 10
+plot_decoding_main_model_results_diff <- function(cfg, paths, group = NULL, roi_input = NULL) {
+  group_name <- paste(group, collapse = "_")
+  input_path <- paste(paths$source$decoding_main_model_results_diff, group_name, sep = "_")
+  dt_input <- load_data(input_path) %>%
+    .[model_name != "Stimulus", ]
+  if (!is.null(roi_input)) {
+    dt_input <- dt_input %>% .[roi == roi_input, ]
   }
   figure <- ggplot(data = dt_input, aes(x = as.numeric(interval_tr), y = as.numeric(aic_diff))) +
     geom_hline(yintercept = 0, color = "black") +
     geom_line(aes(color = as.factor(model_name), group = as.factor(model_name))) +
-    geom_point(aes(color = as.factor(model_name), group = as.factor(model_name),
-                   shape = as.factor(model_name))) +
-    # geom_text(aes(label = as.factor(model_number), color = as.factor(model_number)), vjust = -1.5) +
-    xlab("Time from inter-trial interval onset") +
+    geom_point(aes(color = as.factor(model_name), group = as.factor(model_name), shape = as.factor(model_name))) +
+    ggtitle("AICs of replay models") +
+    xlab("Time from inter-trial interval onset (1 TR = 1.25 s)") +
     ylab("Relative AIC") +
     theme_zoo() +
-    coord_capped_cart(left = "both", bottom = "both", expand = TRUE, ylim = c(-arrow_ymax, 10)) +
+    facet_wrap(group) +
+    coord_capped_cart(left = "both", bottom = "both", expand = TRUE) +
     scale_x_continuous(limits = c(0, 8), labels = label_fill(seq(1, 8, 1), mod = 1), breaks = seq(1, 8, 1)) +
-    theme(legend.position = c(0.7, 0.85)) +
+    theme(plot.title = element_text(hjust = 0.5, face = "bold")) +
+    theme(legend.position = c(0.85, 0.15)) +
     theme(legend.title = element_blank()) +
-    theme(legend.key = element_blank()) + 
-    annotate(geom = "segment",
-      x = arrow_xpos, xend = arrow_xpos, y = 0 + arrow_ymax / 15, yend = arrow_ymax,
-      arrow = arrow(length = unit(3, "pt"), type = "closed"), color = "black") +
-    annotate(geom = "segment",
-      x = arrow_xpos, xend = arrow_xpos, y = 0 - arrow_ymax / 15, yend = -arrow_ymax,
-      arrow = arrow(length = unit(3, "pt"), type = "closed"), color = "black") +
-    annotate(geom = "text", x = 0.25, y = arrow_ymax / 1.75, label = "Stimulus model\nbetter",
-             color = "black", angle = 90, fontface = "italic", size = rel(2.5)) +
-    annotate(geom = "text", x = 0.25, y = -arrow_ymax / 1.75, label = "Replay model\nbetter",
-             color = "black", angle = 90, fontface = "italic", size = rel(2.5)) +
-    ggtitle("AICs of replay models") +
-    theme(plot.title = element_text(hjust = 0.5, face = "bold"))
-  if (!is.null(graph_input)) {
-    figure <- figure +
-      facet_wrap(~ graph)
-  }
+    theme(legend.key = element_blank())
+  figure <- set_yaxis(figure)
+  figure <- add_arrows(figure)
   return(figure)
 }
 

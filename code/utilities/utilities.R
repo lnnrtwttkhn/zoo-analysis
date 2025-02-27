@@ -289,9 +289,8 @@ create_paths <- function() {
   paths$source$decoding_main_model_input <- sprintf(source_path, "decoding_main_model_input")
   paths$source$decoding_main_model_raw_prob <- sprintf(source_path, "decoding_main_model_raw_prob")
   paths$source$decoding_main_model_results <- sprintf(source_path, "decoding_main_model_results")
-  paths$source$decoding_main_model_results_graph <- sprintf(source_path, "decoding_main_model_results_graph")
-  paths$source$decoding_main_model_results_run <- sprintf(source_path, "decoding_main_model_results_run")
-  paths$source$decoding_main_model_run_trs <- sprintf(source_path, "decoding_main_model_results_trs")
+  paths$source$decoding_main_model_results_diff <- sprintf(source_path, "decoding_main_model_results_diff")
+  paths$source$decoding_main_model_results_diff_mean <- sprintf(source_path, "decoding_main_model_results_diff_mean")
   paths$source$decoding_main_model_residuals <- sprintf(source_path, "decoding_main_model_residuals")
   paths$source$decoding_main_model_betas <- sprintf(source_path, "decoding_main_model_betas")
   paths$source$decoding_main_model_betas_id <- sprintf(source_path, "decoding_main_model_betas_id")
@@ -303,8 +302,6 @@ create_paths <- function() {
   paths$source$decoding_main_model_residuals_slope <- sprintf(source_path, "decoding_main_model_residuals_slope")
   paths$source$decoding_main_model_residuals_slope_stat <- sprintf(source_path, "decoding_main_model_residuals_slope_stat")
   paths$source$decoding_main_model_diff <- sprintf(source_path, "decoding_main_model_diff")
-  paths$source$decoding_main_model_diff_graph <- sprintf(source_path, "decoding_main_model_diff_graph")
-  paths$source$decoding_main_model_diff_run <- sprintf(source_path, "decoding_main_model_diff_run")
   paths$source$decoding_main_model_no_evoked <- sprintf(source_path, "decoding_main_model_no_evoked")
   paths$source$decoding_main_model_no_evoked_phase <- sprintf(source_path, "decoding_main_model_no_evoked_phase")
   paths$source$decoding_main_model_no_evoked_late_trs <- sprintf(source_path, "decoding_main_model_no_evoked_late_trs")
@@ -819,3 +816,28 @@ get_class_dist <- function(trial_run, onset, node) {
   return(dt)
 }
 
+add_arrows <- function(figure) {
+  ybreaks <- ggplot_build(figure)$layout$panel_params[[1]]$y.sec$breaks
+  arrow_xpos <- 0.75
+  figure <- figure +
+    annotate(geom = "segment",
+             x = arrow_xpos, xend = arrow_xpos, y = 0, yend = max(ybreaks),
+             arrow = arrow(length = unit(3, "pt"), type = "closed"), color = "black") +
+    annotate(geom = "segment",
+             x = arrow_xpos, xend = arrow_xpos, y = 0, yend = min(ybreaks),
+             arrow = arrow(length = unit(3, "pt"), type = "closed"), color = "black") +
+    annotate(geom = "text", x = 0.25, y = max(ybreaks) / 2, label = "Stimulus model\nbetter",
+             color = "black", angle = 90, fontface = "italic", size = rel(2.5)) +
+    annotate(geom = "text", x = 0.25, y = min(ybreaks) / 2, label = "Replay model\nbetter",
+             color = "black", angle = 90, fontface = "italic", size = rel(2.5))
+  return(figure)
+}
+
+set_yaxis <- function(figure) {
+  yrange <- ggplot_build(figure)$layout$panel_params[[1]]$y.range
+  ybreaks <- ggplot_build(figure)$layout$panel_params[[1]]$y.sec$breaks
+  ybreaks_max <- max(abs(yrange), na.rm = TRUE)
+  figure <- figure +
+    ylim(c(-ybreaks_max, ybreaks_max))
+  return(figure)
+}

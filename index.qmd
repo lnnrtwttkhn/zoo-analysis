@@ -252,7 +252,6 @@ plot_decoding_main_model_raw_prob_all(cfg, paths)
 
 ```{r}
 get_decoding_main_model_results(cfg, paths)
-get_decoding_main_model_results_graph(cfg, paths)
 ```
 
 ##### Residuals of stimulus model
@@ -308,18 +307,25 @@ plot_decoding_main_model_results_stim(cfg, paths, roi_input = "motor")
 ```
 
 ```{r}
-get_decoding_main_model_results_diff(cfg, paths)
-plot_decoding_main_model_results_diff(cfg, paths, roi_input = "visual")
-plot_decoding_main_model_results_diff(cfg, paths, roi_input = "motor")
-get_decoding_main_model_results_diff_graph(cfg, paths)
-plot_decoding_main_model_results_diff(cfg, paths, roi_input = "visual")
-plot_decoding_main_model_results_diff(cfg, paths, roi_input = "visual", graph_input = TRUE)
+get_decoding_main_model_results(cfg, paths, group = c("roi"))
+get_decoding_main_model_results(cfg, paths, group = c("roi", "graph"))
+get_decoding_main_model_results(cfg, paths, group = c("roi", "run"))
+get_decoding_main_model_results(cfg, paths, group = c("roi", "run_half"))
+get_decoding_main_model_results_diff(cfg, paths, group = c("roi"))
+get_decoding_main_model_results_diff(cfg, paths, group = c("roi", "graph"))
+get_decoding_main_model_results_diff(cfg, paths, group = c("roi", "run"))
+get_decoding_main_model_results_diff(cfg, paths, group = c("roi", "run_half"))
+get_decoding_main_model_results_diff_mean(cfg, paths, group = c("roi", "run"))
+get_decoding_main_model_results_diff_mean(cfg, paths, group = c("roi", "run_half"))
 ```
 
 ```{r}
-get_decoding_main_model_results_diff(cfg, paths)
-plot_decoding_main_model_results_diff(cfg, paths, roi_input = "visual")
-plot_decoding_main_model_results_diff(cfg, paths, roi_input = "motor")
+plot_decoding_main_model_results_diff(cfg, paths, group = c("roi"), roi_input = "visual")
+plot_decoding_main_model_results_diff(cfg, paths, group = c("roi"), roi_input = "motor")
+plot_decoding_main_model_results_diff(cfg, paths, group = c("roi"))
+plot_decoding_main_model_results_diff(cfg, paths, group = c("roi", "graph"), roi_input = "visual")
+plot_decoding_main_model_results_diff(cfg, paths, group = c("roi", "run"), roi_input = "visual")
+plot_decoding_main_model_results_diff(cfg, paths, group = c("roi", "run_half"), roi_input = "visual")
 ```
 
 ```{r}
@@ -328,11 +334,6 @@ get_decoding_main_model_results_run_diff(cfg, paths)
 plot_decoding_main_model_results_run_diff(cfg, paths, roi_input = "visual")
 plot_decoding_main_model_results_run_diff(cfg, paths, roi_input = "motor")
 plot_decoding_main_model_results_run_diff_all(cfg, paths)
-```
-
-```{r}
-get_decoding_main_model_results_run_trs(cfg, paths)
-plot_decoding_main_model_results_run_trs(cfg, paths)
 ```
 
 ```{r}

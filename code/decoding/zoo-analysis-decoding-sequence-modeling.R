@@ -142,52 +142,6 @@ get_decoding_main_model_raw_prob <- function(cfg, paths) {
     save_data(paths$source$decoding_main_model_raw_prob)
 }
 
-get_decoding_main_model_results <- function(cfg, paths) {
-  dt_input <- load_data(paths$source$decoding_main_model_input)
-  model_formulas <- cfg$decoding_sequence$models$model_formulas
-  model_names <- cfg$decoding_sequence$models$model_names
-  dt_output <- dt_input %>%
-    .[!(node_classifier == node), ] %>%
-    .[, by = .(roi, interval_tr), {
-      model_tidy = lapply(model_formulas, run_lmer, data = .SD, cfg = cfg, tidy = TRUE)
-      model = lapply(model_formulas, run_lmer, data = .SD, cfg = cfg, tidy = FALSE)
-      model_formula = model_formulas
-      model_name = model_names
-      model_number = seq_len(length(model_formulas))
-      aic = unlist(lapply(model, AIC))
-      N = .N
-      list(model_tidy, model_formula, model_name, model_number, aic, N)
-    }] %>%
-    unnest(model_tidy) %>%
-    setDT(.) %>%
-    verify(length(unique(N)) == 1) %>%
-    .[, model_label := paste("Model", model_number)] %>%
-    save_data(paths$source$decoding_main_model_results)
-}
-
-get_decoding_main_model_results_graph <- function(cfg, paths) {
-  dt_input <- load_data(paths$source$decoding_main_model_input)
-  model_formulas <- cfg$decoding_sequence$models$model_formulas
-  model_names <- cfg$decoding_sequence$models$model_names
-  dt_output <- dt_input %>%
-    .[!(node_classifier == node), ] %>%
-    .[, by = .(roi, interval_tr, graph), {
-      model_tidy = lapply(model_formulas, run_lmer, data = .SD, cfg = cfg, tidy = TRUE)
-      model = lapply(model_formulas, run_lmer, data = .SD, cfg = cfg, tidy = FALSE)
-      model_formula = model_formulas
-      model_name = model_names
-      model_number = seq_len(length(model_formulas))
-      aic = unlist(lapply(model, AIC))
-      N = .N
-      list(model_tidy, model_formula, model_name, model_number, aic, N)
-    }] %>%
-    unnest(model_tidy) %>%
-    setDT(.) %>%
-    verify(length(unique(N)) == 2) %>%
-    .[, model_label := paste("Model", model_number)] %>%
-    save_data(paths$source$decoding_main_model_results_graph)
-}
-
 get_decoding_main_model_p_stim <- function(cfg, paths) {
   dt_input <- load_data(paths$source$decoding_main_model_results)
   dt_output <- dt_input %>%
@@ -485,27 +439,7 @@ get_decoding_main_model_betas_behav_cor_mean <- function(cfg, paths) {
     # .[, by = .(predictor), .(min_p = min(p.value))]
 }
 
-get_decoding_main_model_results_diff <- function(cfg, paths) {
-  # calculate the AIC score differences of all models against the baseline model:
-  dt_input <- load_data(paths$source$decoding_main_model_results) 
-  dt_output <- dt_input %>%
-    .[, c("roi", "interval_tr",  "model_name", "model_number", "aic")] %>%
-    unique(.) %>%
-    # remember that smaller (i.e., more negative) AIC means better fit!
-    .[, by = .(roi, interval_tr), aic_diff := aic - aic[model_number == 1]] %>%
-    save_data(paths$source$decoding_main_model_diff)
-}
 
-get_decoding_main_model_results_diff_graph <- function(cfg, paths) {
-  # calculate the AIC score differences of all models against the baseline model:
-  dt_input <- load_data(paths$source$decoding_main_model_results_graph) 
-  dt_output <- dt_input %>%
-    .[, c("roi", "graph", "interval_tr",  "model_name", "model_number", "aic")] %>%
-    unique(.) %>%
-    # remember that smaller (i.e., more negative) AIC means better fit!
-    .[, by = .(roi, graph, interval_tr), aic_diff := aic - aic[model_number == 1]] %>%
-    save_data(paths$source$decoding_main_model_diff_graph)
-}
 
 get_decoding_main_model_results_report <- function(cfg, paths) {
   # reduce AICs of model comparison to the ones used in reporting
@@ -515,13 +449,15 @@ get_decoding_main_model_results_report <- function(cfg, paths) {
     .[interval_tr %in% c(2, 5)]
 }
 
-get_decoding_main_model_results_run <- function(cfg, paths) {
+get_decoding_main_model_results <- function(cfg, paths, group = NULL) {
   dt_input <- load_data(paths$source$decoding_main_model_input)
+  group_name <- paste(group, collapse = "_")
+  save_path <- paste(paths$source$decoding_main_model_results, group_name, sep = "_")
   model_formulas <- cfg$decoding_sequence$models$suite6
   model_names <- cfg$decoding_sequence$models$model_names
   dt_output <- dt_input %>%
     .[!(node_classifier == node), ] %>%
-    .[, by = .(roi, run_half, interval_tr), {
+    .[, by = c(group, "interval_tr"), {
       model_tidy = lapply(model_formulas, run_lmer, data = .SD, cfg = cfg, tidy = TRUE)
       model = lapply(model_formulas, run_lmer, data = .SD, cfg = cfg, tidy = FALSE)
       model_formula = model_formulas
@@ -534,20 +470,57 @@ get_decoding_main_model_results_run <- function(cfg, paths) {
     unnest(model_tidy) %>%
     setDT(.) %>%
     .[, model_label := paste("Model", model_number)] %>%
-    save_data(paths$source$decoding_main_model_results_run)
+    save_data(save_path)
 }
 
-get_decoding_main_model_results_run_trs <- function(cfg, paths) {
+get_decoding_main_model_results_diff <- function(cfg, paths, group = NULL) {
+  # calculate the AIC score differences of all models against the baseline model:
+  group_name <- paste(group, collapse = "_")
+  input_path <- paste(paths$source$decoding_main_model_results, group_name, sep = "_")
+  save_path <- paste(paths$source$decoding_main_model_results_diff, group_name, sep = "_")
+  dt_input <- load_data(input_path)
+  dt_output <- dt_input %>%
+    .[, c(group, "interval_tr", "model_name", "model_number", "aic"), with = FALSE] %>%
+    unique(.) %>%
+    # remember that smaller (i.e., more negative) AIC means better fit!
+    .[, by = c(group, "interval_tr"), aic_diff := aic - aic[model_name == "Stimulus"]] %>%
+    save_data(save_path)
+}
+
+get_decoding_main_model_results_diff_mean <- function(cfg, paths, group = NULL) {
+  # calculate the AIC score differences of all models against the baseline model:
+  group_name <- paste(group, collapse = "_")
+  input_path <- paste(paths$source$decoding_main_model_results_diff, group_name, sep = "_")
+  save_path <- paste(paths$source$decoding_main_model_results_diff_max, group_name, sep = "_")
+  dt_input <- load_data(input_path)
+  dt_output <- dt_input %>%
+    .[, by = c(group, "model_name", "model_number"), .(
+      num_trs = .N,
+      aic_diff_abs_mean = mean(abs(aic_diff)),
+      aic_diff_abs_max = aic_diff[which.max(abs(aic_diff))]
+    )] %>%
+    verify(num_trs == cfg$decoding_sequence$num_trs) %>%
+    save_data(save_path)
+}
+
+get_decoding_main_model_results_run_half_diff <- function(cfg, paths) {
   dt_input <- load_data(paths$source$decoding_main_model_results_run) 
   dt_output <- dt_input %>%
     .[, c("roi", "run_half", "interval_tr",  "model_name", "model_number", "aic")] %>%
     unique(.) %>%
+    # .[, by = .(roi, run_half, model_name, model_number), .(
+    #   num_trs = .N,
+    #   aic = aic[which.max(abs(aic))]
+    # )] %>%
+    # verify(num_trs == cfg$decoding_sequence$num_trs) %>%
+    # .[, by = .(roi, run_half), aic_diff := aic - aic[model_number == 1]] %>%
     .[, by = .(roi, run_half, interval_tr), aic_diff := aic - aic[model_number == 1]] %>%
-    save_data(paths$source$decoding_main_model_run_trs)
+    
+    save_data(paths$source$decoding_main_model_run_half_diff)
 }
 
-get_decoding_main_model_results_run_diff <- function(cfg, paths) {
-  dt_input <- load_data(paths$source$decoding_main_model_results_run) 
+get_decoding_main_model_results_run_half_diff <- function(cfg, paths) {
+  dt_input <- load_data(paths$source$decoding_main_model_results_run_half) 
   dt_output <- dt_input %>%
     .[, c("roi", "run_half", "interval_tr",  "model_name", "model_number", "aic")] %>%
     unique(.) %>%
@@ -563,7 +536,7 @@ get_decoding_main_model_results_run_diff <- function(cfg, paths) {
       aic_diff = aic_diff[which.max(abs(aic_diff))]
     )] %>%
     verify(num_trs == cfg$decoding_sequence$num_trs) %>%
-    save_data(paths$source$decoding_main_model_diff_run)
+    save_data(paths$source$decoding_main_model_run_half_diff)
 }
 
 get_decoding_main_model_no_evoked <- function(cfg, paths) {
