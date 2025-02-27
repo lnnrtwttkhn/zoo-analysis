@@ -165,6 +165,29 @@ get_decoding_main_model_results <- function(cfg, paths) {
     save_data(paths$source$decoding_main_model_results)
 }
 
+get_decoding_main_model_results_graph <- function(cfg, paths) {
+  dt_input <- load_data(paths$source$decoding_main_model_input)
+  model_formulas <- cfg$decoding_sequence$models$model_formulas
+  model_names <- cfg$decoding_sequence$models$model_names
+  dt_output <- dt_input %>%
+    .[!(node_classifier == node), ] %>%
+    .[, by = .(roi, interval_tr, graph), {
+      model_tidy = lapply(model_formulas, run_lmer, data = .SD, cfg = cfg, tidy = TRUE)
+      model = lapply(model_formulas, run_lmer, data = .SD, cfg = cfg, tidy = FALSE)
+      model_formula = model_formulas
+      model_name = model_names
+      model_number = seq_len(length(model_formulas))
+      aic = unlist(lapply(model, AIC))
+      N = .N
+      list(model_tidy, model_formula, model_name, model_number, aic, N)
+    }] %>%
+    unnest(model_tidy) %>%
+    setDT(.) %>%
+    verify(length(unique(N)) == 2) %>%
+    .[, model_label := paste("Model", model_number)] %>%
+    save_data(paths$source$decoding_main_model_results_graph)
+}
+
 get_decoding_main_model_p_stim <- function(cfg, paths) {
   dt_input <- load_data(paths$source$decoding_main_model_results)
   dt_output <- dt_input %>%
@@ -470,12 +493,23 @@ get_decoding_main_model_results_diff <- function(cfg, paths) {
     unique(.) %>%
     # remember that smaller (i.e., more negative) AIC means better fit!
     .[, by = .(roi, interval_tr), aic_diff := aic - aic[model_number == 1]] %>%
-    save_data(paths$source$decoding_main_model_comp)
+    save_data(paths$source$decoding_main_model_diff)
+}
+
+get_decoding_main_model_results_diff_graph <- function(cfg, paths) {
+  # calculate the AIC score differences of all models against the baseline model:
+  dt_input <- load_data(paths$source$decoding_main_model_results_graph) 
+  dt_output <- dt_input %>%
+    .[, c("roi", "graph", "interval_tr",  "model_name", "model_number", "aic")] %>%
+    unique(.) %>%
+    # remember that smaller (i.e., more negative) AIC means better fit!
+    .[, by = .(roi, graph, interval_tr), aic_diff := aic - aic[model_number == 1]] %>%
+    save_data(paths$source$decoding_main_model_diff_graph)
 }
 
 get_decoding_main_model_results_report <- function(cfg, paths) {
   # reduce AICs of model comparison to the ones used in reporting
-  dt_input <- load_data(paths$source$decoding_main_model_comp) 
+  dt_input <- load_data(paths$source$decoding_main_model_diff) 
   dt_output <- dt_input %>%
     .[roi == "visual", ] %>%
     .[interval_tr %in% c(2, 5)]

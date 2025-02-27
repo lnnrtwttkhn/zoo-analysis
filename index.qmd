@@ -252,6 +252,7 @@ plot_decoding_main_model_raw_prob_all(cfg, paths)
 
 ```{r}
 get_decoding_main_model_results(cfg, paths)
+get_decoding_main_model_results_graph(cfg, paths)
 ```
 
 ##### Residuals of stimulus model
@@ -304,6 +305,15 @@ plot_decoding_main_model_betas(cfg, paths, roi_input = "motor", graph_input = "u
 ```{r}
 plot_decoding_main_model_results_stim(cfg, paths, roi_input = "visual")
 plot_decoding_main_model_results_stim(cfg, paths, roi_input = "motor")
+```
+
+```{r}
+get_decoding_main_model_results_diff(cfg, paths)
+plot_decoding_main_model_results_diff(cfg, paths, roi_input = "visual")
+plot_decoding_main_model_results_diff(cfg, paths, roi_input = "motor")
+get_decoding_main_model_results_diff_graph(cfg, paths)
+plot_decoding_main_model_results_diff(cfg, paths, roi_input = "visual")
+plot_decoding_main_model_results_diff(cfg, paths, roi_input = "visual", graph_input = TRUE)
 ```
 
 ```{r}

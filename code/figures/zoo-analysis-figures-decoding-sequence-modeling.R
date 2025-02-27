@@ -415,24 +415,30 @@ plot_decoding_main_model_results_stim <- function(cfg, paths, roi_input) {
   return(figure)
 }
 
-plot_decoding_main_model_results_diff <- function(cfg, paths, roi_input) {
+plot_decoding_main_model_results_diff <- function(cfg, paths, roi_input, graph_input = NULL) {
   # plot aics compared to baseline model
-  dt_input <- load_data(paths$source$decoding_main_model_comp) %>%
-    .[roi == roi_input, ] %>%
-    .[model_number != 1, ]
   arrow_xpos <- 0.75
-  arrow_ymax <- 10
+  if (!is.null(graph_input)) {
+    dt_input <- load_data(paths$source$decoding_main_model_diff_graph) %>%
+      .[roi == roi_input, ] %>%
+      .[model_number != 1, ]
+    arrow_ymax <- 30
+  } else {
+    dt_input <- load_data(paths$source$decoding_main_model_diff) %>%
+      .[roi == roi_input, ] %>%
+      .[model_number != 1, ]
+    arrow_ymax <- 10
+  }
   figure <- ggplot(data = dt_input, aes(x = as.numeric(interval_tr), y = as.numeric(aic_diff))) +
     geom_hline(yintercept = 0, color = "black") +
     geom_line(aes(color = as.factor(model_name), group = as.factor(model_name))) +
     geom_point(aes(color = as.factor(model_name), group = as.factor(model_name),
                    shape = as.factor(model_name))) +
     # geom_text(aes(label = as.factor(model_number), color = as.factor(model_number)), vjust = -1.5) +
-    # facet_wrap(~ roi) +
     xlab("Time from inter-trial interval onset") +
     ylab("Relative AIC") +
     theme_zoo() +
-    coord_capped_cart(left = "both", bottom = "both", expand = TRUE, ylim = c(-30, 10)) +
+    coord_capped_cart(left = "both", bottom = "both", expand = TRUE, ylim = c(-arrow_ymax, 10)) +
     scale_x_continuous(limits = c(0, 8), labels = label_fill(seq(1, 8, 1), mod = 1), breaks = seq(1, 8, 1)) +
     theme(legend.position = c(0.7, 0.85)) +
     theme(legend.title = element_blank()) +
@@ -449,6 +455,10 @@ plot_decoding_main_model_results_diff <- function(cfg, paths, roi_input) {
              color = "black", angle = 90, fontface = "italic", size = rel(2.5)) +
     ggtitle("AICs of replay models") +
     theme(plot.title = element_text(hjust = 0.5, face = "bold"))
+  if (!is.null(graph_input)) {
+    figure <- figure +
+      facet_wrap(~ graph)
+  }
   return(figure)
 }
 
