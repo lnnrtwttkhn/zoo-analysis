@@ -100,6 +100,7 @@ get_decoding_main_model_input <- function(cfg, paths) {
     .[interval_tr %in% seq(1, 8), ] %>%
     .[trial_run > 1, ] %>%
     .[, run_half := (as.numeric(substr(run, 6, 6)) - 1) * 2 + ceiling(trial_run / 120)] %>%
+    .[, session_half := ifelse(run_half <= 5, "Before", "After")] %>%
     .[, onset_interval := NULL] %>%
     .[, onset := NULL] %>%
     .[, dist_flat := NULL] %>%
@@ -117,6 +118,7 @@ get_decoding_main_model_input <- function(cfg, paths) {
     .[, prob_class_scale := scale(prob_class, center = TRUE, scale = TRUE), by = .(id, roi)] %>%
     .[, prob_stim_scale := scale(prob_stim, center = TRUE, scale = TRUE), by = .(id, roi)] %>%
     .[, prob_sr_scale := scale(prob_sr, center = TRUE, scale = TRUE), by = .(id, roi)] %>%
+    .[, sequence_detected := ifelse(sequence_detected == "yes", "conscious knowledge", "no conscious knowledge")] %>%
     setcolorder(., c(
       "id", "run", "run_half", "trial_run", "trial_index", "graph", "node", "prob_graph", "dist_graph", "roi", "node_classifier", "interval_tr"
     )) %>%
@@ -176,7 +178,6 @@ get_decoding_main_model_residuals <- function(cfg, paths) {
     }] %>%
     unnest(., c(residual, prediction, dist_graph, id, alpha, gamma, sequence_detected, trial_index)) %>%
     setDT(.) %>%
-    .[, sequence_detected := ifelse(sequence_detected == "yes", "conscious knowledge", "no conscious knowledge")] %>%
     .[, alpha_group := dplyr::case_when(
       round(alpha, 2) == 0.01 ~ sprintf("%s ~ 0.01", cfg$alpha_utf),
       round(alpha, 2) > 0.01 & round(alpha, 2) < 1 ~ sprintf("0.01 < %s < 1.00", cfg$alpha_utf),
@@ -491,7 +492,7 @@ get_decoding_main_model_results_diff_mean <- function(cfg, paths, group = NULL) 
   # calculate the AIC score differences of all models against the baseline model:
   group_name <- paste(group, collapse = "_")
   input_path <- paste(paths$source$decoding_main_model_results_diff, group_name, sep = "_")
-  save_path <- paste(paths$source$decoding_main_model_results_diff_max, group_name, sep = "_")
+  save_path <- paste(paths$source$decoding_main_model_results_diff_mean, group_name, sep = "_")
   dt_input <- load_data(input_path)
   dt_output <- dt_input %>%
     .[, by = c(group, "model_name", "model_number"), .(
@@ -501,42 +502,6 @@ get_decoding_main_model_results_diff_mean <- function(cfg, paths, group = NULL) 
     )] %>%
     verify(num_trs == cfg$decoding_sequence$num_trs) %>%
     save_data(save_path)
-}
-
-get_decoding_main_model_results_run_half_diff <- function(cfg, paths) {
-  dt_input <- load_data(paths$source$decoding_main_model_results_run) 
-  dt_output <- dt_input %>%
-    .[, c("roi", "run_half", "interval_tr",  "model_name", "model_number", "aic")] %>%
-    unique(.) %>%
-    # .[, by = .(roi, run_half, model_name, model_number), .(
-    #   num_trs = .N,
-    #   aic = aic[which.max(abs(aic))]
-    # )] %>%
-    # verify(num_trs == cfg$decoding_sequence$num_trs) %>%
-    # .[, by = .(roi, run_half), aic_diff := aic - aic[model_number == 1]] %>%
-    .[, by = .(roi, run_half, interval_tr), aic_diff := aic - aic[model_number == 1]] %>%
-    
-    save_data(paths$source$decoding_main_model_run_half_diff)
-}
-
-get_decoding_main_model_results_run_half_diff <- function(cfg, paths) {
-  dt_input <- load_data(paths$source$decoding_main_model_results_run_half) 
-  dt_output <- dt_input %>%
-    .[, c("roi", "run_half", "interval_tr",  "model_name", "model_number", "aic")] %>%
-    unique(.) %>%
-    # .[, by = .(roi, run_half, model_name, model_number), .(
-    #   num_trs = .N,
-    #   aic = aic[which.max(abs(aic))]
-    # )] %>%
-    # verify(num_trs == cfg$decoding_sequence$num_trs) %>%
-    # .[, by = .(roi, run_half), aic_diff := aic - aic[model_number == 1]] %>%
-    .[, by = .(roi, run_half, interval_tr), aic_diff := aic - aic[model_number == 1]] %>%
-    .[, by = .(roi, run_half, model_name, model_number), .(
-      num_trs = .N,
-      aic_diff = aic_diff[which.max(abs(aic_diff))]
-    )] %>%
-    verify(num_trs == cfg$decoding_sequence$num_trs) %>%
-    save_data(paths$source$decoding_main_model_run_half_diff)
 }
 
 get_decoding_main_model_no_evoked <- function(cfg, paths) {

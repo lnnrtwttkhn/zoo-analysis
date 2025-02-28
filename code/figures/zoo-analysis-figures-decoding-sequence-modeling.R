@@ -435,7 +435,7 @@ plot_decoding_main_model_results_diff <- function(cfg, paths, group = NULL, roi_
     coord_capped_cart(left = "both", bottom = "both", expand = TRUE) +
     scale_x_continuous(limits = c(0, 8), labels = label_fill(seq(1, 8, 1), mod = 1), breaks = seq(1, 8, 1)) +
     theme(plot.title = element_text(hjust = 0.5, face = "bold")) +
-    theme(legend.position = c(0.85, 0.15)) +
+    # theme(legend.position = c(0.85, 0.15)) +
     theme(legend.title = element_blank()) +
     theme(legend.key = element_blank())
   figure <- set_yaxis(figure)
@@ -443,25 +443,45 @@ plot_decoding_main_model_results_diff <- function(cfg, paths, group = NULL, roi_
   return(figure)
 }
 
-plot_decoding_main_model_results_run_trs <- function(cfg, paths) {
-  dt_input <- load_data(paths$source$decoding_main_model_run_trs) %>%
-    .[model_number != 1, ] %>%
-    .[roi == "visual", ]
-  figure <- ggplot(data = dt_input, aes(x = as.factor(interval_tr), y = as.numeric(aic_diff))) +
+plot_decoding_main_model_results_diff_mean <- function(cfg, paths, group, roi_input) {
+  group_name <- paste(group, collapse = "_")
+  input_path <- paste(paths$source$decoding_main_model_results_diff_mean, group_name, sep = "_")
+  dt_input <- load_data(input_path) %>%
+    .[roi == roi_input, ] %>%
+    .[model_number == 4, ]
+  # arrow_y_change <- dt_input$aic_diff[dt_input$run_half == 5]
+  # arrow_xpos <- 0.75
+  # arrow_ymax <- 5
+  figure <- ggplot(data = dt_input, aes(x = as.numeric(run), y = as.numeric(aic_diff_abs_max))) +
     geom_hline(yintercept = 0, color = "black") +
-    geom_line(aes(color = as.factor(model_name), group = as.factor(model_name))) +
-    geom_point(aes(color = as.factor(model_name), group = as.factor(model_name),
-                   shape = as.factor(model_name))) +
-    facet_wrap(~ run_half) +
-    ylab("Relative AIC") +
-    xlab("Time from inter-trial interval onset (in TRs; 1 TR = 1.25 s)") +
+    geom_line(aes(group = 1)) +
+    geom_point(aes(group = 1)) +
+    xlab("Run") +
+    ylab("Relative AIC (SR-replay)") +
+    ggtitle("Change in replay over runs") +
+    theme(plot.title = element_text(hjust = 0.5, face = "bold")) +
     theme_zoo() +
     coord_capped_cart(left = "both", bottom = "both", expand = TRUE) +
-    theme(legend.title = element_blank()) +
-    theme(legend.position = c(0.85, 0.1)) +
-    theme(legend.key = element_blank())
+    # scale_x_continuous(breaks = c(1.5, 3.5, 5.5, 7.5, 9.5), labels = 1:5, limits = c(0, 10)) +
+    facet_wrap(~ sequence_detected) +
+    annotate(geom = "segment",
+      x = arrow_xpos, xend = arrow_xpos, y = 0 + arrow_ymax / 15, yend = arrow_ymax,
+      arrow = arrow(length = unit(3, "pt"), type = "closed"), color = "black") +
+    annotate(geom = "segment",
+      x = arrow_xpos, xend = arrow_xpos, y = 0 - arrow_ymax / 15, yend = -arrow_ymax,
+      arrow = arrow(length = unit(3, "pt"), type = "closed"), color = "black") +
+    annotate(geom = "text", x = 0.25, y = arrow_ymax / 1.75, label = "Stimulus model\nbetter",
+             color = "black", angle = 90, fontface = "italic", size = rel(2.5)) +
+    annotate(geom = "text", x = 0.25, y = -arrow_ymax / 1.75, label = "Replay model\nbetter",
+             color = "black", angle = 90, fontface = "italic", size = rel(2.5))
+    # geom_segment(aes(
+    #   x = 5.5, xend = 5.5, y = 2.5, yend = arrow_y_change),
+    #   arrow = arrow(length = unit(3, "pt"), type = "closed"), color = "red") +
+    # annotate(geom = "text", x = 5.5, y = 3.5, label = "graph structure\nchange",
+    #          color = "red", angle = 0, fontface = "plain", size = rel(3))
   return(figure)
 }
+
 
 plot_decoding_main_model_results_run_diff <- function(cfg, paths, roi_input) {
   dt_input <- load_data(paths$source$decoding_main_model_diff_run) %>%
