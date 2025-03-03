@@ -23,7 +23,7 @@ prepare_data_mri_rest(cfg, paths)
 prep_demographics_data(cfg, paths)
 prepare_questionnaire_data(cfg, paths)
 prep_sr_modeling(cfg, paths)
-prep_sr_matrices(paths)
+prep_sr_matrices(cfg, paths)
 prepare_data_decoding_main(cfg, paths)
 ```
 

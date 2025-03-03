@@ -193,11 +193,16 @@ prepare_questionnaire_data <- function(cfg, paths) {
 }
 
 prep_sr_modeling <- function(cfg, paths) {
+  get_data(paths$input_sr_modeling)
+  get_data(paths$input_sr_base_modeling)
+  get_data(paths$input_sr_onestep_modeling)
   dt_input_sr <- load_data(paths$input_sr_modeling) %>%
     .[, model_name := "sr" ]
   dt_input_sr_base <- load_data(paths$input_sr_base_modeling) %>%
     .[, model_name := "sr_base" ]
-  dt_input <- rbindlist(list(dt_input_sr, dt_input_sr_base), fill = TRUE)
+  dt_input_sr_onestep <- load_data(paths$input_sr_onestep_modeling) %>%
+    .[, model_name := "sr_onestep" ]
+  dt_input <- rbindlist(list(dt_input_sr, dt_input_sr_base, dt_input_sr_onestep), fill = TRUE)
   dt_demographics <- load_data(paths$source$demographics) %>%
     .[!(id %in% cfg$sub_exclude), ]
   parameter_names <- c("alpha", "gamma")
@@ -208,10 +213,11 @@ prep_sr_modeling <- function(cfg, paths) {
     .[, id := as.factor(as.character(id))] %>%
     .[, neg_ll := as.numeric(neg_ll)] %>%
     .[, model_name := dplyr::case_when(
-      model_name == "sr" ~ "Full",
-      model_name == "sr_base" ~ "Base"
+      model_name == "sr_onestep" ~ "SR + 1-step",
+      model_name == "sr" ~ "SR",
+      model_name == "sr_base" ~ "1-step"
     )] %>%
-    .[, model_name := factor(as.factor(model_name), levels = c("Base", "Full"))] %>%
+    .[, model_name := factor(as.factor(model_name), levels = c("SR + 1-step", "SR", "1-step"))] %>%
     .[, process := dplyr::case_when(
       process == "model_fitting" ~ "Model Fitting",
       process == "parameter_recovery" ~ "Parameter Recovery"
@@ -229,7 +235,7 @@ prep_sr_matrices <- function(cfg, paths) {
   dt_behav_task <- load_data(paths$source$behavior_task)
   dt_sr_params <- load_data(paths$source$behavior_sr_fit_parameters) %>%
     .[process == "Model Fitting", ] %>%
-    .[model_name == "Full", ] %>%
+    .[model_name == "SR", ] %>%
     .[mod == "model", ] %>%
     .[iter == 1, ] %>%
     .[variable %in% c("alpha", "gamma"), ] %>%

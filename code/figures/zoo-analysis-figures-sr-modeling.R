@@ -114,19 +114,22 @@ plot_behavior_sr_fit_model_comparison_sum_aic <- function(cfg, paths) {
   dt_input <- load_data(paths$source$behavior_sr_fit_model_comparison) %>%
     .[iter == 1, ] %>%
     .[variable == "aic", ]
-  ymax <- -105300
-  figure <- ggplot(data = dt_input, aes(x = model_name, y = value)) +
+  ymax <- -111850
+  # ymax <- -93000
+  figure <- ggplot(data = dt_input, aes(x = model_name, y = value, fill = model_name)) +
     # facet_wrap(~ iter, scales = "free_y") +
     stat_summary(geom = "bar", fun = "sum") +
     ylab("AIC") +
-    xlab("SR model") +
+    xlab("Model") +
     theme_zoo() +
     coord_capped_cart(left = "both", bottom = "both", ylim = c(NA, ymax)) +
     theme(axis.line.x = element_line(color = "white")) +
     theme(axis.ticks.x = element_line(color = "white")) +
     theme(axis.title.x = element_text(colour = "black")) +
     theme(axis.text.x = element_text(colour = "black")) +
-    theme(plot.title = element_text(hjust = 0.5))
+    theme(plot.title = element_text(hjust = 0.5)) +
+    theme(legend.position = "none")
+  save_figure(plot = figure, "behavior_sr_fit_model_comparison_sum_aic", width = 3, height = 5)
   return(figure)
 }
 
@@ -255,7 +258,7 @@ plot_sr_timecourse <- function() {
 plot_behavior_sr_fit_parameter_mean <- function(cfg, paths) {
   dt_input <- load_data(paths$source$behavior_sr_fit_parameter_distribution) %>%
     .[process == "Model Fitting", ] %>%
-    .[model_name == "Full", ] %>%
+    .[model_name == "SR", ] %>%
     verify(length(unique(id)) == cfg$num_subs)
   figure <- ggplot(data = dt_input, aes(x = variable, y = value)) +
     geom_boxplot(outlier.shape = NA, width = 0.5, color = "black") +
@@ -278,10 +281,10 @@ plot_behavior_sr_fit_parameter_mean <- function(cfg, paths) {
 plot_behavior_sr_fit_parameter_order <- function(cfg, paths) {
   dt1 <- load_data(paths$source$behavior_sr_fit_parameter_distribution) %>%
     .[process == "Model Fitting", ] %>%
-    .[model_name == "Full", ]
+    .[model_name == "SR", ]
   dt2 <- load_data(paths$source$behavior_sr_fit_parameter_order) %>%
     .[process == "Model Fitting", ] %>%
-    .[model_name == "Full", ]
+    .[model_name == "SR", ]
   figure <- ggplot(data = dt1, aes(x = order, y = value)) +
     geom_boxplot(outlier.shape = NA, width = 0.5, color = "black") +
     geom_beeswarm(alpha = 0.3) +
@@ -309,10 +312,10 @@ plot_behavior_sr_fit_parameter_order <- function(cfg, paths) {
 plot_behavior_sr_fit_parameter_conscious <- function(cfg, paths) {
   dt1 <- load_data(paths$source$behavior_sr_fit_parameter_distribution) %>%
     .[process == "Model Fitting", ] %>%
-    .[model_name == "Full", ]
+    .[model_name == "SR", ]
   dt2 <- load_data(paths$source$behavior_sr_fit_parameter_conscious) %>%
     .[process == "Model Fitting", ] %>%
-    .[model_name == "Full", ]
+    .[model_name == "SR", ]
   figure <- ggplot(data = dt1, aes(x = sequence_detected, y = value)) +
     geom_boxplot(outlier.shape = NA, width = 0.5, color = "black") +
     geom_beeswarm(alpha = 0.3) +
@@ -339,19 +342,20 @@ plot_behavior_sr_fit_parameter_conscious <- function(cfg, paths) {
 
 plot_behavior_sr_fit_suprise_effect <- function(cfg, paths) {
   dt_input <- load_data(paths$source$behavior_sr_fit_suprise_effect) %>%
-    .[variable == "p_shannon_surprise", ] %>%
-    .[model_name == "Full", ] %>%
-    .[process == "Model Fitting", ]
+    .[process == "Model Fitting", ] %>%
+    .[variable %in% c("SR-based\nsurprise", "1-step\nprobability"), ] %>%
+    .[model_name %in% c("SR", "SR + 1-step"), ]
   figure <- ggplot(data = dt_input, aes(x = variable, y = value_log_20)) +
     geom_hline(yintercept = log(0.05, base = 20), linetype = "dashed", color = "black") +
     geom_boxplot(outlier.shape = NA, width = 0.5, color = "black") +
     geom_beeswarm(alpha = 0.3) +
     ylab("p-value\n(base-20 log-transformed)") +
     theme_zoo() +
+    facet_wrap(~ model_name) +
     coord_capped_cart(left = "both", expand = TRUE) +
     scale_y_continuous(limits = c(-20, 0)) +
     theme(axis.ticks.x = element_blank()) +
-    theme(axis.text.x = element_blank()) +
+    # theme(axis.text.x = element_blank()) +
     theme(axis.title.x = element_blank()) +
     theme(axis.line.x = element_blank())
   return(figure)

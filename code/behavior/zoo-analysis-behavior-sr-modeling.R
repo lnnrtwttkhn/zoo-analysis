@@ -177,7 +177,7 @@ get_behavior_sr_fit_model_comparison <- function(cfg, paths) {
     verify(.[, by = .(id, model_name, iter), .(num_values = .N)]$num_values == length(variables)) %>%
     verify(length(unique(id)) == cfg$num_subs) %>%
     .[, by = .(id, variable, iter), num_models := .N] %>%
-    .[num_models == 2, ] %>%
+    .[num_models == 3, ] %>%
     # .[, .(num_subs = length(unique(id)))]
     verify(.[, .(num_subs = length(unique(id)))]$num_subs == cfg$num_subs) %>%
     save_data(paths$source$behavior_sr_fit_model_comparison)
@@ -187,16 +187,17 @@ get_behavior_sr_fit_model_comparison_stat <- function(cfg, paths) {
   dt_input <- load_data(paths$source$behavior_sr_fit_model_comparison)
   dt_output <-  dt_input %>%
     .[, by = .(id, process, variable, iter), num_models := .N] %>%
-    .[num_models == 2, ] %>%
-    .[, num_params := ifelse(model_name == "Full", 2, NA)] %>%
-    .[, num_params := ifelse(model_name == "Base", 1, num_params)] %>%
+    .[num_models == 3, ] %>%
+    .[, num_params := ifelse(model_name == "SR", 2, NA)] %>%
+    .[, num_params := ifelse(model_name == "SR + 1-step", 2, num_params)] %>%
+    .[, num_params := ifelse(model_name == "1-step", 1, num_params)] %>%
     .[variable == "aic", value := value + 2 * num_params] %>%
     .[, by = .(model_name, variable, iter), .(
       num_subs = .N,
       sum_value = sum(value)
     )] %>%
     # TODO: FIX FOR SAME NUMBER OF PARTICIPANTS!
-    # verify(num_subs == cfg$num_subs) %>%
+    verify(num_subs == cfg$num_subs) %>%
     verify(length(unique(num_subs)) == 1)
   # ttest_cfg <- list(
   #   formula = "value ~ model_name",
@@ -265,11 +266,13 @@ get_behavior_sr_fit_suprise_effect <- function(cfg, paths) {
   dt_input <- load_data(paths$source$behavior_sr_fit_parameters)
   dt_output <- dt_input %>%
     .[iter == 1, ] %>%
+    .[process == "Model Fitting",] %>%
     .[mod == "reg_model",] %>%
     .[substr(variable, start = 0, stop = 2) == "p_",] %>%
     .[, variable := factor(variable, levels = c(
       'p_Intercept',
       'p_shannon_surprise',
+      'p_prob_current',
       'p_trial_ses',
       'p_block',
       'p_hand_finger_pressedleft_middle',
@@ -277,6 +280,10 @@ get_behavior_sr_fit_suprise_effect <- function(cfg, paths) {
       'p_hand_finger_pressedright_index',
       'p_hand_finger_pressedright_middle',
       'p_hand_finger_pressedright_ring')
+    )] %>%
+    .[, variable := dplyr::case_when(
+      variable == "p_shannon_surprise" ~ "SR-based\nsurprise",
+      variable == "p_prob_current" ~ "1-step\nprobability"
     )] %>%
     .[, value_log_20 := log(value, base = 20)] %>%
     save_data(paths$source$behavior_sr_fit_suprise_effect)
@@ -286,10 +293,10 @@ get_behavior_sr_fit_suprise_effect_num <- function(cfg, paths) {
   alpha_level <- 0.05
   dt_input <- load_data(paths$source$behavior_sr_fit_suprise_effect)
   dt_output <- dt_input %>%
-    .[variable == "p_shannon_surprise", ] %>%
-    .[model_name == "Full",] %>%
+    .[variable %in% c("SR-based surprise", "1-step probability"), ] %>%
+    .[model_name %in% c("SR", "SR + 1-step"),] %>%
     .[, significance := ifelse(value < alpha_level, "yes", "no")] %>%
-    .[, by = .(significance), .(
+    .[, by = .(model_name, variable, significance), .(
       num_subs = .N
     )]
 }
@@ -383,7 +390,7 @@ get_behavior_sr_fit_response_time_onestep <- function(cfg, paths) {
   dt1 <- load_data(paths$source$behavior_sequence_onestep)
   dt2 <- load_data(paths$source$behavior_sr_fit_parameters) %>%
     .[process == "model_fitting", ] %>%
-    .[model_name == "Full", ] %>%
+    .[model_name == "SR", ] %>%
     .[iter %in% 1] %>%
     .[variable %in% c("gamma"), ]
   dt_output <- merge(dt1, dt2) %>%
@@ -402,7 +409,7 @@ get_behavior_sr_fit_response_time_onestep_diff <- function(cfg, paths) {
   dt1 <- load_data(paths$source$behavior_sequence_onestep_run_glm)
   dt2 <- load_data(paths$source$behavior_sr_fit_parameters) %>%
     .[process == "Model Fitting", ] %>%
-    .[model_name == "Full", ] %>%
+    .[model_name == "SR", ] %>%
     .[iter %in% 1] %>%
     .[variable %in% c("alpha", "gamma"), ]
   dt_output <- merge(dt1, dt2) %>%
@@ -424,7 +431,7 @@ get_behavior_sr_fit_parameter_recovery <- function(cfg, paths) {
   dt_output <- dt_input %>%
     .[iter == 1, ] %>%
     .[, iter := paste("Iteration:", iter)] %>%
-    # .[model_name == "Full", ] %>%
+    # .[model_name == "SR", ] %>%
     .[!is.na(process), ] %>%
     .[mod == "model", ] %>%
     .[variable %in% c("alpha", "gamma"), ] %>%

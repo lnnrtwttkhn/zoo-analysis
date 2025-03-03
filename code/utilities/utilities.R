@@ -176,6 +176,7 @@ create_paths <- function() {
   paths$input_questionnaire <- file.path(paths$input, "bids", "*", "ses-02", "beh", "*beh.tsv")
   paths$input_sr_modeling <- file.path(path_root, "input", "sr-modeling", "modeling", "sub-*-sr.csv")
   paths$input_sr_base_modeling <- file.path(path_root, "input", "sr-modeling", "modeling", "sub-*-sr_base.csv")
+  paths$input_sr_onestep_modeling <- file.path(path_root, "input", "sr-modeling", "modeling", "sub-*-sr_onestep.csv")
   paths$input_mri_rest <- file.path(paths$input, "decoding", "sub-*", "decoding", "*scheme-7*_time_shift-4*decoding*")
   paths$input_mri_single_peak <- c(
     file.path(paths$input, "decoding", "sub-*", "decoding", "*scheme-0*_time_shift-4*decoding*"),

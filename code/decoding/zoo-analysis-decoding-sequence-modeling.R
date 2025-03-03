@@ -376,7 +376,7 @@ get_decoding_main_model_betas_id <- function(cfg, paths) {
 get_decoding_main_model_betas_behav <- function(cfg, paths) {
   dt_sr_fits <- load_data(paths$source$behavior_sr_fit_parameter_distribution) %>%
     .[process == "Model Fitting", ] %>%
-    .[model_name == "Full", ] %>%
+    .[model_name == "SR", ] %>%
     .[, c("id", "variable", "value")] %>%
     verify(.[, by = .(id), num_var := length(unique(variable))]$num_var == 2) %>%
     pivot_wider(id_cols = c("id"), names_from = variable, values_from = value)

@@ -83,6 +83,16 @@ plot_sr_modeling_parameter_receovery <- function(cfg, paths) {
   return(figure)
 }
 
+plot_sr_modeling_sr_onestep <- function(cfg, paths) {
+  figure <- plot_grid(
+    plot_behavior_sr_fit_model_comparison_sum_aic(cfg, paths),
+    plot_behavior_sr_fit_suprise_effect(cfg, paths),
+    nrow = 1, ncol = 2, rel_widths = c(0.4, 0.6), labels = letters[1:2]
+  )
+  save_figure(plot = figure, "sr_modeling__sr_onestep", width = 8, height = 5)
+  return(figure)
+}
+
 plot_sr_fit_check <- function(cfg, paths){
   figure <- plot_grid(
     plot_behavior_sr_fit_starting_values(cfg, paths),
