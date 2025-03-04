@@ -293,12 +293,16 @@ get_behavior_sr_fit_suprise_effect_num <- function(cfg, paths) {
   alpha_level <- 0.05
   dt_input <- load_data(paths$source$behavior_sr_fit_suprise_effect)
   dt_output <- dt_input %>%
-    .[variable %in% c("SR-based surprise", "1-step probability"), ] %>%
+    .[variable %in% c("SR-based\nsurprise", "1-step\nprobability"), ] %>%
     .[model_name %in% c("SR", "SR + 1-step"),] %>%
     .[, significance := ifelse(value < alpha_level, "yes", "no")] %>%
     .[, by = .(model_name, variable, significance), .(
       num_subs = .N
-    )]
+    )] %>%
+    .[, ratio_subs := round(num_subs / cfg$num_subs * 100, 0)] %>%
+    .[, text_label := paste0(sprintf("n = %.0f", ratio_subs), "%\np < .05")] %>%
+    verify(.[, by = .(model_name, variable), .(num_subs = sum(num_subs))]$num_subs == cfg$num_subs) %>%
+    save_data(paths$source$behavior_sr_fit_suprise_effect_num)
 }
 
 get_behavior_sr_fit_response_time_alpha <- function(cfg, paths) {

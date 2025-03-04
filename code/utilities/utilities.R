@@ -246,6 +246,7 @@ create_paths <- function() {
   paths$source$behavior_sr_fit_parameter_conscious <- sprintf(source_path, "behavior_sr_fit_parameter_conscious")
   paths$source$behavior_sr_fit_parameter_order <- sprintf(source_path, "behavior_sr_fit_parameter_order")
   paths$source$behavior_sr_fit_suprise_effect <- sprintf(source_path, "behavior_sr_fit_suprise_effect")
+  paths$source$behavior_sr_fit_suprise_effect_num <- sprintf(source_path, "behavior_sr_fit_suprise_effect_num")
   paths$source$behavior_sr_fit_sr_matrices <- sprintf(source_path, "behavior_sr_fit_sr_matrices")
   paths$source$behavior_sr_fit_sr_matrices_plot <- sprintf(source_path, "behavior_sr_fit_sr_matrices_plot")
   paths$source$behavior_sr_fit_sr_matrices
