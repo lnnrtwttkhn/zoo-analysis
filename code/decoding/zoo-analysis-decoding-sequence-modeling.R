@@ -498,7 +498,8 @@ get_decoding_main_model_results_diff_mean <- function(cfg, paths, group = NULL) 
     .[, by = c(group, "model_name", "model_number"), .(
       num_trs = .N,
       aic_diff_abs_mean = mean(abs(aic_diff)),
-      aic_diff_abs_max = aic_diff[which.max(abs(aic_diff))]
+      aic_diff_abs_max = aic_diff[which.max(abs(aic_diff))],
+      aic_diff_abs_max_tr = which.max(abs(aic_diff))
     )] %>%
     verify(num_trs == cfg$decoding_sequence$num_trs) %>%
     save_data(save_path)

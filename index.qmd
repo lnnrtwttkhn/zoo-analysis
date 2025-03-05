@@ -329,17 +329,13 @@ plot_decoding_main_model_results_diff(cfg, paths, group = c("roi", "run"), roi_i
 plot_decoding_main_model_results_diff(cfg, paths, group = c("roi", "run", "sequence_detected"), roi_input = "visual")
 plot_decoding_main_model_results_diff(cfg, paths, group = c("roi", "session_half", "sequence_detected"), roi_input = "visual")
 plot_decoding_main_model_results_diff(cfg, paths, group = c("roi", "run_half"), roi_input = "visual")
-plot_decoding_main_model_results_diff_mean(cfg, paths, group = c("roi", "run_half"), roi_input = "visual")
-plot_decoding_main_model_results_diff_mean(cfg, paths, group = c("roi", "run"), roi_input = "visual")
-plot_decoding_main_model_results_diff_mean(cfg, paths, group = c("roi", "run", "sequence_detected"), roi_input = "visual")
 ```
 
 ```{r}
-get_decoding_main_model_results_run(cfg, paths)
-get_decoding_main_model_results_run_diff(cfg, paths)
-plot_decoding_main_model_results_run_diff(cfg, paths, roi_input = "visual")
-plot_decoding_main_model_results_run_diff(cfg, paths, roi_input = "motor")
-plot_decoding_main_model_results_run_diff_all(cfg, paths)
+plot_decoding_main_model_results_diff_run_half(cfg, paths, group = c("roi", "run_half"), roi_input = "visual")
+plot_decoding_main_model_results_diff_run_half(cfg, paths, group = c("roi", "run_half"), roi_input = "motor")
+plot_decoding_main_model_results_diff_run(cfg, paths, group = c("roi", "run"), roi_input = "visual")
+plot_decoding_main_model_results_diff_run_consciousness(cfg, paths, group = c("roi", "run", "sequence_detected"), roi_input = "visual")
 ```
 
 ```{r}

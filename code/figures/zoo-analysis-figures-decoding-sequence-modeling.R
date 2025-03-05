@@ -443,15 +443,44 @@ plot_decoding_main_model_results_diff <- function(cfg, paths, group = NULL, roi_
   return(figure)
 }
 
-plot_decoding_main_model_results_diff_mean <- function(cfg, paths, group, roi_input) {
+plot_decoding_main_model_results_diff_run_half <- function(cfg, paths, group, roi_input) {
   group_name <- paste(group, collapse = "_")
   input_path <- paste(paths$source$decoding_main_model_results_diff_mean, group_name, sep = "_")
   dt_input <- load_data(input_path) %>%
     .[roi == roi_input, ] %>%
     .[model_number == 4, ]
-  # arrow_y_change <- dt_input$aic_diff[dt_input$run_half == 5]
-  # arrow_xpos <- 0.75
-  # arrow_ymax <- 5
+  arrow_y_change <- dt_input$aic_diff_abs_max[dt_input$run_half == 5]
+  arrow_xpos <- 0.75
+  arrow_ymax <- 5
+  figure <- ggplot(data = dt_input, aes(x = as.numeric(run_half), y = as.numeric(aic_diff_abs_max))) +
+    geom_hline(yintercept = 0, color = "black") +
+    geom_line(aes(group = 1)) +
+    geom_point(aes(group = 1)) +
+    xlab("Run") +
+    ylab("Relative AIC (SR-replay)") +
+    ggtitle("Change in replay over runs") +
+    theme(plot.title = element_text(hjust = 0.5, face = "bold")) +
+    theme_zoo() +
+    coord_capped_cart(left = "both", bottom = "both", expand = TRUE, ylim = c(-6, 4)) +
+    scale_x_continuous(breaks = c(1.5, 3.5, 5.5, 7.5, 9.5), labels = 1:5, limits = c(0, 10))
+  figure <- add_arrows(figure)
+  figure <- figure + 
+    annotate(geom = "segment", x = 5.5, xend = 5.5, y = 2.5, yend = arrow_y_change,
+      arrow = arrow(length = unit(3, "pt"), type = "closed"), color = "red") +
+    annotate(geom = "text", x = 5.5, y = 3.5, label = "graph structure\nchange",
+             color = "red", angle = 0, fontface = "plain", size = rel(3))
+  return(figure)
+}
+
+plot_decoding_main_model_results_diff_run <- function(cfg, paths, group, roi_input) {
+  group_name <- paste(group, collapse = "_")
+  input_path <- paste(paths$source$decoding_main_model_results_diff_mean, group_name, sep = "_")
+  dt_input <- load_data(input_path) %>%
+    .[roi == roi_input, ] %>%
+    .[model_number == 4, ]
+  arrow_y_change <- dt_input$aic_diff_abs_max[dt_input$run == 3]
+  arrow_xpos <- 0.75
+  arrow_ymax <- 5
   figure <- ggplot(data = dt_input, aes(x = as.numeric(run), y = as.numeric(aic_diff_abs_max))) +
     geom_hline(yintercept = 0, color = "black") +
     geom_line(aes(group = 1)) +
@@ -461,61 +490,32 @@ plot_decoding_main_model_results_diff_mean <- function(cfg, paths, group, roi_in
     ggtitle("Change in replay over runs") +
     theme(plot.title = element_text(hjust = 0.5, face = "bold")) +
     theme_zoo() +
-    coord_capped_cart(left = "both", bottom = "both", expand = TRUE) +
-    # scale_x_continuous(breaks = c(1.5, 3.5, 5.5, 7.5, 9.5), labels = 1:5, limits = c(0, 10)) +
-    facet_wrap(~ sequence_detected) +
-    annotate(geom = "segment",
-      x = arrow_xpos, xend = arrow_xpos, y = 0 + arrow_ymax / 15, yend = arrow_ymax,
-      arrow = arrow(length = unit(3, "pt"), type = "closed"), color = "black") +
-    annotate(geom = "segment",
-      x = arrow_xpos, xend = arrow_xpos, y = 0 - arrow_ymax / 15, yend = -arrow_ymax,
-      arrow = arrow(length = unit(3, "pt"), type = "closed"), color = "black") +
-    annotate(geom = "text", x = 0.25, y = arrow_ymax / 1.75, label = "Stimulus model\nbetter",
-             color = "black", angle = 90, fontface = "italic", size = rel(2.5)) +
-    annotate(geom = "text", x = 0.25, y = -arrow_ymax / 1.75, label = "Replay model\nbetter",
-             color = "black", angle = 90, fontface = "italic", size = rel(2.5))
-    # geom_segment(aes(
-    #   x = 5.5, xend = 5.5, y = 2.5, yend = arrow_y_change),
-    #   arrow = arrow(length = unit(3, "pt"), type = "closed"), color = "red") +
-    # annotate(geom = "text", x = 5.5, y = 3.5, label = "graph structure\nchange",
-    #          color = "red", angle = 0, fontface = "plain", size = rel(3))
+    coord_capped_cart(left = "both", bottom = "both", expand = TRUE, ylim = c(-10, 5))
+  figure <- add_arrows(figure)
   return(figure)
 }
 
-
-plot_decoding_main_model_results_run_diff <- function(cfg, paths, roi_input) {
-  dt_input <- load_data(paths$source$decoding_main_model_diff_run) %>%
+plot_decoding_main_model_results_diff_run_consciousness <- function(cfg, paths, group, roi_input) {
+  group_name <- paste(group, collapse = "_")
+  input_path <- paste(paths$source$decoding_main_model_results_diff_mean, group_name, sep = "_")
+  dt_input <- load_data(input_path) %>%
     .[roi == roi_input, ] %>%
     .[model_number == 4, ]
-  arrow_y_change <- dt_input$aic_diff[dt_input$run_half == 5]
+  arrow_y_change <- dt_input$aic_diff_abs_max[dt_input$run == 3]
   arrow_xpos <- 0.75
   arrow_ymax <- 5
-  figure <- ggplot(data = dt_input, aes(x = as.numeric(run_half), y = as.numeric(aic_diff))) +
+  figure <- ggplot(data = dt_input, aes(x = as.numeric(run), y = as.numeric(aic_diff_abs_max))) +
     geom_hline(yintercept = 0, color = "black") +
     geom_line(aes(group = 1)) +
     geom_point(aes(group = 1)) +
+    facet_wrap(~ sequence_detected) +
     xlab("Run") +
     ylab("Relative AIC (SR-replay)") +
-    theme_zoo() +
-    coord_capped_cart(left = "both", bottom = "both", expand = TRUE) +
-    scale_x_continuous(breaks = c(1.5, 3.5, 5.5, 7.5, 9.5), labels = 1:5, limits = c(0, 10)) +
-    geom_segment(aes(
-      x = arrow_xpos, xend = arrow_xpos, y = 0 + arrow_ymax / 15, yend = arrow_ymax),
-      arrow = arrow(length = unit(3, "pt"), type = "closed"), color = "black") +
-    geom_segment(aes(
-      x = arrow_xpos, xend = arrow_xpos, y = 0 - arrow_ymax / 15, yend = -arrow_ymax),
-      arrow = arrow(length = unit(3, "pt"), type = "closed"), color = "black") +
-    annotate(geom = "text", x = 0.25, y = arrow_ymax / 1.75, label = "Stimulus model\nbetter",
-             color = "black", angle = 90, fontface = "italic", size = rel(2.5)) +
-    annotate(geom = "text", x = 0.25, y = -arrow_ymax / 1.75, label = "Replay model\nbetter",
-             color = "black", angle = 90, fontface = "italic", size = rel(2.5)) +
     ggtitle("Change in replay over runs") +
     theme(plot.title = element_text(hjust = 0.5, face = "bold")) +
-    geom_segment(aes(
-      x = 5.5, xend = 5.5, y = 2.5, yend = arrow_y_change),
-      arrow = arrow(length = unit(3, "pt"), type = "closed"), color = "red") +
-    annotate(geom = "text", x = 5.5, y = 3.5, label = "graph structure\nchange",
-             color = "red", angle = 0, fontface = "plain", size = rel(3))
+    theme_zoo() +
+    coord_capped_cart(left = "both", bottom = "both", expand = TRUE, ylim = c(-10, 5))
+  figure <- add_arrows(figure)
   return(figure)
 }
 
