@@ -266,6 +266,48 @@ prep_sr_matrices <- function(cfg, paths) {
   
 }
 
+prep_sr_modeling_data <- function(cfg, paths) {
+  get_data(paths$input_sr_modeling_data)
+  get_data(paths$input_sr_base_modeling_data)
+  get_data(paths$input_sr_onestep_modeling_data)
+  dt_input_sr <- load_data(paths$input_sr_modeling_data) %>%
+    .[iter == 1, ] %>%
+    .[process == "model_fitting", ]
+  dt_input_sr_base <- load_data(paths$input_sr_base_modeling_data) %>%
+    .[iter == 1, ] %>%
+    .[process == "model_fitting", ]
+  dt_input_sr_onestep <- load_data(paths$input_sr_onestep_modeling_data) %>%
+    .[iter == 1, ] %>%
+    .[process == "model_fitting", ]
+  dt_input <- rbindlist(list(dt_input_sr, dt_input_sr_base, dt_input_sr_onestep), fill = TRUE)
+  dt_demographics <- load_data(paths$source$demographics) %>%
+    .[!(id %in% cfg$sub_exclude), ]
+  dt_sr_params <- load_data(paths$source$behavior_sr_fit_parameters) %>%
+    .[variable %in% c("alpha", "gamma"), ] %>%
+    .[, c("id", "variable", "value", "model_name", "process")] %>%
+    pivot_wider(id_cols = c("id", "model_name", "process"), names_from = "variable")
+  parameter_names <- c("alpha", "gamma")
+  num_params <- length(parameter_names)
+  dt_output <- dt_input %>%
+    .[!(id %in% cfg$sub_exclude), ] %>%
+    .[, model_name := dplyr::case_when(
+      model_name == "sr_onestep" ~ "SR + 1-step",
+      model_name == "sr" ~ "SR",
+      model_name == "sr_base" ~ "1-step"
+    )] %>%
+    .[, model_name := factor(as.factor(model_name), levels = c("SR + 1-step", "SR", "1-step"))] %>%
+    .[, process := dplyr::case_when(
+      process == "model_fitting" ~ "Model Fitting",
+      process == "parameter_recovery" ~ "Parameter Recovery"
+    )] %>%
+    merge.data.table(x = ., y = dt_demographics, by = c("id", "order")) %>%
+    merge.data.table(x = ., y = dt_sr_params, by = c("id", "model_name", "process")) %>%
+    .[, id := as.factor(as.character(id))] %>%
+    # .[, by = .(process), .(num_subs = length(unique(id)))]
+    verify(.[, by = .(process), .(num_subs = length(unique(id)))]$num_subs == cfg$num_subs) %>%
+    save_data(paths$source$behavior_sr_fit_data)
+}
+
 prepare_data_mri_rest <- function(cfg, paths) {
   dt_input <- load_data(paths$input_mri_rest)
   dt_output <- dt_input %>%

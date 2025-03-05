@@ -177,6 +177,9 @@ create_paths <- function() {
   paths$input_sr_modeling <- file.path(path_root, "input", "sr-modeling", "modeling", "sub-*-sr.csv")
   paths$input_sr_base_modeling <- file.path(path_root, "input", "sr-modeling", "modeling", "sub-*-sr_base.csv")
   paths$input_sr_onestep_modeling <- file.path(path_root, "input", "sr-modeling", "modeling", "sub-*-sr_onestep.csv")
+  paths$input_sr_modeling_data <- file.path(path_root, "input", "sr-modeling", "modeling", "sub-*-sr_fit-data.csv")
+  paths$input_sr_base_modeling_data <- file.path(path_root, "input", "sr-modeling", "modeling", "sub-*-sr_base*-data.csv")
+  paths$input_sr_onestep_modeling_data <- file.path(path_root, "input", "sr-modeling", "modeling", "sub-*-sr_onestep*-data.csv")
   paths$input_mri_rest <- file.path(paths$input, "decoding", "sub-*", "decoding", "*scheme-7*_time_shift-4*decoding*")
   paths$input_mri_single_peak <- c(
     file.path(paths$input, "decoding", "sub-*", "decoding", "*scheme-0*_time_shift-4*decoding*"),
@@ -238,6 +241,7 @@ create_paths <- function() {
   paths$source$behavior_sr_grid_seq_mean_lme <- sprintf(source_path, "behavior_sr_seq_mean_lme")
   # paths: analysis of behavioral data from successor representation model fitting:
   paths$source$behavior_sr_fit_parameters <- sprintf(source_path, "behavior_sr_fit_parameters")
+  paths$source$behavior_sr_fit_data <- sprintf(source_path, "behavior_sr_fit_data")
   paths$source$behavior_sr_fit_starting_values <- sprintf(source_path, "behavior_sr_fit_starting_values")
   paths$source$behavior_sr_fit_parameter_dispersion <- sprintf(source_path, "behavior_sr_fit_parameter_dispersion")
   paths$source$behavior_sr_fit_parameter_distribution <- sprintf(source_path, "behavior_sr_fit_parameter_distribution")
