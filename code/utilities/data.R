@@ -217,7 +217,7 @@ prep_sr_modeling <- function(cfg, paths) {
       model_name == "sr" ~ "SR",
       model_name == "sr_base" ~ "1-step"
     )] %>%
-    .[, model_name := factor(as.factor(model_name), levels = c("SR + 1-step", "SR", "1-step"))] %>%
+    .[, model_name := factor(as.factor(model_name), levels = c("1-step", "SR", "SR + 1-step"))] %>%
     .[, process := dplyr::case_when(
       process == "model_fitting" ~ "Model Fitting",
       process == "parameter_recovery" ~ "Parameter Recovery"
@@ -235,7 +235,7 @@ prep_sr_matrices <- function(cfg, paths) {
   dt_behav_task <- load_data(paths$source$behavior_task)
   dt_sr_params <- load_data(paths$source$behavior_sr_fit_parameters) %>%
     .[process == "Model Fitting", ] %>%
-    .[model_name == "SR", ] %>%
+    .[model_name == "SR + 1-step", ] %>%
     .[mod == "model", ] %>%
     .[iter == 1, ] %>%
     .[variable %in% c("alpha", "gamma"), ] %>%

@@ -44,7 +44,7 @@ plot_sr_modeling <- function(cfg, paths) {
       plot_behavior_sr_fit_model_comparison_sum_aic(cfg, paths),
       plot_behavior_sr_fit_parameter_mean(cfg, paths),
       plot_behavior_sr_fit_suprise_effect(cfg, paths),
-      nrow = 1, ncol = 4, labels = c("a", "b", "c", "d"), rel_widths = c(0.3, 0.25, 0.25, 0.2)
+      nrow = 1, ncol = 4, labels = c("a", "b", "c", "d"), rel_widths = c(0.3, 0.25, 0.15, 0.3)
     ),
     plot_grid(
       plot_behavior_sr_fit_parameter_order(cfg, paths),
@@ -57,7 +57,7 @@ plot_sr_modeling <- function(cfg, paths) {
     ),
     nrow = 3, ncol = 1, rel_heights = c(0.3, 0.3, 0.4)
   )
-  save_figure(plot = figure, "sr_modeling", width = 8, height = 10)
+  save_figure(plot = figure, "sr_modeling", width = 9, height = 10)
   return(figure)
 }
 
@@ -89,7 +89,7 @@ plot_sr_modeling_sr_onestep <- function(cfg, paths) {
     plot_behavior_sr_fit_suprise_effect(cfg, paths),
     nrow = 1, ncol = 2, rel_widths = c(0.4, 0.6), labels = letters[1:2]
   )
-  save_figure(plot = figure, "sr_modeling__sr_onestep", width = 8, height = 5)
+  save_figure(plot = figure, "sr_modeling_sr_onestep", width = 8, height = 5)
   return(figure)
 }
 
