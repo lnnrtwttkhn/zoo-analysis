@@ -93,9 +93,14 @@ get_decoding_main_model_input <- function(cfg, paths) {
     .[, c("id", "sequence_detected")]
   dt_behav_sr <- load_data(paths$source$behavior_sr_fit_sr_matrices) %>%
     .[condition == "Sequence", ]
+  dt_behav_sr_data <- load_data(paths$source$behavior_sr_fit_data) %>%
+    .[model_name == "SR + 1-step", ] %>%
+    .[process == "Model Fitting", ] %>%
+    .[, c("id", "run", "trial_run", "shannon_surprise")]
   dt_model <- dt_main_stim %>%
     merge.data.table(., dt_behav_sr, by.x = col_names_x, by.y = col_names_y, all.x = TRUE) %>%
     merge.data.table(., dt_demographics, by = c("id")) %>%
+    merge.data.table(., dt_behav_sr_data, by = c("id", "run", "trial_run")) %>%
     .[!(id %in% cfg$sub_exclude), ] %>%
     .[interval_tr %in% seq(1, 8), ] %>%
     .[trial_run > 1, ] %>%
@@ -172,11 +177,12 @@ get_decoding_main_model_residuals <- function(cfg, paths) {
       alpha = list(alpha)
       gamma = list(gamma)
       sequence_detected = list(as.character(sequence_detected))
+      shannon_surprise = list(shannon_surprise)
       trial_index = list(trial_index)
       N = .N
-      list(model_formula, model_name, model_number, residual, prediction, dist_graph, id, alpha, gamma, sequence_detected, trial_index, N)
+      list(model_formula, model_name, model_number, residual, prediction, dist_graph, id, alpha, gamma, sequence_detected, shannon_surprise, trial_index, N)
     }] %>%
-    unnest(., c(residual, prediction, dist_graph, id, alpha, gamma, sequence_detected, trial_index)) %>%
+    unnest(., c(residual, prediction, dist_graph, id, alpha, gamma, sequence_detected, shannon_surprise, trial_index)) %>%
     setDT(.) %>%
     .[, alpha_group := dplyr::case_when(
       round(alpha, 2) == 0.01 ~ sprintf("%s ~ 0.01", cfg$alpha_utf),
@@ -207,18 +213,12 @@ get_decoding_main_model_residuals_mean <- function(cfg, paths) {
 get_decoding_main_model_residuals_slope <- function(cfg, paths) {
   dt_input <- load_data(paths$source$decoding_main_model_residuals)
   dt_output <- dt_input %>%
-    .[, by = .(id, roi, sequence_detected, alpha_group, gamma_group, model_name, graph, trial_index, interval_tr), .(
+    .[, by = .(id, roi, sequence_detected, shannon_surprise, alpha_group, gamma_group, model_name, graph, trial_index, interval_tr), .(
       num_nodes = .N,
       slope = coef(lm(residual ~ dist_graph))[2] * (-1)
     )] %>%
     verify(num_nodes == cfg$num_nodes - 1) %>%
     .[, num_nodes := NULL] %>%
-    .[, by = .(id, roi, sequence_detected, alpha_group, gamma_group, model_name, graph, interval_tr), .(
-      num_trials = .N,
-      mean_slope = mean(slope)
-    )] %>%
-    verify(num_trials <= cfg$decoding_sequence$max_trials_graph) %>%
-    .[, num_trials := NULL] %>%
     save_data(paths$source$decoding_main_model_residuals_slope)
 }
 
@@ -233,6 +233,12 @@ get_decoding_main_model_residuals_slope_stat <- function(cfg, paths) {
     alternative = "two.sided"
   )
   dt_output <- dt_input %>%
+    .[, by = .(id, roi, sequence_detected, shannon_surprise, alpha_group, gamma_group, model_name, graph, interval_tr), .(
+      num_trials = .N,
+      mean_slope = mean(slope)
+    )] %>%
+    verify(num_trials <= cfg$decoding_sequence$max_trials_graph) %>%
+    .[, num_trials := NULL] %>%
     melt(id.vars = c("id", "roi", "model_name", "graph", "interval_tr"), measure.vars = c("mean_slope")) %>%
     .[model_name == "Stimulus", ] %>%
     .[, by = .(roi, model_name, graph, interval_tr, variable), .(ttest = list(get_ttest(.SD, ttest_cfg)))] %>%
@@ -255,6 +261,12 @@ get_decoding_main_model_residuals_slope_stat_group <- function(cfg, paths, group
   save_path <- paste(paths$source$decoding_main_model_residuals_slope_stat, group, sep = "_")
   dt_input$group <- dt_input[, ..group]
   dt_output <- dt_input %>%
+    .[, by = .(id, roi, sequence_detected, shannon_surprise, alpha_group, gamma_group, model_name, graph, interval_tr), .(
+      num_trials = .N,
+      mean_slope = mean(slope)
+    )] %>%
+    verify(num_trials <= cfg$decoding_sequence$max_trials_graph) %>%
+    .[, num_trials := NULL] %>%
     melt(id.vars = c("id", "roi", "group", "model_name", "graph", "interval_tr"), measure.vars = c("mean_slope")) %>%
     .[model_name == "Stimulus", ] %>%
     # remove subgroups with n = 1:
@@ -267,6 +279,54 @@ get_decoding_main_model_residuals_slope_stat_group <- function(cfg, paths, group
     setorder(., group, roi, model_name, graph, interval_tr) %>%
     save_data(save_path)
 }
+
+get_decoding_main_model_residuals_surprise <- function(cfg, paths) {
+  dt_input <- load_data(paths$source$decoding_main_model_residuals_slope)
+  dt_output <- dt_input %>%
+    .[, by = .(id, alpha_group, gamma_group, sequence_detected, roi, graph, model_name, interval_tr), .(
+      num_trials = .N,
+      cor = list(broom::tidy(cor.test(shannon_surprise, abs(slope), method = "pearson")))
+    )] %>%
+    verify(num_trials <= cfg$decoding_sequence$max_trials_graph) %>%
+    unnest(cor) %>%
+    setDT(.) %>%
+    get_pvalue_adjust(., list(adjust_method = "fdr")) %>%
+    .[model_name == "Stimulus", ] %>%
+    .[roi == "visual", ] %>%
+    .[graph == "uni", ]
+    # .[, by = .(roi, graph, model_name, interval_tr), .(
+    #   num_subs = .N,
+    #   mean_cor = mean(estimate)
+    # )] %>%
+    # verify(num_subs == cfg$num_subs)
+}
+
+figure <- ggplot(dt_output, aes(x = as.factor(interval_tr), y = as.numeric(estimate))) +
+  # annotate("rect", xmin = 1, xmax = 4.5, ymin = -Inf, ymax = Inf, alpha = 0.2, fill = "lightgray") +
+  # annotate("rect", xmin = 4.5, xmax = 8, ymin = -Inf, ymax = Inf, alpha = 0.2, fill = "darkgray") +
+  geom_hline(yintercept = 0, color = "gray") +
+  stat_summary(aes(group = as.factor(model_name), fill = as.factor(model_name)),
+               geom = "ribbon", fun.data = "mean_se", color = NA, alpha = 0.3) +
+  stat_summary(aes(group = as.factor(model_name), color = as.factor(model_name)),
+               geom = "line", fun = "mean") +
+  stat_summary(aes(group = as.factor(model_name), color = as.factor(model_name)),
+               geom = "point", fun = "mean") +
+  ylab("Correlation between Shannon surprise and residuals slope") +
+  xlab("Time from inter-trial interval onset") +
+  # facet_grid(vars(roi), vars(graph), scales = "free_y") +
+  facet_wrap(~ gamma_group) + 
+  theme_zoo() +
+  coord_capped_cart(left = "both", bottom = "both", expand = TRUE) +
+  scale_x_discrete(labels = label_fill(seq(1, 8, 1), mod = 1), breaks = seq(1, 8, 1)) +
+  scale_color_manual(values = cfg$colors_dist, name = "Node distance") +
+  scale_fill_manual(values = cfg$colors_dist, name = "Node distance") +
+  theme(legend.position = "bottom", legend.box = "horizontal") +
+  guides(fill = guide_legend(title.position = "top", title.hjust = 0.5)) +
+  guides(color = guide_legend(nrow = 1, ncol = 6)) +
+  theme(legend.margin = margin(t = 0, r = 0, b = 0, l = 0)) +
+  theme(legend.box.margin = margin(t = 0, r = 0, b = 0, l = 0)) +
+  theme(plot.title = element_text(hjust = 0.5, face = "bold"))
+
 
 get_decoding_main_model_prediction <- function(cfg, paths) {
   dt_input <- load_data(paths$source$decoding_main_model_input)
