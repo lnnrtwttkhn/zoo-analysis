@@ -122,6 +122,8 @@ plot_behavior_sr_fit_model_comparison_sum_aic <- function(cfg, paths) {
     ylab("AIC") +
     xlab("Model") +
     theme_zoo() +
+    scale_x_discrete(labels = label_wrap(10)) +
+    scale_fill_manual(values = cfg$colors_models) +
     coord_capped_cart(left = "both", bottom = "both", ylim = c(NA, ymax)) +
     theme(axis.line.x = element_line(color = "white")) +
     theme(axis.ticks.x = element_line(color = "white")) +
@@ -136,7 +138,7 @@ plot_behavior_sr_fit_model_comparison_sum_aic <- function(cfg, paths) {
 plot_behavior_sr_fit_model_comparison_sum_bic <- function(cfg, paths) {
   dt_input <- load_data(paths$source$behavior_sr_fit_model_comparison) %>%
     .[variable == "bic", ]
-  ymax <- -100300
+  ymax <- -111850
   figure <- ggplot(data = dt_input, aes(x = model_name, y = value)) +
     stat_summary(geom = "bar", fun = "sum") +
     ylab("BIC") +
@@ -258,7 +260,9 @@ plot_sr_timecourse <- function() {
 plot_behavior_sr_fit_parameter_mean <- function(cfg, paths) {
   dt_input <- load_data(paths$source$behavior_sr_fit_parameter_distribution) %>%
     .[process == "Model Fitting", ] %>%
-    .[model_name == "SR", ] %>%
+    .[model_name == "SR + 1-step", ] %>%
+    .[, variable := ifelse(variable == "alpha", cfg$alpha_utf, variable)] %>%
+    .[, variable := ifelse(variable == "gamma", cfg$gamma_utf, variable)] %>%
     verify(length(unique(id)) == cfg$num_subs)
   figure <- ggplot(data = dt_input, aes(x = variable, y = value)) +
     geom_boxplot(outlier.shape = NA, width = 0.5, color = "black") +
@@ -281,10 +285,10 @@ plot_behavior_sr_fit_parameter_mean <- function(cfg, paths) {
 plot_behavior_sr_fit_parameter_order <- function(cfg, paths) {
   dt1 <- load_data(paths$source$behavior_sr_fit_parameter_distribution) %>%
     .[process == "Model Fitting", ] %>%
-    .[model_name == "SR", ]
+    .[model_name == "SR + 1-step", ]
   dt2 <- load_data(paths$source$behavior_sr_fit_parameter_order) %>%
     .[process == "Model Fitting", ] %>%
-    .[model_name == "SR", ]
+    .[model_name == "SR + 1-step", ]
   figure <- ggplot(data = dt1, aes(x = order, y = value)) +
     geom_boxplot(outlier.shape = NA, width = 0.5, color = "black") +
     geom_beeswarm(alpha = 0.3) +
@@ -312,10 +316,10 @@ plot_behavior_sr_fit_parameter_order <- function(cfg, paths) {
 plot_behavior_sr_fit_parameter_conscious <- function(cfg, paths) {
   dt1 <- load_data(paths$source$behavior_sr_fit_parameter_distribution) %>%
     .[process == "Model Fitting", ] %>%
-    .[model_name == "SR", ]
+    .[model_name == "SR + 1-step", ]
   dt2 <- load_data(paths$source$behavior_sr_fit_parameter_conscious) %>%
     .[process == "Model Fitting", ] %>%
-    .[model_name == "SR", ]
+    .[model_name == "SR + 1-step", ]
   figure <- ggplot(data = dt1, aes(x = sequence_detected, y = value)) +
     geom_boxplot(outlier.shape = NA, width = 0.5, color = "black") +
     geom_beeswarm(alpha = 0.3) +
@@ -344,19 +348,22 @@ plot_behavior_sr_fit_suprise_effect <- function(cfg, paths) {
   dt1 <- load_data(paths$source$behavior_sr_fit_suprise_effect) %>%
     .[process == "Model Fitting", ] %>%
     .[variable %in% c("SR-based\nsurprise", "1-step\nprobability"), ] %>%
-    .[model_name %in% c("SR", "SR + 1-step"), ]
+    # .[model_name %in% c("SR", "SR + 1-step"), ]
+    .[model_name %in% c("SR + 1-step"), ]
   dt2 <- load_data(paths$source$behavior_sr_fit_suprise_effect_num) %>%
-    .[significance == "yes", ]
+    .[significance == "yes", ] %>%
+    # .[model_name %in% c("SR", "SR + 1-step"), ]
+  .[model_name %in% c("SR + 1-step"), ]
   figure <- ggplot(data = dt1, aes(x = variable, y = value_log_20)) +
     geom_hline(yintercept = log(0.05, base = 20), linetype = "dashed", color = "black") +
     geom_boxplot(outlier.shape = NA, width = 0.5, color = "black") +
     geom_beeswarm(alpha = 0.3) +
-    geom_text(data = dt2, aes(label = text_label, y = Inf, vjust = 1.5)) +
+    geom_text(data = dt2, aes(label = text_label, y = Inf, vjust = 1)) +
     ylab("p-value\n(base-20 log-transformed)") +
     xlab("Model regressors") +
     theme_zoo() +
-    facet_wrap(~ model_name) +
-    coord_capped_cart(left = "both", expand = TRUE, ylim = c(-20, 3)) +
+    # facet_wrap(~ model_name) +
+    coord_capped_cart(left = "both", expand = TRUE, ylim = c(-20, 4)) +
     scale_y_continuous(limits = c(-20, 0)) +
     theme(axis.ticks.x = element_blank()) +
     theme(axis.line.x = element_blank())
@@ -378,7 +385,6 @@ plot_behavior_sr_fit_response_time_alpha <- function(cfg, paths) {
     ggtitle("Correlation between alpha and response time") +
     # ggtitle("Betas of SR + 1-step model\n(bidirectional graph)") +
     theme(plot.title = element_text(hjust = 0.5, face = "bold"))
-  figure
   return(figure)
 }
 
@@ -466,7 +472,7 @@ plot_sr_matrices <- function(cfg, paths) {
 
 plot_sr_matrices_select <- function(cfg, paths) {
   dt_input <- load_data(paths$source$behavior_sr_fit_sr_matrices_plot) %>%
-    .[id %in% c("sub-04", "sub-42")]
+    .[id %in% c("sub-06", "sub-43")]
   order_factor <- list()
   order_factor["uni - bi"] <- list(c("run-01 (uni)", "run-02 (uni)", "run-03 (uni)", "run-03 (bi)", "run-04 (bi)", "run-05 (bi)"))
   order_factor["bi - uni"] <- list(c("run-01 (bi)", "run-02 (bi)", "run-03 (bi)", "run-03 (uni)", "run-04 (uni)", "run-05 (uni)"))

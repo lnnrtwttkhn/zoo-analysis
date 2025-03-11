@@ -159,6 +159,8 @@ get_behavior_sr_fit_parameter_distribution <- function(cfg, paths) {
     .[mod == "model"] %>%
     .[!is.na(process), ] %>%
     .[variable %in% c("alpha", "gamma")] %>%
+    .[, variable := ifelse(variable == "alpha", cfg$alpha_utf, variable)] %>%
+    .[, variable := ifelse(variable == "gamma", cfg$gamma_utf, variable)] %>%
     .[iter == 1, ] %>%
     save_data(paths$source$behavior_sr_fit_parameter_distribution)
 }
@@ -213,6 +215,17 @@ get_behavior_sr_fit_model_comparison_stat <- function(cfg, paths) {
   #   save_data(paths$source$behavior_sr_fit_model_comparison_stat)
 }
 
+get_behavior_sr_fit_parameter_mean <- function(cfg, paths) {
+  dt_input <- load_data(paths$source$behavior_sr_fit_parameter_distribution)
+  dt_output <- dt_input %>%
+    .[, by = .(process, model_name, variable), .(
+      mean_value = round(mean(value), 2),
+      sd_value = round(sd(value), 2),
+      num_subs = .N
+    )] %>% 
+    verify(num_subs == cfg$num_subs)
+}
+
 get_behavior_sr_fit_parameter_conscious <- function(cfg, paths) {
   dt_input <- load_data(paths$source$behavior_sr_fit_parameter_distribution)
   ttest_cfg <- list(
@@ -227,6 +240,7 @@ get_behavior_sr_fit_parameter_conscious <- function(cfg, paths) {
     .[, by = .(process, model_name, variable), .(ttest = list(get_ttest(.SD, ttest_cfg)))] %>%
     unnest(ttest) %>%
     get_pvalue_adjust(., ttest_cfg) %>%
+    # .[model_name == "SR + 1-step", ]
     save_data(paths$source$behavior_sr_fit_parameter_conscious)
 }
 
@@ -244,6 +258,7 @@ get_behavior_sr_fit_parameter_order <- function(cfg, paths) {
     .[, by = .(process, model_name, variable), .(ttest = list(get_ttest(.SD, ttest_cfg)))] %>%
     unnest(ttest) %>%
     get_pvalue_adjust(., ttest_cfg) %>%
+    .[model_name == "SR + 1-step", ]
     save_data(paths$source$behavior_sr_fit_parameter_order)
 }
 
@@ -394,7 +409,7 @@ get_behavior_sr_fit_response_time_onestep <- function(cfg, paths) {
   dt1 <- load_data(paths$source$behavior_sequence_onestep)
   dt2 <- load_data(paths$source$behavior_sr_fit_parameters) %>%
     .[process == "model_fitting", ] %>%
-    .[model_name == "SR", ] %>%
+    .[model_name == "SR + 1-step", ] %>%
     .[iter %in% 1] %>%
     .[variable %in% c("gamma"), ]
   dt_output <- merge(dt1, dt2) %>%
@@ -413,7 +428,7 @@ get_behavior_sr_fit_response_time_onestep_diff <- function(cfg, paths) {
   dt1 <- load_data(paths$source$behavior_sequence_onestep_run_glm)
   dt2 <- load_data(paths$source$behavior_sr_fit_parameters) %>%
     .[process == "Model Fitting", ] %>%
-    .[model_name == "SR", ] %>%
+    .[model_name == "SR + 1-step", ] %>%
     .[iter %in% 1] %>%
     .[variable %in% c("alpha", "gamma"), ]
   dt_output <- merge(dt1, dt2) %>%

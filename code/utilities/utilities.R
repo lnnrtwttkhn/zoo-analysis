@@ -25,6 +25,7 @@ load_packages <- function() {
   library("broom.mixed")
   library("tibble")
   library("cowplot")
+  library("scales")
 }
 
 load_config <- function() {
@@ -52,7 +53,7 @@ load_config <- function() {
   cfg$condition_levels <- c("Training", "Single", "Sequence")
   cfg$graph_levels <- c("uni", "bi", "flat")
   cfg$alpha_utf <- "\u03B1"
-  cfg$gamma_utf <- "\u0263"
+  cfg$gamma_utf <- "\u03B3"
   cfg$beta_utf <- "\u03B2"
   # set plotting colors:
   cfg$colors_probability = hcl.colors(4, "Dark Mint")
@@ -64,6 +65,7 @@ load_config <- function() {
   cfg$colors_decoding_current <- rev(hcl.colors(5, "Inferno")[c(1,3)])
   cfg$colors_predictors <- c("darkblue", "darkred", "darkgray")
   cfg$shapes_predictors <- c(15, 16, 17)
+  cfg$colors_models <- rev(gg_color_hue(3))
   # configuration parameters for questionnaire data:
   cfg$questionnaire$num_trials <- 30
   # configuration parameters for sequence trial behavioral data:
@@ -724,6 +726,11 @@ sr_mat_fun = function(node_previous, node, alpha, gamma){
   sr_mat = c(list(sr_mat[[1]]), sr_mat)
   bits = c(NA, bits)
   return(list(sr_mat))
+}
+
+gg_color_hue <- function(n) {
+  hues <- seq(15, 375, length = n + 1)
+  hcl(h = hues, l = 65, c = 100)[1:n]
 }
 
 label_fill <- function(original, offset = 0, mod = 2, fill = "") {

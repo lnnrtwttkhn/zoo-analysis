@@ -132,7 +132,7 @@ plot_behavior_sr_fit_parameter_recovery(cfg, paths)
 get_behavior_sr_fit_parameter_recovery_corr(cfg, paths)
 plot_behavior_sr_fit_parameter_recovery_corr(cfg, paths)
 get_behavior_sr_fit_parameter_recovery_corr_stat(cfg, paths)
-plot_sr_modeling_parameter_receovery(cfg, paths)
+plot_behavior_sr_fit_parameter_recovery(cfg, paths)
 ```
 
 ```{r}
