@@ -279,12 +279,15 @@ plot_decoding_main_model_residuals_slope(cfg, paths, roi_input = "visual", graph
 get_decoding_main_model_residuals_slope_stat_group(cfg, paths, group = "alpha_group")
 get_decoding_main_model_residuals_slope_stat_group(cfg, paths, group = "gamma_group")
 get_decoding_main_model_residuals_slope_stat_group(cfg, paths, group = "sequence_detected")
+get_decoding_main_model_residuals_slope_stat_group(cfg, paths, group = "surprise_group")
 plot_decoding_main_model_residuals(cfg, paths, roi_input = "visual", graph_input = "uni", group = "alpha_group")
 plot_decoding_main_model_residuals(cfg, paths, roi_input = "visual", graph_input = "uni", group = "gamma_group")
 plot_decoding_main_model_residuals(cfg, paths, roi_input = "visual", graph_input = "uni", group = "sequence_detected")
+plot_decoding_main_model_residuals(cfg, paths, roi_input = "visual", graph_input = "uni", group = "surprise_group")
 plot_decoding_main_model_residuals_slope(cfg, paths, roi_input = "visual", graph_input = "uni", group = "alpha_group")
 plot_decoding_main_model_residuals_slope(cfg, paths, roi_input = "visual", graph_input = "uni", group = "gamma_group")
 plot_decoding_main_model_residuals_slope(cfg, paths, roi_input = "visual", graph_input = "uni", group = "sequence_detected")
+plot_decoding_main_model_residuals_slope(cfg, paths, roi_input = "visual", graph_input = "uni", group = "surprise_group")
 ```
 
 ```{r}

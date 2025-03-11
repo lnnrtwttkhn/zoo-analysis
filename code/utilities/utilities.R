@@ -255,7 +255,6 @@ create_paths <- function() {
   paths$source$behavior_sr_fit_suprise_effect_num <- sprintf(source_path, "behavior_sr_fit_suprise_effect_num")
   paths$source$behavior_sr_fit_sr_matrices <- sprintf(source_path, "behavior_sr_fit_sr_matrices")
   paths$source$behavior_sr_fit_sr_matrices_plot <- sprintf(source_path, "behavior_sr_fit_sr_matrices_plot")
-  paths$source$behavior_sr_fit_sr_matrices
   paths$source$behavior_sr_fit_response_time_alpha <- sprintf(source_path, "behavior_sr_fit_response_time_alpha")
   paths$source$behavior_sr_fit_response_time_alpha_stat <- sprintf(source_path, "behavior_sr_fit_response_time_alpha_stat")
   paths$source$behavior_sr_fit_response_time_glm <- sprintf(source_path, "behavior_sr_fit_response_time_glm")
@@ -308,6 +307,7 @@ create_paths <- function() {
   paths$source$decoding_main_model_prediction <- sprintf(source_path, "decoding_main_model_prediction")
   paths$source$decoding_main_model_residuals_mean <- sprintf(source_path, "decoding_main_model_residuals_mean")
   paths$source$decoding_main_model_residuals_slope <- sprintf(source_path, "decoding_main_model_residuals_slope")
+  paths$source$decoding_main_model_residuals_slope_mean <- sprintf(source_path, "decoding_main_model_residuals_slope_mean")
   paths$source$decoding_main_model_residuals_slope_stat <- sprintf(source_path, "decoding_main_model_residuals_slope_stat")
   paths$source$decoding_main_model_diff <- sprintf(source_path, "decoding_main_model_diff")
   paths$source$decoding_main_model_no_evoked <- sprintf(source_path, "decoding_main_model_no_evoked")

@@ -105,7 +105,7 @@ plot_decoding_main_model_residuals <- function(cfg, paths, roi_input, graph_inpu
 }
 
 plot_decoding_main_model_residuals_slope <- function(cfg, paths, roi_input, graph_input, group = NULL) {
-  dt1 <- load_data(paths$source$decoding_main_model_residuals_slope) %>%
+  dt1 <- load_data(paths$source$decoding_main_model_residuals_slope_mean) %>%
     .[graph == graph_input, ] %>%
     .[ roi == roi_input, ] %>%
     .[model_name == "Stimulus", ]
