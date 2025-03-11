@@ -196,6 +196,16 @@ plot_decoding_main_residuals_slope_alpha_gamma <- function(cfg, paths, roi_input
   return(figure)
 }
 
+plot_decoding_main_residuals_slope_surprise <- function(cfg, paths, roi_input, graph_input) {
+  figure <- plot_grid(
+    plot_decoding_main_model_residuals(cfg, paths, roi_input = "visual", graph_input = "uni", group = "surprise_group"),
+    plot_decoding_main_model_residuals_slope(cfg, paths, roi_input = "visual", graph_input = "uni", group = "surprise_group"),
+    nrow = 2, ncol = 1, labels = letters[1:2]
+  )
+  save_figure(plot = figure, "decoding_main_residuals_slope_surprise", width = 6, height = 7)
+  return(figure)
+}
+
 plot_brain_behavior <- function(cfg, paths, roi_input) {
   figure <- plot_grid(
     plot_grid(

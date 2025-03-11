@@ -304,7 +304,8 @@ prep_sr_modeling_data <- function(cfg, paths) {
     merge.data.table(x = ., y = dt_sr_params, by = c("id", "model_name", "process")) %>%
     .[, id := as.factor(as.character(id))] %>%
     # .[, by = .(process), .(num_subs = length(unique(id)))]
-    verify(.[, by = .(process), .(num_subs = length(unique(id)))]$num_subs == cfg$num_subs) %>%
+    .[, by = .(process, model_name, id), mean_surprise_last_5 := sapply(seq_len(.N), function(i) mean(shannon_surprise[max(1, i-4):i]))] %>%
+    verify(.[, by = .(process, model_name), .(num_subs = length(unique(id)))]$num_subs == cfg$num_subs) %>%
     save_data(paths$source$behavior_sr_fit_data)
 }
 

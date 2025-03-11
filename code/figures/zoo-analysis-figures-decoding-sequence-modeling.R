@@ -105,16 +105,17 @@ plot_decoding_main_model_residuals <- function(cfg, paths, roi_input, graph_inpu
 }
 
 plot_decoding_main_model_residuals_slope <- function(cfg, paths, roi_input, graph_input, group = NULL) {
-  dt1 <- load_data(paths$source$decoding_main_model_residuals_slope_mean) %>%
+  if (is.null(group)) {
+    path_dt1 <- paths$source$decoding_main_model_residuals_slope_mean
+    path_dt2 <- paths$source$decoding_main_model_residuals_slope_stat
+  } else if (!is.null(group))  {
+    path_dt1 <- paste(paths$source$decoding_main_model_residuals_slope_mean, group, sep = "_")
+    path_dt2 <- paste(paths$source$decoding_main_model_residuals_slope_stat, group, sep = "_")
+  }
+  dt1 <- load_data(path_dt1) %>%
     .[graph == graph_input, ] %>%
     .[ roi == roi_input, ] %>%
     .[model_name == "Stimulus", ]
-  if (is.null(group)) {
-    path_dt2 <- paths$source$decoding_main_model_residuals_slope_stat
-  } else if (!is.null(group))  {
-    path_dt2 <- paste(paths$source$decoding_main_model_residuals_slope_stat, group, sep = "_")
-    dt1$group = dt1[, ..group]
-  }
   dt2 <- load_data(path_dt2) %>%
     .[graph == graph_input, ] %>%
     .[ roi == roi_input, ] %>%

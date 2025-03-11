@@ -96,7 +96,7 @@ get_decoding_main_model_input <- function(cfg, paths) {
   dt_behav_sr_data <- load_data(paths$source$behavior_sr_fit_data) %>%
     .[model_name == "SR + 1-step", ] %>%
     .[process == "Model Fitting", ] %>%
-    .[, c("id", "run", "trial_run", "shannon_surprise")]
+    .[, c("id", "run", "trial_run", "shannon_surprise", "mean_surprise_last_5")]
   dt_model <- dt_main_stim %>%
     merge.data.table(., dt_behav_sr, by.x = col_names_x, by.y = col_names_y, all.x = TRUE) %>%
     merge.data.table(., dt_demographics, by = c("id")) %>%
@@ -178,16 +178,18 @@ get_decoding_main_model_residuals <- function(cfg, paths) {
       gamma = list(gamma)
       sequence_detected = list(as.character(sequence_detected))
       shannon_surprise = list(shannon_surprise)
+      mean_surprise_last_5 = list(mean_surprise_last_5)
       trial_index = list(trial_index)
       N = .N
-      list(model_formula, model_name, model_number, residual, prediction, dist_graph, id, alpha, gamma, sequence_detected, shannon_surprise, trial_index, N)
+      list(model_formula, model_name, model_number, residual, prediction, dist_graph, id, alpha, gamma, sequence_detected, shannon_surprise, mean_surprise_last_5, trial_index, N)
     }] %>%
-    unnest(., c(residual, prediction, dist_graph, id, alpha, gamma, sequence_detected, shannon_surprise, trial_index)) %>%
+    unnest(., c(residual, prediction, dist_graph, id, alpha, gamma, sequence_detected, shannon_surprise, mean_surprise_last_5, trial_index)) %>%
     setDT(.) %>%
-    .[, surprise_group := dplyr::case_when(
+    .[, by = .(id), surprise_group := dplyr::case_when(
       shannon_surprise < median(shannon_surprise) ~ "Low SR-based surprise",
-      shannon_surprise >= median(shannon_surprise) ~ "High SR-based surprise"
+      shannon_surprise > median(shannon_surprise) ~ "High SR-based surprise"
     )] %>%
+    .[!is.na(surprise_group), ] %>%
     .[, alpha_group := dplyr::case_when(
       round(alpha, 2) == 0.01 ~ sprintf("%s ~ 0.01", cfg$alpha_utf),
       round(alpha, 2) > 0.01 & round(alpha, 2) < 1 ~ sprintf("0.01 < %s < 1.00", cfg$alpha_utf),
@@ -205,7 +207,7 @@ get_decoding_main_model_residuals <- function(cfg, paths) {
 get_decoding_main_model_residuals_mean <- function(cfg, paths) {
   dt_input <- load_data(paths$source$decoding_main_model_residuals)
   dt_output <- dt_input %>%
-    .[, by = .(id, roi, sequence_detected, alpha_group, gamma_group, model_name, graph, interval_tr, dist_graph), .(
+    .[, by = .(id, roi, sequence_detected, alpha_group, gamma_group, surprise_group, model_name, graph, interval_tr, dist_graph), .(
       num_trials = .N,
       mean_residual = mean(residual)
     )] %>%
@@ -226,16 +228,18 @@ get_decoding_main_model_residuals_slope <- function(cfg, paths) {
     save_data(paths$source$decoding_main_model_residuals_slope)
 }
 
-get_decoding_main_model_residuals_slope_mean <- function(cfg, paths) {
+get_decoding_main_model_residuals_slope_mean <- function(cfg, paths, group = NULL) {
+  save_path <- paste(paths$source$decoding_main_model_residuals_slope_mean, group, sep = "_")
   dt_input <- load_data(paths$source$decoding_main_model_residuals_slope)
+  dt_input$group <- dt_input[, ..group]
   dt_output <- dt_input %>%
-    .[, by = .(id, roi, sequence_detected, alpha_group, gamma_group, surprise_group, model_name, graph, interval_tr), .(
+    .[, by = .(id, roi, model_name, graph, interval_tr, group), .(
       num_trials = .N,
       mean_slope = mean(slope)
     )] %>%
     verify(num_trials <= cfg$decoding_sequence$max_trials_graph) %>%
     .[, num_trials := NULL] %>%
-    save_data(paths$source$decoding_main_model_residuals_slope_mean)
+    save_data(save_path)
 }
 
 get_decoding_main_model_residuals_slope_stat <- function(cfg, paths) {
@@ -259,7 +263,9 @@ get_decoding_main_model_residuals_slope_stat <- function(cfg, paths) {
 }
 
 get_decoding_main_model_residuals_slope_stat_group <- function(cfg, paths, group = NULL) {
-  dt_input <- load_data(paths$source$decoding_main_model_residuals_slope_mean)
+  path_input <- paste(paths$source$decoding_main_model_residuals_slope_mean, group, sep = "_")
+  path_output <- paste(paths$source$decoding_main_model_residuals_slope_stat, group, sep = "_")
+  dt_input <- load_data(path_input)
   ttest_cfg <- list(
     lhs = "value",
     rhs = "1",
@@ -268,8 +274,6 @@ get_decoding_main_model_residuals_slope_stat_group <- function(cfg, paths, group
     mu = 0,
     alternative = "two.sided"
   )
-  save_path <- paste(paths$source$decoding_main_model_residuals_slope_stat, group, sep = "_")
-  dt_input$group <- dt_input[, ..group]
   dt_output <- dt_input %>%
     melt(id.vars = c("id", "roi", "group", "model_name", "graph", "interval_tr"), measure.vars = c("mean_slope")) %>%
     .[model_name == "Stimulus", ] %>%
@@ -281,7 +285,7 @@ get_decoding_main_model_residuals_slope_stat_group <- function(cfg, paths, group
     unnest(ttest) %>%
     get_pvalue_adjust(., ttest_cfg) %>%
     setorder(., group, roi, model_name, graph, interval_tr) %>%
-    save_data(save_path)
+    save_data(path_output)
 }
 
 get_decoding_main_model_residuals_surprise_cor <- function(cfg, paths) {
