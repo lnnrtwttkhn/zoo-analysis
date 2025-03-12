@@ -222,6 +222,10 @@ prep_sr_modeling <- function(cfg, paths) {
       process == "model_fitting" ~ "Model Fitting",
       process == "parameter_recovery" ~ "Parameter Recovery"
     )] %>%
+    .[, variable_label := dplyr::case_when(
+      variable == "alpha" ~ cfg$alpha_utf,
+      variable == "gamma" ~ cfg$gamma_utf
+    )] %>%
     # check if there are the expected number of parameter for each model:
     verify(.[mod == "model" & variable %in% parameter_names, by = .(id, process, model_name, iter), .(
       num_params = length(unique(variable))

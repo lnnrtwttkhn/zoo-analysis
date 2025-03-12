@@ -71,15 +71,15 @@ plot_sr_modeling_supplement <- function(cfg, paths) {
   return(figure)
 }
 
-plot_sr_modeling_parameter_receovery <- function(cfg, paths) {
+plot_sr_modeling_parameter_recovery <- function(cfg, paths) {
   figure <- plot_grid(
     plot_behavior_sr_fit_parameter_recovery_corr(cfg, paths),
     plot_behavior_sr_fit_parameter_recovery(cfg, paths),
     plot_behavior_sequence_response_time_onestep_run(cfg, paths),
     plot_behavior_sr_fit_response_time_onestep_diff(cfg, paths),
-    nrow = 2, ncol = 2, rel_heights = c(1/2, 1/2), labels = c("a", "b", "c", "d")
+    nrow = 2, ncol = 2, rel_widths = c(0.5, 0.5), labels = c("a", "b", "c", "d")
   )
-  save_figure(plot = figure, "sr_modeling_parameter_recovery", width = 10, height = 8)
+  save_figure(plot = figure, "sr_modeling_parameter_recovery", width = 12, height = 8)
   return(figure)
 }
 

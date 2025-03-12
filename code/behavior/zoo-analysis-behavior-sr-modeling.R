@@ -408,7 +408,7 @@ get_behavior_sr_fit_response_time_hafrun_glm <- function(cfg, paths) {
 get_behavior_sr_fit_response_time_onestep <- function(cfg, paths) {
   dt1 <- load_data(paths$source$behavior_sequence_onestep)
   dt2 <- load_data(paths$source$behavior_sr_fit_parameters) %>%
-    .[process == "model_fitting", ] %>%
+    .[process == "Model Fitting", ] %>%
     .[model_name == "SR + 1-step", ] %>%
     .[iter %in% 1] %>%
     .[variable %in% c("gamma"), ]
@@ -433,7 +433,7 @@ get_behavior_sr_fit_response_time_onestep_diff <- function(cfg, paths) {
     .[variable %in% c("alpha", "gamma"), ]
   dt_output <- merge(dt1, dt2) %>%
     save_data(paths$source$behavior_sr_fit_response_time_onestep_diff) %>%
-    .[, by = .(variable), .(
+    .[, by = .(variable, variable_label), .(
       num_subs = .N,
       cor = list(broom::tidy(cor.test(slope_diff, value, method = "pearson")))
     )] %>%
@@ -441,7 +441,7 @@ get_behavior_sr_fit_response_time_onestep_diff <- function(cfg, paths) {
     unnest(cor) %>%
     setDT(.) %>%
     get_pvalue_adjust(., list(adjust_method = "fdr")) %>%
-    .[, result := sprintf("r = %.2f, p = %.2f", estimate, p.value)] %>%
+    .[, result := sprintf("r = %.2f, p %s", estimate, p.value_round_label)] %>%
     save_data(paths$source$behavior_sr_fit_response_time_onestep_run_stat)
 }
 
@@ -482,7 +482,8 @@ get_behavior_sr_fit_parameter_recovery_corr_stat <- function(cfg, paths) {
       broom::tidy(cor.test(.$model_fitting, .$parameter_recovery, method = "pearson")),
       data.table(num_subs = nrow(.)))) %>%
     setDT(.) %>%
-    # TODO: FIX NUMBER OF PARTICIPANTS
-    # verify(num_subs == cfg$num_subs)
+    verify(num_subs == cfg$num_subs) %>%
+    get_pvalue_adjust(., list(adjust_method = "fdr")) %>%
+    .[, result := sprintf("r = %.2f, p %s", estimate, p.value_round_label)] %>%
     save_data(paths$source$behavior_sr_fit_parameter_recovery_corr_stat)
 }

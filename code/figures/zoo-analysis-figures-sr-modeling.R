@@ -392,10 +392,10 @@ plot_behavior_sr_fit_response_time_onestep_diff <- function(cfg, paths) {
   dt1 <- load_data(paths$source$behavior_sr_fit_response_time_onestep_diff)
   dt2 <- load_data(paths$source$behavior_sr_fit_response_time_onestep_run_stat)
   figure <- ggplot(dt1, aes(x = as.numeric(value), y = as.numeric(slope_diff))) +
-    facet_wrap(~ variable) +
+    facet_wrap(~ variable_label) +
     geom_point(aes(color = as.factor(id))) +
     geom_smooth(method = "lm", color = "black") +
-    geom_text(data = dt2, aes(y = Inf, x = 0.65, label = result, vjust = 2)) +
+    geom_text(data = dt2, aes(y = Inf, x = Inf, label = result), vjust = 2, size = 4, hjust = 1) +
     xlab("Parameter estimates") +
     ylab("Difference in learning slopes\nfor high vs. low probability transitions") +
     theme_zoo() +
@@ -403,7 +403,7 @@ plot_behavior_sr_fit_response_time_onestep_diff <- function(cfg, paths) {
     # scale_color_manual(values = cfg$dist_colors, name = "Predictor") +
     # scale_fill_manual(values = cfg$dist_colors, name = "Predictor") +
     # scale_shape_manual(name = "Predictor") +
-    ggtitle("Correlation between decrease in response time\n for high vs. low probability transitions\nand model parameter estimates") +
+    ggtitle("Correlation between decrease in response times\n for high vs. low probability transitions\nand model parameter estimates") +
     # ggtitle("Betas of SR + 1-step model\n(bidirectional graph)") +
     theme(plot.title = element_text(hjust = 0.5, face = "bold")) +
     theme(legend.position = "none") +
@@ -537,20 +537,25 @@ plot_behavior_sr_fit_parameter_recovery <- function(cfg, paths) {
     ylab("Parameter estimate") +
     theme_zoo() +
     coord_capped_cart(left = "both", bottom = "both", expand = TRUE) +
+    scale_y_continuous(labels = label_fill(seq(0, 1, 0.25), mod = 4), breaks = seq(0, 1, 0.25)) +
     theme(axis.title.x = element_blank())
    return(figure)
 }
 
 plot_behavior_sr_fit_parameter_recovery_corr <- function(cfg, paths) {
-  dt_input <- load_data(paths$source$behavior_sr_fit_parameter_recovery_corr)
-  figure <- ggplot(data = dt_input, aes(x = model_fitting, y = parameter_recovery)) +
+  dt1 <- load_data(paths$source$behavior_sr_fit_parameter_recovery_corr)
+  dt2 <- load_data(paths$source$behavior_sr_fit_parameter_recovery_corr_stat)
+  figure <- ggplot(data = dt1, aes(x = model_fitting, y = parameter_recovery)) +
     facet_grid(vars(variable), vars(model_name)) +
     # geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "gray") +
+    geom_text(data = dt2, aes(y = Inf, x = 0, label = result), vjust = 2, hjust = 0, size = 4) +
     geom_smooth(method = "lm", fullrange = TRUE, color = "black") +
     geom_point(aes(color = id)) +
     theme(legend.position = "none") +
-    xlab("Parameter Recovery") +
-    ylab("Model fitting") +
+    xlab("Parameter estimate (Parameter Recovery)") +
+    ylab("Parameter estimate (Model Fitting)") +
+    # ggtitle("Parameter Recovery") +
+    theme(plot.title = element_text(hjust = 0.5, face = "bold")) +
     theme_zoo() +
     coord_capped_cart(left = "both", bottom = "both", expand = TRUE) +
     scale_y_continuous(labels = label_fill(seq(0, 1, 0.25), mod = 4), breaks = seq(0, 1, 0.25)) +
