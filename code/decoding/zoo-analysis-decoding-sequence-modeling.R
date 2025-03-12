@@ -447,7 +447,7 @@ get_decoding_main_model_betas_id <- function(cfg, paths) {
 get_decoding_main_model_betas_behav <- function(cfg, paths) {
   dt_sr_fits <- load_data(paths$source$behavior_sr_fit_parameter_distribution) %>%
     .[process == "Model Fitting", ] %>%
-    .[model_name == "SR", ] %>%
+    .[model_name == "SR + 1-step", ] %>%
     .[, c("id", "variable", "value")] %>%
     verify(.[, by = .(id), num_var := length(unique(variable))]$num_var == 2) %>%
     pivot_wider(id_cols = c("id"), names_from = variable, values_from = value)
@@ -460,7 +460,7 @@ get_decoding_main_model_betas_behav <- function(cfg, paths) {
     save_data(paths$source$decoding_main_model_betas_behav)
   dt_output <- dt_sr_beta %>%
     # .[, by = .(roi, interval_tr, predictor, variable), .(
-    .[, by = .(roi, graph, interval_tr, predictor, beta, sr_parameter), .(
+    .[, by = .(roi, graph, interval_tr, model_name, predictor, beta, sr_parameter), .(
       num_subs = .N,
       cor = list(broom::tidy(cor.test(beta_value, sr_parameter_value, method = "pearson")))
     )] %>%
@@ -475,27 +475,32 @@ get_decoding_main_model_betas_behav <- function(cfg, paths) {
 }
 
 get_decoding_main_model_betas_behav_cor_mean <- function(cfg, paths) {
-  dt_input <- load_data(paths$source$decoding_main_model_betas_behav) %>%
+  dt_input <- load_data(paths$source$decoding_main_model_betas_behav)
+  dt_output <- dt_input %>%
     # average beta and sr parameter estimates across TRs:
-    .[, by = .(id, roi, graph, predictor, beta, sr_parameter), .(
+    .[, by = .(id, roi, graph, model_name, predictor, beta, sr_parameter), .(
       num_trs = .N,
       beta_value = mean(beta_value),
       sr_parameter_value = unique(sr_parameter_value)
     )] %>%
     verify(num_trs == cfg$decoding_sequence$num_trs) %>%
     save_data(paths$source$decoding_main_model_betas_behav_cor_mean)
-  dt_sd <- dt_input %>%
-    .[, by = .(roi, graph, predictor), ":="(
-      num_subs = .N,
-      sd_group = sd(mean_estimate, na.rm = TRUE),
-      mean_group = mean(mean_estimate, na.rm = TRUE)
-    )] %>%
-    verify(num_subs == cfg$num_subs) %>%
-    .[, outlier_cutoff := abs(mean_estimate + 1 * sd_group)] %>%
-    .[, outlier := mean_estimate >= outlier_cutoff]
+  # dt_sd <- dt_input %>%
+  #   .[, by = .(roi, graph, predictor), ":="(
+  #     num_subs = .N,
+  #     sd_group = sd(mean_estimate, na.rm = TRUE),
+  #     mean_group = mean(mean_estimate, na.rm = TRUE)
+  #   )] %>%
+  #   verify(num_subs == cfg$num_subs) %>%
+  #   .[, outlier_cutoff := abs(mean_estimate + 1 * sd_group)] %>%
+  #   .[, outlier := mean_estimate >= outlier_cutoff]
+}
+
+get_decoding_main_model_betas_behav_cor_mean_stat <- function(cfg, paths) {
+  dt_input <- load_data(paths$source$decoding_main_model_betas_behav_cor_mean)
   dt_output <- dt_input %>%
     # .[mean_estimate <= 1, ] %>%
-    .[, by = .(roi, graph, predictor, beta, sr_parameter), .(
+    .[, by = .(roi, graph, model_name, predictor, beta, sr_parameter), .(
       num_subs = .N,
       cor = list(broom::tidy(cor.test(beta_value, sr_parameter_value, method = "pearson")))
     )] %>%
@@ -503,14 +508,10 @@ get_decoding_main_model_betas_behav_cor_mean <- function(cfg, paths) {
     unnest(cor) %>%
     setDT(.) %>%
     get_pvalue_adjust(., list(adjust_method = "bonferroni")) %>%
-    .[predictor %in% c("SR", "1-step"), ] %>%
-    .[roi == "visual", ] %>%
-    .[graph == "uni", ] %>%
-    .[beta == "estimate_abs", ]
-  dt_output$report_latex
-    # .[, by = .(predictor), .(min_p = min(p.value))]
+    .[, result := sprintf("r = %.2f, p %s", estimate, p.value_round_label)] %>%
+    save_data(paths$source$decoding_main_model_betas_behav_cor_mean_stat) %>%
+    .[p.value < 0.05, ]
 }
-
 
 
 get_decoding_main_model_results_report <- function(cfg, paths) {

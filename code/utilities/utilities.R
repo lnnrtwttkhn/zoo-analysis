@@ -304,6 +304,7 @@ create_paths <- function() {
   paths$source$decoding_main_model_betas_behav <- sprintf(source_path, "decoding_main_model_betas_behav")
   paths$source$decoding_main_model_betas_behav_cor <- sprintf(source_path, "decoding_main_model_betas_behav_cor")
   paths$source$decoding_main_model_betas_behav_cor_mean <- sprintf(source_path, "decoding_main_model_betas_behav_cor_mean")
+  paths$source$decoding_main_model_betas_behav_cor_mean_stat <- sprintf(source_path, "decoding_main_model_betas_behav_cor_mean_stat")
   paths$source$decoding_main_model_prediction <- sprintf(source_path, "decoding_main_model_prediction")
   paths$source$decoding_main_model_residuals_mean <- sprintf(source_path, "decoding_main_model_residuals_mean")
   paths$source$decoding_main_model_residuals_slope <- sprintf(source_path, "decoding_main_model_residuals_slope")

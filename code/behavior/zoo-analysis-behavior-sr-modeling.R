@@ -159,8 +159,8 @@ get_behavior_sr_fit_parameter_distribution <- function(cfg, paths) {
     .[mod == "model"] %>%
     .[!is.na(process), ] %>%
     .[variable %in% c("alpha", "gamma")] %>%
-    .[, variable := ifelse(variable == "alpha", cfg$alpha_utf, variable)] %>%
-    .[, variable := ifelse(variable == "gamma", cfg$gamma_utf, variable)] %>%
+    .[, variable_label := ifelse(variable == "alpha", cfg$alpha_utf, variable)] %>%
+    .[, variable_label := ifelse(variable == "gamma", cfg$gamma_utf, variable)] %>%
     .[iter == 1, ] %>%
     save_data(paths$source$behavior_sr_fit_parameter_distribution)
 }
