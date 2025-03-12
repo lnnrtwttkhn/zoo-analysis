@@ -328,11 +328,12 @@ plot_decoding_main_model_betas_behav_cor <- function(cfg, paths, roi_input) {
 }
 
 plot_decoding_main_model_betas_behav_cor_mean <- function(cfg, paths, roi_input, graph_input, predictor_input = NULL, sr_input = NULL) {
-  dt_input <- load_data(paths$source$decoding_main_model_betas_behav_cor_mean)
+  dt1 <- load_data(paths$source$decoding_main_model_betas_behav_cor_mean)
+  dt2 <- load_data(paths$source$decoding_main_model_betas_behav_cor_mean_stat)
   if (!is.null(sr_input)) {
-    dt_input <- dt_input %>% .[sr_parameter == sr_input]
+    dt1 <- dt1 %>% .[sr_parameter == sr_input]
   }
-  dt_input <- dt_input %>%
+  dt1 <- dt1 %>%
     .[beta == "estimate_abs", ] %>%
     .[roi == roi_input, ] %>%
     .[predictor == predictor_input, ] %>%
@@ -341,11 +342,22 @@ plot_decoding_main_model_betas_behav_cor_mean <- function(cfg, paths, roi_input,
       sr_parameter == "alpha" ~ cfg$alpha_utf,
       sr_parameter == "gamma" ~ cfg$gamma_utf
     )]
-  figure <- ggplot(dt_input, aes(x = as.numeric(sr_parameter_value), y = as.numeric(beta_value))) +
+  dt2 <- dt2 %>%
+    .[roi == roi_input, ] %>%
+    .[beta == "estimate_abs", ] %>%
+    .[roi == roi_input, ] %>%
+    .[predictor == predictor_input, ] %>%
+    .[graph == graph_input, ] %>%
+    .[, sr_parameter := dplyr::case_when(
+      sr_parameter == "alpha" ~ cfg$alpha_utf,
+      sr_parameter == "gamma" ~ cfg$gamma_utf
+    )]
+  figure <- ggplot(dt1, aes(x = as.numeric(sr_parameter_value), y = as.numeric(beta_value))) +
     geom_point(aes(color = as.factor(predictor), group = as.factor(id),
                    shape = as.factor(predictor))) +
     geom_smooth(method = "lm", aes(color = as.factor(predictor),
                                    fill = as.factor(predictor))) +
+    geom_text(data = dt2, aes(y = Inf, x = 0, label = result), vjust = 2, hjust = 0, size = 4) +
     ylab(sprintf("Absolute %s (of %s component)", cfg$beta_utf, predictor_input)) +
     xlab("Parameter estimate") +
     theme_zoo() +
@@ -355,7 +367,7 @@ plot_decoding_main_model_betas_behav_cor_mean <- function(cfg, paths, roi_input,
     scale_x_continuous(labels = label_fill(seq(0, 1, 0.25), mod = 2), breaks = seq(0, 1, 0.25)) +
     scale_fill_manual(name = "Predictor", values = cfg$colors_predictors) +
     scale_shape_manual(name = "Predictor", values = cfg$shapes_predictors) +
-    ggtitle("Relationship between SR fits\nand betas of SR + 1-step model") +
+    ggtitle(sprintf("Relationship between SR parameters\nand absolute %s of %s (SR + 1-step model)", cfg$beta_utf, predictor_input)) +
     theme(plot.title = element_text(hjust = 0.5, face = "bold")) +
     theme(legend.position = "none")
   return(figure)
