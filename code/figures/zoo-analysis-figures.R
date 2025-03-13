@@ -206,6 +206,32 @@ plot_decoding_main_residuals_slope_surprise <- function(cfg, paths, roi_input, g
   return(figure)
 }
 
+plot_decoding_main_residuals_slope_awareness <- function(cfg, paths, roi_input, graph_input) {
+  figure <- plot_grid(
+    ggdraw() + draw_label("Classification based on explicit binary report of sequence awarenes", hjust = 0.5, fontface = "bold"),
+    plot_grid(
+      plot_decoding_main_model_residuals(cfg, paths, roi_input = "visual", graph_input = "uni", group = "sequence_detected"),
+      plot_decoding_main_model_residuals_slope(cfg, paths, roi_input = "visual", graph_input = "uni", group = "sequence_detected"),
+      labels = c("a", "b")
+    ),
+    ggdraw() + draw_label("Classification based on ratings of pairwise transition probabilities", hjust = 0.5, fontface = "bold"),
+    plot_grid(
+      plot_decoding_main_model_residuals(cfg, paths, roi_input = "visual", graph_input = "uni", group = "rating_group"),
+      plot_decoding_main_model_residuals_slope(cfg, paths, roi_input = "visual", graph_input = "uni", group = "rating_group"),
+      labels = c("c", "d")
+    ),
+    ggdraw() + draw_label("Classification based on binary report and transition probability ratings", hjust = 0.5, fontface = "bold"),
+    plot_grid(
+      plot_decoding_main_model_residuals(cfg, paths, roi_input = "visual", graph_input = "uni", group = "knowledge_group"),
+      plot_decoding_main_model_residuals_slope(cfg, paths, roi_input = "visual", graph_input = "uni", group = "knowledge_group"),
+      labels = c("e", "f")
+    ),
+    nrow = 6, ncol = 1, rel_heights = c(0.05, 0.45, 0.05, 0.45, 0.05, 0.45)
+  )
+  save_figure(plot = figure, "decoding_main_residuals_slope_awareness", width = 10, height = 10)
+  return(figure)
+}
+
 plot_brain_behavior <- function(cfg, paths, roi_input) {
   figure <- plot_grid(
     plot_grid(
