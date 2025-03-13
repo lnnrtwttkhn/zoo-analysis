@@ -373,6 +373,30 @@ plot_decoding_main_model_betas_behav_cor_mean <- function(cfg, paths, roi_input,
   return(figure)
 }
 
+plot_decoding_main_model_betas_behav_cor_mean_rt <- function(cfg, paths) {
+  dt1 <- load_data(paths$source$decoding_main_model_betas_behav_cor_mean) %>%
+    .[roi == "visual", ] %>%
+    .[graph == "uni", ] %>%
+    .[model_name == "SR + 1-step"] %>%
+    .[predictor == "1-step"] %>%
+    .[beta == "estimate_abs", ] %>%
+    .[sr_parameter == "alpha", ]
+  dt2 <- load_data(paths$source$decoding_main_model_betas_behav_cor_mean_stat_rt) %>%
+    .[roi == "visual"] %>%
+    .[p.value < 0.05]
+  figure <- ggplot(dt1, aes(x = as.numeric(beta_value), y = as.numeric(slope_high))) +
+    geom_point() +
+    geom_smooth(method = "lm") +
+    geom_text(data = dt2, aes(y = Inf, x = Inf, label = result), vjust = 2, hjust = 1, size = 4) +
+    ylab("Slope of response times for\nhigh probability one-step transitions") +
+    xlab("Beta of 1-step regressor (SR + 1-step model)") +
+    theme_zoo() +
+    coord_capped_cart(left = "both", bottom = "both", expand = TRUE) +
+    theme(plot.title = element_text(hjust = 0.5, face = "bold")) +
+    theme(legend.position = "none")
+  return(figure)
+}
+
 plot_decoding_main_model_prediction <- function(cfg, paths, roi_input, graph_input) {
   dt_input <- load_data(paths$source$decoding_main_model_prediction) %>%
     .[graph == graph_input] %>%
