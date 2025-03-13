@@ -232,6 +232,8 @@ create_paths <- function() {
   paths$source$questionnaire_prob_ratings_onestep <- sprintf(source_path, "questionnaire_prob_ratings_onestep")
   paths$source$questionnaire_prob_ratings_correlation <- sprintf(source_path, "questionnaire_prob_ratings_correlation")
   paths$source$questionnaire_prob_ratings_correlation_stat <- sprintf(source_path, "questionnaire_prob_ratings_correlation_stat")
+  paths$source$questionnaire_prob_ratings_cor_random <- sprintf(source_path, "questionnaire_prob_ratings_cor_random")
+  paths$source$questionnaire_prob_ratings_cor_sub <- sprintf(source_path, "questionnaire_prob_ratings_cor_sub")
   # paths: analysis of behavioral data from successor representation modeling (grid search):
   paths$source$behavior_sr_grid <- sprintf(source_path, "behavior_sr_grid")
   paths$source$behavior_sr_grid_seq <- sprintf(source_path, "behavior_sr_grid_seq")

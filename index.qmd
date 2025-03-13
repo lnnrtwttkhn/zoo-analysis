@@ -73,6 +73,14 @@ get_questionnaire_prob_ratings_model(cfg, paths)
 plot_questionnaire_all(cfg, paths)
 ```
 
+```{r}
+get_questionnaire_random_transitions(cfg, paths, graphs)
+plot_questionnaire_prob_ratings_cor(cfg, paths)
+plot_questionnaire_seq_prob_cor(cfg, paths)
+plot_questionnaire_seq_prob_cor_seq_detect(cfg, paths)
+plot_questionnaire_prob_model(cfg, paths)
+```
+
 ### Successor Representation Model Fitting
 
 ```{r}
