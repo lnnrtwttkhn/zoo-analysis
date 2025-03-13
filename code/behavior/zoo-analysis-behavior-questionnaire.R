@@ -418,7 +418,8 @@ get_questionnaire_random_transitions <- function(cfg, paths, graphs) {
       prob_cor_bi = cor.test(probability_rating, prob_bi)$estimate
     )] %>%
     .[, by = .(id, sequence_detected), prob_cor_mean := mean(c(prob_cor_uni, prob_cor_bi))] %>%
-    .[, rating_category := ifelse(prob_cor_mean <= cutoff, "Random", "Non-Random")] %>%
+    .[, rating_group := ifelse(prob_cor_mean <= cutoff, "Random", "Non-Random")] %>%
+    .[, knowledge_group := ifelse(rating_group == "Random" & sequence_detected == "no", "Unaware & Random", "Others")] %>%
     save_data(paths$source$questionnaire_prob_ratings_cor_sub)
 }
 
@@ -450,7 +451,7 @@ plot_questionnaire_prob_ratings_cor <- function(cfg, paths) {
 
 plot_questionnaire_seq_prob_cor <- function(cfg, paths) {
   dt_input <- load_data(paths$source$questionnaire_prob_ratings_cor_sub)
-  figure <- ggplot(data = dt_input, aes(x = rating_category)) +
+  figure <- ggplot(data = dt_input, aes(x = rating_group)) +
     geom_bar(width = 0.5) +
     geom_text(stat = "count", aes(label = after_stat(count), y = after_stat(count) + 1)) +
     ylab("Number of participants") +
@@ -469,7 +470,7 @@ plot_questionnaire_seq_prob_cor <- function(cfg, paths) {
 
 plot_questionnaire_seq_prob_cor_seq_detect <- function(cfg, paths) {
   dt_input <- load_data(paths$source$questionnaire_prob_ratings_cor_sub)
-  figure <- ggplot(data = dt_input, aes(x = rating_category)) +
+  figure <- ggplot(data = dt_input, aes(x = rating_group)) +
     facet_wrap(~ sequence_detected) +
     geom_bar(width = 0.5) +
     geom_text(stat = "count", aes(label = after_stat(count), y = after_stat(count) + 1)) +
