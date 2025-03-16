@@ -494,7 +494,7 @@ plot_sr_matrices_select <- function(cfg, paths) {
 }
 
 plot_sr_matrices_select_extreme <- function(cfg, paths) {
-  sub_order <- c("sub-02", "sub-34", "sub-07", "sub-36", "sub-15", "sub-41")
+  sub_order <- c("sub-02", "sub-34", "sub-07", "sub-33", "sub-15", "sub-38")
   dt_input <- load_data(paths$source$behavior_sr_fit_sr_matrices_plot)
   order_factor <- list()
   order_factor["uni - bi"] <- list(c("run-01 (uni)", "run-02 (uni)", "run-03 (uni)", "run-03 (bi)", "run-04 (bi)", "run-05 (bi)"))

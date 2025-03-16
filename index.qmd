@@ -8,6 +8,7 @@ title: "Zoo Analysis"
 #| warning: false
 #| message: false
 source(here::here("code", "utilities", "utilities.R"))
+source(here::here("code", "utilities", "data.R"))
 load_packages()
 paths <- create_paths()
 cfg <- load_config()
@@ -17,7 +18,6 @@ graphs <- load_graphs(paths)
 ## Data
 
 ```{r}
-source(here::here("code", "utilities", "data.R"))
 prepare_data_behavior(cfg, paths)
 prepare_data_mri_rest(cfg, paths)
 prep_demographics_data(cfg, paths)
@@ -125,6 +125,7 @@ plot_behavior_sr_fit_suprise_effect(cfg, paths)
 get_sr_matrices(cfg, paths)
 plot_sr_matrices(cfg, paths)
 plot_sr_matrices_select(cfg, paths)
+plot_sr_matrices_select_extreme(cfg, paths)
 ```
 
 ```{r}
