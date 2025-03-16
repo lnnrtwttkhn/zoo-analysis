@@ -382,9 +382,9 @@ plot_decoding_main_model_betas_behav_cor_mean_rt <- function(cfg, paths) {
     .[beta == "estimate_abs", ] %>%
     .[sr_parameter == "alpha", ]
   dt2 <- load_data(paths$source$decoding_main_model_betas_behav_cor_mean_stat_rt) %>%
-    .[roi == "visual"] %>%
+    # .[roi == "visual"] %>%
     .[p.value < 0.05]
-  figure <- ggplot(dt1, aes(x = as.numeric(beta_value), y = as.numeric(slope_high))) +
+  figure <- ggplot(dt1, aes(x = as.numeric(beta_value), y = as.numeric(slope_diff))) +
     geom_point() +
     geom_smooth(method = "lm") +
     geom_text(data = dt2, aes(y = Inf, x = Inf, label = result), vjust = 2, hjust = 1, size = 4) +

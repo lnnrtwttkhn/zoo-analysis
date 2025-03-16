@@ -523,10 +523,13 @@ get_decoding_main_model_betas_behav <- function(cfg, paths) {
     verify(.[, by = .(id), num_var := length(unique(variable))]$num_var == 2) %>%
     pivot_wider(id_cols = c("id"), names_from = variable, values_from = value)
   dt_behav_sequence_onestep <- load_data(paths$source$behavior_sequence_onestep_run_glm)
+  dt_behav_sequence_dist <- load_data(paths$source$behavior_sequence_dist_run_glm) %>%
+    .[variable == "mean_accuracy", ]
   dt_sr_beta <- load_data(paths$source$decoding_main_model_betas_id) %>%
     .[model_number == 4] %>%
     merge.data.table(x = ., y = dt_sr_fits, by = c("id")) %>%
     merge.data.table(x = ., y = dt_behav_sequence_onestep, by = c("id")) %>%
+    merge.data.table(x = ., y = dt_behav_sequence_dist, by = c("id")) %>%
     .[, estimate_abs := abs(estimate)] %>%
     melt(measure.vars = c("estimate", "estimate_abs"), variable.name = "beta", value.name = "beta_value") %>%
     melt(measure.vars = c("alpha", "gamma"), variable.name = "sr_parameter", value.name = "sr_parameter_value") %>%
@@ -557,7 +560,10 @@ get_decoding_main_model_betas_behav_cor_mean <- function(cfg, paths) {
       sr_parameter_value = unique(sr_parameter_value),
       slope_diff = unique(slope_diff),
       slope_low = unique(Low),
-      slope_high = unique(High)
+      slope_high = unique(High),
+      dist3 = unique(dist3),
+      dist2 = unique(dist2),
+      dist1 = unique(dist1)
     )] %>%
     verify(num_trs == cfg$decoding_sequence$num_trs) %>%
     save_data(paths$source$decoding_main_model_betas_behav_cor_mean)
@@ -592,11 +598,11 @@ get_decoding_main_model_betas_behav_cor_mean_stat <- function(cfg, paths) {
 get_decoding_main_model_betas_behav_cor_mean_stat_rt <- function(cfg, paths) {
   dt_input <- load_data(paths$source$decoding_main_model_betas_behav_cor_mean)
   dt_output <- dt_input %>%
-    .[, c("id", "roi", "graph", "model_name", "predictor", "beta", "beta_value", "slope_diff", "slope_low", "slope_high"), with = FALSE] %>%
+    .[, c("id", "roi", "graph", "model_name", "predictor", "beta", "beta_value", "slope_diff", "slope_low", "slope_high", "dist3", "dist2", "dist1"), with = FALSE] %>%
     unique(.) %>%
     .[, by = .(roi, graph, model_name, predictor, beta), .(
       num_subs = .N,
-      cor = list(broom::tidy(cor.test(beta_value, slope_high, method = "pearson")))
+      cor = list(broom::tidy(cor.test(beta_value, dist3, method = "pearson")))
     )] %>%
     verify(num_subs == cfg$num_subs) %>%
     unnest(cor) %>%

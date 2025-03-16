@@ -487,3 +487,31 @@ get_behavior_sr_fit_parameter_recovery_corr_stat <- function(cfg, paths) {
     .[, result := sprintf("r = %.2f, p %s", estimate, p.value_round_label)] %>%
     save_data(paths$source$behavior_sr_fit_parameter_recovery_corr_stat)
 }
+
+get_behavior_sr_fit_behav_cor <- function(cfg, paths) {
+  dt_input <- load_data(paths$source$behavior_sr_fit_data)
+  dt_output <- dt_input %>%
+    .[, by = .(model_name, process, id, gamma, alpha), .(
+      num_trials = .N,
+      cor = list(broom::tidy(cor.test(shannon_surprise, as.numeric(log_response_time), method = "pearson")))
+    )] %>%
+    unnest(cor) %>%
+    setDT(.) %>%
+    get_pvalue_adjust(., list(adjust_method = "bonferroni")) %>%
+    .[process == "Model Fitting", ] %>%
+    .[model_name != "1-step", ] %>%
+    .[, c("id", "model_name", "alpha", "gamma", "estimate")] %>%
+    melt(measure.vars = c("alpha", "gamma"))
+      
+  
+  ggplot(dt_output, aes(x = as.numeric(value), y = as.numeric(estimate))) +
+    facet_grid(vars(variable), vars(model_name)) +
+    geom_point() +
+    geom_smooth(method = "lm") +
+    ylab("Correlation between surprise and response times") +
+    xlab("Parameter estimate") +
+    theme_zoo() +
+    coord_capped_cart(left = "both", bottom = "both", expand = TRUE)
+}
+
+
