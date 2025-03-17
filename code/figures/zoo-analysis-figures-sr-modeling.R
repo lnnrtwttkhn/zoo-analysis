@@ -472,7 +472,7 @@ plot_sr_matrices <- function(cfg, paths) {
 
 plot_sr_matrices_select <- function(cfg, paths) {
   dt_input <- load_data(paths$source$behavior_sr_fit_sr_matrices_plot) %>%
-    .[id %in% c("sub-06", "sub-43")]
+    .[id %in% c("sub-16", "sub-25")]
   order_factor <- list()
   order_factor["uni - bi"] <- list(c("run-01 (uni)", "run-02 (uni)", "run-03 (uni)", "run-03 (bi)", "run-04 (bi)", "run-05 (bi)"))
   order_factor["bi - uni"] <- list(c("run-01 (bi)", "run-02 (bi)", "run-03 (bi)", "run-03 (uni)", "run-04 (uni)", "run-05 (uni)"))

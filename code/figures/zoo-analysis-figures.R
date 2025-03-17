@@ -40,24 +40,26 @@ plot_behavior_run <- function(cfg, paths) {
 plot_sr_modeling <- function(cfg, paths) {
   figure <- plot_grid(
     plot_grid(
-      plot_sr_grid_seq_lme(cfg, paths),
+      # plot_sr_grid_seq_lme(cfg, paths),
       plot_behavior_sr_fit_model_comparison_sum_aic(cfg, paths),
       plot_behavior_sr_fit_parameter_mean(cfg, paths),
       plot_behavior_sr_fit_suprise_effect(cfg, paths),
-      nrow = 1, ncol = 4, labels = c("a", "b", "c", "d"), rel_widths = c(0.3, 0.25, 0.15, 0.3)
+      # nrow = 1, ncol = 4, labels = c("a", "b", "c", "d"), rel_widths = c(0.3, 0.25, 0.15, 0.3)
+      nrow = 1, ncol = 3, labels = c("a", "b", "c"), rel_widths = c(0.25, 0.15, 0.3)
     ),
-    plot_grid(
-      plot_behavior_sr_fit_parameter_order(cfg, paths),
-      plot_behavior_sr_fit_parameter_conscious(cfg, paths),
-      nrow = 1, ncol = 2, labels = c("e", "f")
-    ),
+    # plot_grid(
+    #   plot_behavior_sr_fit_parameter_order(cfg, paths),
+    #   plot_behavior_sr_fit_parameter_conscious(cfg, paths),
+    #   nrow = 1, ncol = 2, labels = c("e", "f")
+    # ),
     plot_grid(
       plot_sr_matrices_select(cfg, paths),
-      nrow = 1, ncol = 1, labels = c("g")
+      nrow = 1, ncol = 1, labels = c("d")
     ),
-    nrow = 3, ncol = 1, rel_heights = c(0.3, 0.3, 0.4)
+    nrow = 2, ncol = 1, rel_heights = c(0.45, 0.55)
   )
-  save_figure(plot = figure, "sr_modeling", width = 9, height = 10)
+  # save_figure(plot = figure, "sr_modeling", width = 9, height = 10)
+  save_figure(plot = figure, "sr_modeling", width = 7, height = 6.5)
   return(figure)
 }
 
