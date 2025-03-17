@@ -41,6 +41,43 @@ get_single_decoding_peak_accuracy_stat <- function(cfg, paths) {
     get_pvalue_adjust(., ttest_cfg)
 }
 
+get_decoding_single_hpc_peak_accuracy_mean <- function(cfg, paths) {
+  dt_input <- load_data(paths$source$decoding_single_hpc_peak)
+  dt_output <- dt_input %>%
+    .[, by = .(id, mask_test, session, run, trial_run, stim_file), .(
+      max_prob_label = class[which.max(probability)],
+      num_classes = .N
+    )] %>%
+    # TODO: Fix number of classes
+    # verify(num_classes == cfg$num_nodes) %>%
+    # .[, num_classes := NULL] %>%
+    .[, accuracy := ifelse(stim_file == max_prob_label, 1, 0)] %>%
+    .[session == "ses-01"] %>%
+    # .[, by = .(id, mask_test), .(num_trials = .N)] %>%
+    verify(.[, by = .(id, mask_test), .(num_trials = .N)]$num_trials <= cfg$single$max_trials) %>%
+    .[, by = .(id, mask_test), .(
+      mean_accuracy = mean(accuracy) * 100
+    )] %>%
+    save_data(paths$source$decoding_single_hpc_peak_accuracy_mean)
+}
+
+get_single_decoding_hpc_peak_accuracy_stat <- function(cfg, paths) {
+  dt_input <- load_data(paths$source$decoding_single_hpc_peak_accuracy_mean)
+  ttest_cfg <- list(
+    lhs = "value",
+    rhs = "1",
+    adjust_method = "bonferroni",
+    paired = FALSE,
+    mu = 100/cfg$num_nodes,
+    alternative = "greater"
+  )
+  dt_output <- dt_input %>%
+    .[, value := mean_accuracy] %>%
+    .[, by = .(mask_test), .(ttest = list(get_ttest(.SD, ttest_cfg)))] %>%
+    unnest(ttest) %>%
+    get_pvalue_adjust(., ttest_cfg)
+}
+
 get_single_decoding_peak_run <- function(cfg, paths) {
   dt_input <- load_data(paths$source$decoding_single_peak_accuracy)
   dt_output <- dt_input %>%

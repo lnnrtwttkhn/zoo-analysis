@@ -484,6 +484,20 @@ prepare_data_decoding_single_peak <- function(cfg, paths) {
     save_data(paths$source$decoding_single_peak)
 }
 
+prepare_data_decoding_single_hpc_peak <- function(cfg, paths) {
+  get_data(paths$input_mri_single_hpc)
+  dt_input <- load_data(paths$input_mri_single_hpc)
+  dt_output <- dt_input %>%
+    .[!(id %in% cfg$sub_exclude), ] %>%
+    .[classification == "ensemble", ] %>%
+    # .[classifier == stim_file, ] %>%
+    .[class != "other", ] %>%
+    .[test_set == "condition-recall_event-stimulus_accuracy-correct", ] %>%
+    # prepare_data_decoding(.) %>%
+    # verify(run_index %in% seq(1, 9)) %>%
+    save_data(paths$source$decoding_single_hpc_peak)
+}
+
 prepare_data_decoding_single_interval <- function(cfg, paths) {
   get_data(paths$input_mri_single_interval)
   dt_input <- load_data(paths$input_mri_single_interval)

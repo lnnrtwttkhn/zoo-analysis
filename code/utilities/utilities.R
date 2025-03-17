@@ -197,6 +197,9 @@ create_paths <- function() {
     file.path(paths$input, "decoding", "sub-*", "decoding", "*scheme-6*_time_shift-4*decoding*"),
     file.path(paths$input, "decoding", "sub-*", "decoding", "*scheme-8*_time_shift-4*decoding*")
   )
+  paths$input_mri_single_hpc <- c(
+    file.path(paths$input, "decoding-hpc", "sub-*", "decoding", "sub-*_mask-hpc-anatomical_task_decoding.csv")
+  )
   paths$graphs <- file.path(paths$code, "utilities", "graphs.yml")
   # outputs:
   paths$figures <- file.path(paths$output, "figures")
@@ -276,6 +279,9 @@ create_paths <- function() {
   paths$source$decoding_single_peak_accuracy <- sprintf(source_path, "decoding_single_peak_accuracy")
   paths$source$decoding_single_peak_accuracy_mean <- sprintf(source_path, "decoding_single_peak_accuracy_mean")
   paths$source$decoding_single_peak_accuracy_run <- sprintf(source_path, "decoding_single_peak_accuracy_run")
+  # source data for decoding on single trials in hippocampus:
+  paths$source$decoding_single_hpc_peak <- sprintf(source_path, "decoding_single_hpc_peak")
+  paths$source$decoding_single_hpc_peak_accuracy_mean <- sprintf(source_path, "decoding_single_hpc_peak_accuracy_mean")
   # source data for decoding on single trials (interval):
   paths$source$decoding_single_interval <- sprintf(source_path, "decoding_single_interval")
   paths$source$decoding_single_interval_trial <- sprintf(source_path, "decoding_recall_interval_trial")
