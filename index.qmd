@@ -275,16 +275,35 @@ plot_decoding_main_model_residuals(cfg, paths, roi_input = "visual", graph_input
 
 ```{r}
 get_decoding_main_model_residuals_slope(cfg, paths)
+get_decoding_main_model_residuals_slope_stat(cfg, paths)
+
 dt_output <- get_decoding_main_model_residuals_slope_stat(cfg, paths) %>%
   .[p.value < 0.05] %>%
   .[roi == "visual"] %>%
   .[graph == "uni"]
-plot_decoding_main_model_residuals(cfg, paths, roi_input = "visual", graph_input = "uni")
 plot_decoding_main_model_residuals_slope(cfg, paths, roi_input = "visual", graph_input = "uni")
 plot_decoding_main_model_residuals_slope(cfg, paths, roi_input = "visual", graph_input = "bi")
 ```
 
 ##### Residuals in subgroups
+
+```{r}
+get_decoding_main_model_residuals_mean(cfg, paths, group = "alpha_group")
+get_decoding_main_model_residuals_mean(cfg, paths, group = "gamma_group")
+get_decoding_main_model_residuals_mean(cfg, paths, group = "sequence_detected")
+get_decoding_main_model_residuals_mean(cfg, paths, group = "surprise_group")
+get_decoding_main_model_residuals_mean(cfg, paths, group = "rating_group")
+get_decoding_main_model_residuals_mean(cfg, paths, group = "knowledge_group")
+```
+
+```{r}
+plot_decoding_main_model_residuals(cfg, paths, roi_input = "visual", graph_input = "uni", group = "alpha_group")
+plot_decoding_main_model_residuals(cfg, paths, roi_input = "visual", graph_input = "uni", group = "gamma_group")
+plot_decoding_main_model_residuals(cfg, paths, roi_input = "visual", graph_input = "uni", group = "sequence_detected")
+plot_decoding_main_model_residuals(cfg, paths, roi_input = "visual", graph_input = "uni", group = "surprise_group")
+plot_decoding_main_model_residuals(cfg, paths, roi_input = "visual", graph_input = "uni", group = "rating_group")
+plot_decoding_main_model_residuals(cfg, paths, roi_input = "visual", graph_input = "uni", group = "knowledge_group")
+```
 
 ```{r}
 get_decoding_main_model_residuals_slope_mean(cfg, paths, group = "alpha_group")
@@ -303,12 +322,6 @@ dt_output <- get_decoding_main_model_residuals_slope_stat_group(cfg, paths, grou
   .[graph == "uni"] %>%
   .[p.value < 0.05] %>%
   .$report_latex
-plot_decoding_main_model_residuals(cfg, paths, roi_input = "visual", graph_input = "uni", group = "alpha_group")
-plot_decoding_main_model_residuals(cfg, paths, roi_input = "visual", graph_input = "uni", group = "gamma_group")
-plot_decoding_main_model_residuals(cfg, paths, roi_input = "visual", graph_input = "uni", group = "sequence_detected")
-plot_decoding_main_model_residuals(cfg, paths, roi_input = "visual", graph_input = "uni", group = "surprise_group")
-plot_decoding_main_model_residuals(cfg, paths, roi_input = "visual", graph_input = "uni", group = "rating_group")
-plot_decoding_main_model_residuals(cfg, paths, roi_input = "visual", graph_input = "uni", group = "knowledge_group")
 plot_decoding_main_model_residuals_slope(cfg, paths, roi_input = "visual", graph_input = "uni", group = "alpha_group")
 plot_decoding_main_model_residuals_slope(cfg, paths, roi_input = "visual", graph_input = "uni", group = "gamma_group")
 plot_decoding_main_model_residuals_slope(cfg, paths, roi_input = "visual", graph_input = "uni", group = "sequence_detected")

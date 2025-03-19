@@ -63,7 +63,9 @@ plot_decoding_main_model_raw_prob_all <- function(cfg, paths) {
 }
 
 plot_decoding_main_model_residuals <- function(cfg, paths, roi_input, graph_input, group = NULL) {
-  dt_input <- load_data(paths$source$decoding_main_model_residuals_mean) %>%
+  group_name <- paste(group, collapse = "_")
+  input_path <- paste(paths$source$decoding_main_model_residuals_mean, group_name, sep = "_")
+  dt_input <- load_data(input_path) %>%
     .[graph == graph_input, ] %>%
     .[ roi == roi_input, ] %>%
     .[model_name == "Stimulus", ]
@@ -491,6 +493,7 @@ plot_decoding_main_model_results_diff <- function(cfg, paths, group = NULL, roi_
     theme_zoo() +
     facet_wrap(group) +
     coord_capped_cart(left = "both", bottom = "both", expand = TRUE) +
+    scale_color_manual(values = cfg$colors_models) +
     scale_x_continuous(limits = c(0, 8), labels = label_fill(seq(1, 8, 1), mod = 1), breaks = seq(1, 8, 1)) +
     theme(plot.title = element_text(hjust = 0.5, face = "bold")) +
     # theme(legend.position = c(0.85, 0.15)) +
