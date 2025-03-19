@@ -221,16 +221,18 @@ get_decoding_main_model_residuals <- function(cfg, paths) {
     save_data(paths$source$decoding_main_model_residuals)
 }
 
-get_decoding_main_model_residuals_mean <- function(cfg, paths) {
+get_decoding_main_model_residuals_mean <- function(cfg, paths, group = NULL) {
   dt_input <- load_data(paths$source$decoding_main_model_residuals)
+  group_name <- paste(group, collapse = "_")
+  save_path <- paste(paths$source$decoding_main_model_residuals_mean, group_name, sep = "_")
   dt_output <- dt_input %>%
-    .[, by = .(id, roi, sequence_detected, alpha_group, gamma_group, surprise_group, rating_group, knowledge_group, model_name, graph, interval_tr, dist_graph), .(
+    .[, by = c("id", "roi", "model_name", "graph", "interval_tr", "dist_graph", group), .(
       num_trials = .N,
       mean_residual = mean(residual)
     )] %>%
     verify(num_trials <= cfg$decoding_sequence$max_trials_graph * 2) %>%
     .[, num_trials := NULL] %>%
-    save_data(paths$source$decoding_main_model_residuals_mean)
+    save_data(save_path)
 }
 
 get_decoding_main_model_residuals_slope <- function(cfg, paths) {
