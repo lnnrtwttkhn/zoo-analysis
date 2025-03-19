@@ -365,49 +365,30 @@ get_decoding_main_model_residuals_rt_cor <- function(cfg, paths) {
     )] %>%
     verify(num_trs == cfg$decoding_sequence$num_trs) %>%
     melt(measure.vars = c("mean_rt_prev", "mean_rt_next"), variable.name = "rt_type", value.name = "mean_rt") %>%
+    .[, rt_type := ifelse(rt_type == "mean_rt_prev", "Before interval", "After interval")] %>%
     .[, by = .(id, roi, alpha_group, gamma_group, rating_group, knowledge_group, sequence_detected, model_name, graph, rt_type), .(
       num_trials = .N,
       mean_rt = mean(mean_rt),
       mean_abs_slope = mean(mean_abs_slope)
     )] %>%
-    # .[, by = .(id, alpha_group, gamma_group, sequence_detected, roi, graph, model_name, rt_type), .(
-    #   num_trials = .N,
-    #   cor = list(broom::tidy(cor.test(mean_rt, mean_abs_slope, method = "pearson")))
-    # )] %>%
-    # verify(num_trials <= cfg$decoding_sequence$max_trials_graph) %>%
-    # unnest(cor) %>%
-    # setDT(.) %>%
-    # get_pvalue_adjust(., list(adjust_method = "fdr")) %>%
     .[model_name == "Stimulus", ] %>%
     .[roi == "visual", ] %>%
-    .[graph == "uni", ]
-  # .[, by = .(roi, graph, model_name, interval_tr), .(
-  #   num_subs = .N,
-  #   mean_cor = mean(estimate)
-  # )] %>%
-  # verify(num_subs == cfg$num_subs)
+    .[graph == "uni", ] %>%
+    save_data(paths$source$decoding_main_model_residuals_rt_cor)
 }
 
-plot_decoding_main_model_residuals_rt_cor <- function(cfg, paths) {
-  
-  figure <- ggplot(dt_output, aes(x = as.numeric(mean_abs_slope), y = as.numeric(mean_rt))) +
-    geom_point() +
-    geom_smooth(method = "lm") +
-    # geom_text(data = dt2, aes(y = Inf, x = 0, label = result), vjust = 2, hjust = 0, size = 4) +
-    xlab("Mean absolute slope") +
-    ylab("Mean response time (log ms)") +
-    theme_zoo() +
-    facet_wrap(~ rt_type) +
-    coord_capped_cart(left = "both", bottom = "both", expand = TRUE) +
-    scale_color_manual(name = "Predictor", values = cfg$colors_predictors) +
-    # scale_x_continuous(labels = label_fill(seq(0, 1, 0.25), mod = 2), breaks = seq(0, 1, 0.25)) +
-    scale_fill_manual(name = "Predictor", values = cfg$colors_predictors) +
-    scale_shape_manual(name = "Predictor", values = cfg$shapes_predictors) +
-    ggtitle("Relationship RTs before/after (5 trials)\nand mean absolute slope of residuals") +
-    theme(plot.title = element_text(hjust = 0.5, face = "bold")) +
-    theme(legend.position = "none")
-  figure
-  
+get_decoding_main_model_residuals_rt_cor_stat <- function(cfg, paths) {
+  dt_input <- load_data(paths$source$decoding_main_model_residuals_rt_cor)
+  dt_output <- dt_input %>%
+    .[, by = .(roi, graph, model_name, rt_type), .(
+      num_subs = .N,
+      cor = list(broom::tidy(cor.test(mean_rt, mean_abs_slope, method = "pearson")))
+    )] %>%
+    verify(num_subs == cfg$num_subs) %>%
+    unnest(cor) %>%
+    setDT(.) %>%
+    get_pvalue_adjust(., list(adjust_method = "fdr"))
+  dt_output$report_latex
 }
 
 get_decoding_main_model_prediction <- function(cfg, paths) {

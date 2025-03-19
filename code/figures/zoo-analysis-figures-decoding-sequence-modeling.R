@@ -397,6 +397,27 @@ plot_decoding_main_model_betas_behav_cor_mean_rt <- function(cfg, paths) {
   return(figure)
 }
 
+plot_decoding_main_model_residuals_rt_cor <- function(cfg, paths) {
+  dt_input <- load_data(paths$source$decoding_main_model_residuals_rt_cor)
+  figure <- ggplot(dt_input, aes(x = as.numeric(mean_abs_slope), y = as.numeric(mean_rt))) +
+    geom_point() +
+    geom_smooth(method = "lm") +
+    xlab("Mean absolute slope") +
+    ylab("Mean response time (log ms)") +
+    theme_zoo() +
+    facet_wrap(~ rt_type) +
+    coord_capped_cart(left = "both", bottom = "both", expand = TRUE) +
+    scale_color_manual(name = "Predictor", values = cfg$colors_predictors) +
+    # scale_x_continuous(labels = label_fill(seq(0, 1, 0.25), mod = 2), breaks = seq(0, 1, 0.25)) +
+    scale_fill_manual(name = "Predictor", values = cfg$colors_predictors) +
+    scale_shape_manual(name = "Predictor", values = cfg$shapes_predictors) +
+    ggtitle("Relationship between RTs (mean of 5 trials)\nand mean absolute slope of residuals") +
+    theme(plot.title = element_text(hjust = 0.5, face = "bold")) +
+    theme(legend.position = "none")
+  save_figure(plot = figure, "model_residuals_rt_cor", width = 5, height = 4)
+  return(figure)
+}
+
 plot_decoding_main_model_prediction <- function(cfg, paths, roi_input, graph_input) {
   dt_input <- load_data(paths$source$decoding_main_model_prediction) %>%
     .[graph == graph_input] %>%

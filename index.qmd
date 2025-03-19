@@ -410,6 +410,12 @@ plot_decoding_main_model_betas_behav_cor_mean(cfg, paths, roi_input = "visual", 
 plot_decoding_main_model_betas_behav_cor_mean(cfg, paths, roi_input = "visual", graph_input = "uni", sr_input = "gamma", predictor_input = "SR")
 ```
 
+```{r}
+get_decoding_main_model_residuals_rt_cor(cfg, paths)
+get_decoding_main_model_residuals_rt_cor_stat(cfg, paths)
+plot_decoding_main_model_residuals_rt_cor(cfg, paths)
+```
+
 ## Figures
 
 ```{r}

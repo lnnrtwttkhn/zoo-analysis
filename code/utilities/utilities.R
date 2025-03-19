@@ -321,6 +321,8 @@ create_paths <- function() {
   paths$source$decoding_main_model_residuals_slope <- sprintf(source_path, "decoding_main_model_residuals_slope")
   paths$source$decoding_main_model_residuals_slope_mean <- sprintf(source_path, "decoding_main_model_residuals_slope_mean")
   paths$source$decoding_main_model_residuals_slope_stat <- sprintf(source_path, "decoding_main_model_residuals_slope_stat")
+  paths$source$decoding_main_model_residuals_rt_cor <- sprintf(source_path, "decoding_main_model_residuals_rt_cor")
+  paths$source$decoding_main_model_residuals_rt_cor_stat <- sprintf(source_path, "decoding_main_model_residuals_rt_cor_stat")
   paths$source$decoding_main_model_diff <- sprintf(source_path, "decoding_main_model_diff")
   paths$source$decoding_main_model_no_evoked <- sprintf(source_path, "decoding_main_model_no_evoked")
   paths$source$decoding_main_model_no_evoked_phase <- sprintf(source_path, "decoding_main_model_no_evoked_phase")
