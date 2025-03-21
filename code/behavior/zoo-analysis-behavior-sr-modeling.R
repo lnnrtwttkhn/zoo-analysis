@@ -159,10 +159,18 @@ get_behavior_sr_fit_parameter_distribution <- function(cfg, paths) {
     .[mod == "model"] %>%
     .[!is.na(process), ] %>%
     .[variable %in% c("alpha", "gamma")] %>%
-    .[, variable_label := ifelse(variable == "alpha", cfg$alpha_utf, variable)] %>%
-    .[, variable_label := ifelse(variable == "gamma", cfg$gamma_utf, variable)] %>%
     .[iter == 1, ] %>%
     save_data(paths$source$behavior_sr_fit_parameter_distribution)
+}
+
+get_behavior_sr_fit_parameter_num <- function(cfg, paths) {
+  dt_input <- load_data(paths$source$behavior_sr_fit_parameter_distribution)
+  dt_output <- dt_input %>%
+    .[process == "Model Fitting", ] %>%
+    .[model_name == "SR + 1-step", ] %>%
+    verify(length(unique(id)) == cfg$num_subs) %>%
+    .[variable == cfg$gamma_utf, ] %>%
+    .[round(value, 2) > 0.01, ]
 }
 
 get_behavior_sr_fit_model_comparison <- function(cfg, paths) {
@@ -237,7 +245,7 @@ get_behavior_sr_fit_parameter_conscious <- function(cfg, paths) {
     alternative = "two.sided"
   )
   dt_output <- dt_input %>%
-    .[, by = .(process, model_name, variable), .(ttest = list(get_ttest(.SD, ttest_cfg)))] %>%
+    .[, by = .(process, model_name, variable, variable_label), .(ttest = list(get_ttest(.SD, ttest_cfg)))] %>%
     unnest(ttest) %>%
     get_pvalue_adjust(., ttest_cfg) %>%
     # .[model_name == "SR + 1-step", ]
@@ -255,10 +263,10 @@ get_behavior_sr_fit_parameter_order <- function(cfg, paths) {
     alternative = "two.sided"
   )
   dt_output <- dt_input %>%
-    .[, by = .(process, model_name, variable), .(ttest = list(get_ttest(.SD, ttest_cfg)))] %>%
+    .[, by = .(process, model_name, variable, variable_label), .(ttest = list(get_ttest(.SD, ttest_cfg)))] %>%
     unnest(ttest) %>%
     get_pvalue_adjust(., ttest_cfg) %>%
-    .[model_name == "SR + 1-step", ]
+    # .[model_name == "SR + 1-step", ] %>%
     save_data(paths$source$behavior_sr_fit_parameter_order)
 }
 

@@ -63,6 +63,15 @@ plot_sr_modeling <- function(cfg, paths) {
   return(figure)
 }
 
+plot_sr_modeling_group_splits <- function(cfg, paths) {
+  figure <- plot_grid(
+    plot_behavior_sr_fit_parameter_order(cfg, paths),
+    plot_behavior_sr_fit_parameter_conscious(cfg, paths),
+    nrow = 1, ncol = 2, labels = c("a", "b")
+  )
+  save_figure(plot = figure, "sr_modeling_group_splits", width = 7, height = 3)
+}
+
 plot_sr_modeling_supplement <- function(cfg, paths) {
   figure <- plot_grid(
     plot_sr_grid_seq_graph_lme(cfg, paths),
