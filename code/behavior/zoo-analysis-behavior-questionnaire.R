@@ -426,6 +426,7 @@ get_questionnaire_random_transitions <- function(cfg, paths, graphs) {
 plot_questionnaire_prob_ratings_cor <- function(cfg, paths) {
   dt1 <- load_data(paths$source$questionnaire_prob_ratings_cor_random)
   dt2 <- load_data(paths$source$questionnaire_prob_ratings_cor_sub)
+  cutoff <- quantile(dt1$correlation, 0.95)
   xmax <- 1
   ymax <- 11000
   figure <- ggplot(data = dt1, aes(x = correlation)) +
