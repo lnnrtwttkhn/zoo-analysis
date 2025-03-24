@@ -114,6 +114,13 @@ plot_decoding_main_model_residuals_slope <- function(cfg, paths, roi_input, grap
     path_dt1 <- paste(paths$source$decoding_main_model_residuals_slope_mean, group, sep = "_")
     path_dt2 <- paste(paths$source$decoding_main_model_residuals_slope_stat, group, sep = "_")
   }
+  if (graph_input == "uni") {
+    forward_label <- "Forward"
+    backward_label <- "Backward"
+  } else if (graph_input == "bi") {
+    forward_label <- "Clockwise"
+    backward_label <- "Counter-\nclockwise"
+  }
   dt1 <- load_data(path_dt1) %>%
     .[graph == graph_input, ] %>%
     .[ roi == roi_input, ] %>%
@@ -157,9 +164,9 @@ plot_decoding_main_model_residuals_slope <- function(cfg, paths, roi_input, grap
     annotate(geom = "segment",
              x = arrow_xpos, xend = arrow_xpos, y = 0 - arrow_ymax / 15, yend = -arrow_ymax,
              arrow = arrow(length = unit(3, "pt"), type = "closed"), color = "darkgray") +
-    annotate(geom = "text", x = 0, y = arrow_ymax / 1.75, label = "Forward",
+    annotate(geom = "text", x = 0, y = arrow_ymax / 1.75, label = forward_label,
              color = "darkgray", angle = 90, fontface = "italic", size = rel(3)) +
-    annotate(geom = "text", x = 0, y = -arrow_ymax / 1.75, label = "Backward",
+    annotate(geom = "text", x = 0, y = -arrow_ymax / 1.75, label = backward_label,
              color = "darkgray", angle = 90, fontface = "italic", size = rel(3))
   if (!is.null(group)) {
     figure <- figure +
@@ -662,6 +669,13 @@ plot_decoding_main_model_no_evoked_slope <- function(cfg, paths, mask_input, gra
     .[graph == graph_input, ] %>%
     .[variable == "Slope", ] %>%
     .[, p.value_significance := ifelse(p.value_significance == "n.s.", " ", p.value_significance)]
+  if (graph_input == "uni") {
+    forward_label <- "Forward"
+    backward_label <- "Backward"
+  } else if (graph_input == "bi") {
+    forward_label <- "Clockwise"
+    backward_label <- "Counter-\nclockwise"
+  }
   arrow_ymax <- 0.01
   arrow_xpos <- 0.5
   title_text <- sprintf("Sequentiality in probabilities\n(%sdirectional graph)", graph_input)
@@ -696,9 +710,9 @@ plot_decoding_main_model_no_evoked_slope <- function(cfg, paths, mask_input, gra
     annotate(geom = "segment",
              x = arrow_xpos, xend = arrow_xpos, y = 0 - arrow_ymax / 15, yend = -arrow_ymax,
              arrow = arrow(length = unit(3, "pt"), type = "closed"), color = "darkgray") +
-    annotate(geom = "text", x = 0, y = arrow_ymax / 1.75, label = "Forward",
+    annotate(geom = "text", x = 0, y = arrow_ymax / 1.75, label = forward_label,
              color = "darkgray", angle = 90, fontface = "italic", size = rel(3)) +
-    annotate(geom = "text", x = 0, y = -arrow_ymax / 1.75, label = "Backward",
+    annotate(geom = "text", x = 0, y = -arrow_ymax / 1.75, label = backward_label,
              color = "darkgray", angle = 90, fontface = "italic", size = rel(3))
   return(figure)
 }
