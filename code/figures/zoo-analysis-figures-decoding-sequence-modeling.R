@@ -491,7 +491,6 @@ plot_decoding_main_model_results_diff <- function(cfg, paths, group = NULL, roi_
     xlab("Time from inter-trial interval onset (1 TR = 1.25 s)") +
     ylab("Relative AIC") +
     theme_zoo() +
-    facet_wrap(group) +
     coord_capped_cart(left = "both", bottom = "both", expand = TRUE) +
     scale_color_manual(values = cfg$colors_models) +
     scale_x_continuous(limits = c(0, 8), labels = label_fill(seq(1, 8, 1), mod = 1), breaks = seq(1, 8, 1)) +
@@ -499,6 +498,10 @@ plot_decoding_main_model_results_diff <- function(cfg, paths, group = NULL, roi_
     # theme(legend.position = c(0.85, 0.15)) +
     theme(legend.title = element_blank()) +
     theme(legend.key = element_blank())
+  if (!(all(group == "roi") & !is.null(roi_input))) {
+    figure <- figure +
+      facet_wrap(group)
+  }
   figure <- set_yaxis(figure)
   figure <- add_arrows(figure)
   return(figure)
@@ -623,7 +626,7 @@ plot_decoding_main_model_no_evoked_prob <- function(cfg, paths, mask_input, grap
   dt <- load_data(paths$source$decoding_main_model_no_evoked) %>%
     .[mask_test == mask_input, ] %>%
     .[graph == graph_input]
-  title_text <- sprintf("Sequentiality in probabilities\n(%sdirectional graph)", graph_input)
+  title_text <- sprintf("Classifier probabilities\n(%sdirectional graph)", graph_input)
   figure <- ggplot(dt, aes(x = as.factor(interval_tr), y = mean_prob)) +
     annotate("rect", xmin = 1, xmax = 4.5, ymin = -Inf, ymax = Inf, alpha = 0.2, fill = "lightgray") +
     annotate("rect", xmin = 4.5, xmax = 8, ymin = -Inf, ymax = Inf, alpha = 0.2, fill = "darkgray") +
