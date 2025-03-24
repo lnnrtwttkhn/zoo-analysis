@@ -321,6 +321,39 @@ get_decoding_main_model_residuals_slope_stat_group <- function(cfg, paths, group
     save_data(path_output)
 }
 
+get_decoding_main_model_residuals_slope_stat_mean_awareness <- function(cfg, paths) {
+  groups = c("sequence_detected", "rating_group", "knowledge_group")
+  paths_input <- lapply(groups, function(x) paste(paths$source$decoding_main_model_residuals_slope_mean, x, sep = "_"))
+  dt_input <- setDT(rbindlist(mapply(function(x, y) {
+    data <- load_data(x)
+    data[, grouping := y]
+    return(data)
+  }, paths_input, groups, SIMPLIFY = FALSE))) %>%
+    .[, by = .(id, roi, group, grouping, model_name, model_name, graph), .(
+      num_trs = .N,
+      mean_slope_abs = mean(abs(mean_slope))
+    )] %>%
+    verify(num_trs == cfg$decoding_sequence$num_trs)
+  # path_output <- paste(paths$source$decoding_main_model_residuals_slope_stat, group, sep = "_")
+  ttest_cfg <- list(
+    lhs = "value",
+    rhs = "group",
+    adjust_method = "fdr",
+    paired = FALSE,
+    mu = 0,
+    alternative = "two.sided"
+  )
+  dt_output <- dt_input %>%
+    .[, value := mean_slope_abs] %>%
+    .[, by = .(grouping, roi, model_name, graph), .(ttest = list(get_ttest(.SD, ttest_cfg)))] %>%
+    unnest(ttest) %>%
+    get_pvalue_adjust(., ttest_cfg) %>%
+    .[roi == "visual", ] %>%
+    .[graph == "uni", ] %>%
+    .[model_name == "Stimulus", ]
+    # save_data(path_output)
+}
+
 get_decoding_main_model_residuals_surprise_cor <- function(cfg, paths) {
   dt_input <- load_data(paths$source$decoding_main_model_residuals_slope)
   dt_output <- dt_input %>%
