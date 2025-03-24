@@ -128,7 +128,10 @@ prepare_data_behavior <- function(cfg, paths) {
 
 prep_demographics_data <- function(cfg, paths) {
   # create a data table with the graph order for each participant:
-  data_task <- load_data(paths$source$behavior_task)
+  data_task <- load_data(paths$input_behavior) %>%
+    .[, by = .(id), order := factor(
+      as.factor(ifelse(any(run == "run-01" & graph == "uni"), "uni - bi", "bi - uni")),
+      levels = c("uni - bi", "bi - uni"))]
   data_order <- unique(data_task[, c("id", "order")])
   # prepare the demographics data:
   dt_output <- load_data(paths$input_demographics) %>%
@@ -514,7 +517,6 @@ prepare_data_decoding_single_interval <- function(cfg, paths) {
       num_unique_trs = length(unique(interval_tr))
     )]$num_unique_trs == num_trial_trs) %>%
     save_data(paths$source$decoding_single_interval)
-  return(dt_output)
 }
 
 prepare_data_behavior_sequence_previous <- function(cfg, paths) {
@@ -538,9 +540,7 @@ prepare_data_behavior_sequence_previous <- function(cfg, paths) {
     .[, -c("onset")] %>%
     setorder(., id, run, graph, trial_run, node) %>%
     save_data(paths$source$behavior_sequence_previous)
-  return(dt_output)
 }
-
 
 prepare_data_behavior_sequence_dist_prev <- function(cfg, paths) {
   dt_input <- load_data(paths$source$behavior_task)
@@ -552,7 +552,6 @@ prepare_data_behavior_sequence_dist_prev <- function(cfg, paths) {
     .[, by = .(id, run), .(dt = list(get_class_dist(trial_run, onset, node)))] %>%
     unnest(., dt) %>%
     save_data(paths$source$behavior_sequence_previous_dist)
-  return(dt_output)
 }
 
 prepare_data_decoding_main <- function(cfg, paths) {

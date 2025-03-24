@@ -457,7 +457,7 @@ plot_decoding_main_model_prediction <- function(cfg, paths, roi_input, graph_inp
 }
 
 plot_decoding_main_model_results_stim <- function(cfg, paths, roi_input) {
-  dt_input <- load_data(paths$source$decoding_main_model_results) %>%
+  dt_input <- load_data(paste(paths$source$decoding_main_model_results, "roi", sep = "_")) %>%
     .[roi == roi_input, ] %>%
     .[model_number == 1, ]
   figure <- ggplot(data = dt_input, aes(x = as.factor(interval_tr), y = as.numeric(aic))) +

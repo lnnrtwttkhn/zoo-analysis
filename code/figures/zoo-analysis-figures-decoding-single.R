@@ -206,7 +206,7 @@ plot_decoding_single_fit_mean <- function(cfg, paths){
   return(figure)
 }
 
-plot_decoding_single_fit_sub <- function(cfg, pats) {
+plot_decoding_single_fit_sub <- function(cfg, paths) {
   dt_input <- load_data(paths$source$decoding_single_interval_sine_fit_sub) %>%
     .[mask_test == "visual", ]
   figure <- ggplot(data = dt_input, aes(x = time, y = sine_probability)) +
