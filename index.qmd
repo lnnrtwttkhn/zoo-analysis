@@ -32,6 +32,12 @@ prepare_data_decoding_main(cfg, paths)
 
 ## Behavior
 
+### Single trials
+
+```{r}
+source(here::here("code", "behavior", "zoo-analysis-behavior-single.R"))
+```
+
 ### Sequence Condition
 
 ```{r}
@@ -307,12 +313,12 @@ plot_decoding_main_model_residuals(cfg, paths, roi_input = "visual", graph_input
 ```
 
 ```{r}
-get_decoding_main_model_residuals_slope_mean(cfg, paths, group = "alpha_group")
-get_decoding_main_model_residuals_slope_mean(cfg, paths, group = "gamma_group")
-get_decoding_main_model_residuals_slope_mean(cfg, paths, group = "sequence_detected")
-get_decoding_main_model_residuals_slope_mean(cfg, paths, group = "surprise_group")
-get_decoding_main_model_residuals_slope_mean(cfg, paths, group = "rating_group")
-get_decoding_main_model_residuals_slope_mean(cfg, paths, group = "knowledge_group")
+get_decoding_main_model_residuals_slope_mean_group(cfg, paths, group = "alpha_group")
+get_decoding_main_model_residuals_slope_mean_group(cfg, paths, group = "gamma_group")
+get_decoding_main_model_residuals_slope_mean_group(cfg, paths, group = "sequence_detected")
+get_decoding_main_model_residuals_slope_mean_group(cfg, paths, group = "surprise_group")
+get_decoding_main_model_residuals_slope_mean_group(cfg, paths, group = "rating_group")
+get_decoding_main_model_residuals_slope_mean_group(cfg, paths, group = "knowledge_group")
 get_decoding_main_model_residuals_slope_stat_group(cfg, paths, group = "alpha_group")
 get_decoding_main_model_residuals_slope_stat_group(cfg, paths, group = "gamma_group")
 get_decoding_main_model_residuals_slope_stat_group(cfg, paths, group = "sequence_detected")
