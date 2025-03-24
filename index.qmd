@@ -18,13 +18,15 @@ graphs <- load_graphs(paths)
 ## Data
 
 ```{r}
-prepare_data_behavior(cfg, paths)
-prepare_data_mri_rest(cfg, paths)
 prep_demographics_data(cfg, paths)
+prepare_data_behavior(cfg, paths)
+# prepare_data_mri_rest(cfg, paths)
 prepare_questionnaire_data(cfg, paths)
 prep_sr_modeling(cfg, paths)
 prep_sr_matrices(cfg, paths)
 prep_sr_modeling_data(cfg, paths)
+prepare_data_behavior_sequence_previous(cfg, paths)
+prepare_data_behavior_sequence_dist_prev(cfg, paths)
 prepare_data_decoding_main(cfg, paths)
 ```
 
@@ -162,6 +164,7 @@ source(file.path(paths$code, "decoding", "zoo-analysis-decoding-single-peak.R"))
 source(file.path(paths$code, "decoding", "zoo-analysis-decoding-single-interval.R"))
 source(file.path(paths$code, "figures", "zoo-analysis-figures-decoding-single.R"))
 prepare_data_decoding_single_peak(cfg, paths)
+prepare_data_decoding_single_interval(cfg, paths)
 ```
 
 #### Peak
@@ -198,23 +201,17 @@ plot_decoding_single_interval_node(cfg, paths)
 
 ```{r}
 get_decoding_single_fit(cfg, paths)
-plot_decoding_single_fit(cfg, paths)
-```
-
-```{r}
-get_decoding_single_fit_mean(cfg, paths)
-plot_decoding_single_fit_mean(cfg, paths)
-```
-
-```{r}
 get_decoding_single_fit_eval(cfg, paths)
 get_decoding_single_fit_eval_mean(cfg, paths)
 get_decoding_single_fit_sub(cfg, paths)
+get_decoding_single_fit_mean(cfg, paths)
 get_decoding_single_fit_mean_eval(cfg, paths)
-plot_decoding_single_fit_sub(cfg, paths)
 ```
 
 ```{r}
+plot_decoding_single_fit(cfg, paths)
+plot_decoding_single_fit_mean(cfg, paths)
+plot_decoding_single_fit_sub(cfg, paths)
 plot_decoding_single(cfg, paths)
 plot_sequentiality_illustration(cfg, paths)
 ```
@@ -275,12 +272,16 @@ plot_decoding_main_model_residuals(cfg, paths, roi_input = "visual", graph_input
 
 ```{r}
 get_decoding_main_model_residuals_slope(cfg, paths)
+get_decoding_main_model_residuals_slope_mean(cfg, paths)
 get_decoding_main_model_residuals_slope_stat(cfg, paths)
-
 dt_output <- get_decoding_main_model_residuals_slope_stat(cfg, paths) %>%
   .[p.value < 0.05] %>%
   .[roi == "visual"] %>%
   .[graph == "uni"]
+dt_output <- get_decoding_main_model_residuals_slope_stat(cfg, paths) %>%
+  .[p.value < 0.05] %>%
+  .[roi == "visual"] %>%
+  .[graph == "bi"]
 plot_decoding_main_model_residuals_slope(cfg, paths, roi_input = "visual", graph_input = "uni")
 plot_decoding_main_model_residuals_slope(cfg, paths, roi_input = "visual", graph_input = "bi")
 ```
