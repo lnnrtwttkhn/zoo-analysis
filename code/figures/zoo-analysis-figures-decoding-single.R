@@ -220,8 +220,8 @@ plot_decoding_single_fit_sub <- function(cfg, paths) {
     coord_capped_cart(left = "both", bottom = "both", ylim = c(0, 80), xlim = c(0, 9)) +
     xlab("Time from stimulus onset (in TRs; 1 TR = 1.25 s)") +
     ylab("Probability (%)") +
-    scale_colour_manual(name = "", values = cfg$colors$class, guide = "none") +
-    scale_fill_manual(name = "", values = cfg$colors$class, guide = "none") +
+    scale_colour_manual(name = "", values = cfg$colors_class, guide = "none") +
+    scale_fill_manual(name = "", values = cfg$colors_class, guide = "none") +
     scale_x_continuous(labels = label_fill(seq(1, 10, 1), mod = 3), breaks = seq(0, 9, 1)) +
     theme_zoo()
   return(figure)
@@ -283,7 +283,7 @@ plot_sequentiality_illustration <- function(cfg, paths) {
     ylab("Probability (%)") +
     ggtitle("Classifier probability time courses") +
     scale_x_continuous(labels = label_fill(seq(1, 10, 1), mod = 3), breaks = seq(0, 9, 1)) +
-    scale_colour_manual(name = "Event", values = cfg$colors$class) +
+    scale_colour_manual(name = "Event", values = cfg$colors_class) +
     theme(plot.title = element_text(hjust = 0.5, face = "bold")) +
     theme_zoo()
   fig2 <- ggplot(data = dt_input2 %>% .[time == timepoints[1], ], aes(
@@ -294,8 +294,8 @@ plot_sequentiality_illustration <- function(cfg, paths) {
     xlab("Serial position (reverse)") +
     ylab("Probability (%)") +
     ggtitle("Forward sequentiality") +
-    scale_colour_manual(values = cfg$colors$class, guide = "none") +
-    scale_fill_manual(values = cfg$colors$class, guide = "none") +
+    scale_colour_manual(values = cfg$colors_class, guide = "none") +
+    scale_fill_manual(values = cfg$colors_class, guide = "none") +
     theme(plot.title = element_text(hjust = 0.5, face = "bold")) +
     scale_x_discrete(limits = rev(levels(as.factor(seq(1, 6))))) +
     theme_zoo()
@@ -307,8 +307,8 @@ plot_sequentiality_illustration <- function(cfg, paths) {
     xlab("Serial position (reverse)") +
     ylab("Probability (%)") +
     ggtitle("Backward sequentiality") +
-    scale_colour_manual(values = cfg$colors$class, guide = "none") +
-    scale_fill_manual(values = cfg$colors$class, guide = "none") +
+    scale_colour_manual(values = cfg$colors_class, guide = "none") +
+    scale_fill_manual(values = cfg$colors_class, guide = "none") +
     theme(plot.title = element_text(hjust = 0.5, face = "bold")) +
     scale_x_discrete(limits = rev(levels(as.factor(seq(1, 6))))) +
     theme_zoo()
