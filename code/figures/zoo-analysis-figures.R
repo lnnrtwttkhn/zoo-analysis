@@ -153,15 +153,17 @@ plot_decoding_main_model <- function(cfg, paths, roi_input, graph_input) {
     plot_grid(plot_decoding_main_model_prediction(cfg, paths, roi_input, graph_input),
               labels = c("a"), ncol = 1, nrow = 1),
     plot_grid(plot_decoding_main_model_results_stim(cfg, paths, roi_input),
-              plot_decoding_main_model_results_diff(cfg, paths, group = c("roi"), roi_input = roi_input),
+              plot_decoding_main_model_results_diff(cfg, paths, group = c("roi"), roi_input = roi_input) +
+                theme(legend.position = "none") +
+                theme(legend.position = c(0.7, 0.85)),
               labels = c("b", "c"), ncol = 2, nrow = 1),
-    plot_grid(plot_decoding_main_model_residuals(cfg, paths, roi_input, graph_input),
+    plot_grid(plot_decoding_main_model_residuals(cfg, paths, roi_input, graph_input) + theme(legend.position = "none"),
               plot_decoding_main_model_residuals_slope(cfg, paths, roi_input, graph_input),
               labels = c("d", "e"), ncol = 2, nrow = 1),
     plot_grid(plot_decoding_main_model_no_evoked_prob(cfg, paths, roi_input, graph_input) + theme(legend.position = "none"),
               plot_decoding_main_model_no_evoked_slope(cfg, paths, roi_input, graph_input),
               labels = c("f", "g"), ncol = 2, nrow = 1, vjust = 0.5),
-    ncol = 1, nrow = 5, rel_heights = c(0.1, 1, 1, 1, 1)
+    ncol = 1, nrow = 5, rel_heights = c(0.1, 1, 1.1, 1, 1)
   )
   filename = sprintf("decoding_main_model_%s_%s", roi_input, graph_input)
   save_figure(plot = figure, filename, width = 7, height = 10)
