@@ -247,19 +247,16 @@ plot_decoding_main_residuals_slope_awareness <- function(cfg, paths, roi_input, 
 
 plot_brain_behavior <- function(cfg, paths, roi_input) {
   figure <- plot_grid(
-    plot_grid(
-      plot_decoding_main_model_results_run_diff(cfg, paths, roi_input),
-      plot_decoding_main_model_betas_behav_cor_mean(cfg, paths),
-      plot_decoding_main_model_betas_behav_cor(cfg, paths),
-      ncol = 3, nrow = 1, rel_widths = c(1/3, 1/3, 1/3), labels = letters[1:3]
-    ), plot_grid(
-      plot_decoding_main_model_residuals_consciousness(cfg, paths, roi_input),
-      plot_decoding_main_model_residuals_slope_consciousness(cfg, paths, roi_input),
-      ncol = 2, nrow = 1, rel_widths  = c(1/2, 1/2), labels = letters[4:5]
-    ), ncol = 1, nrow = 2, rel_heights = c(1/2, 1/2)
+    plot_decoding_main_model_results_diff_run_half(cfg, paths, group = c("roi", "run_half"), roi_input = roi_input),
+    plot_decoding_main_model_betas_behav_cor_mean(cfg, paths, roi_input = "visual", graph_input = "uni", predictor_input = "SR"),
+    plot_decoding_main_model_betas_behav_cor_mean(cfg, paths, roi_input = "visual", graph_input = "uni", predictor_input = "1-step"),
+    plot_decoding_main_model_betas_behav_cor(cfg, paths, roi_input = "visual"),
+    plot_decoding_main_model_residuals(cfg, paths, roi_input = roi_input, graph_input = "uni", group = "sequence_detected"),
+    plot_decoding_main_model_residuals_slope(cfg, paths, roi_input = roi_input, graph_input = "uni", group = "sequence_detected"),
+    ncol = 3, nrow = 2, rel_widths = c(0.3, 0.35, 0.35), labels = letters[1:6]
   )
   filename <- sprintf("brain_behavior_%s", roi_input)
-  save_figure(plot = figure, filename = filename, width = 11, height = 7)
+  save_figure(plot = figure, filename = filename, width = 12.5, height = 7)
   return(figure)
 }
 

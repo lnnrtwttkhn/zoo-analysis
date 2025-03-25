@@ -137,7 +137,7 @@ get_decoding_main_model_input <- function(cfg, paths) {
     .[, prob_class_scale := scale(prob_class, center = TRUE, scale = TRUE), by = .(id, roi)] %>%
     .[, prob_stim_scale := scale(prob_stim, center = TRUE, scale = TRUE), by = .(id, roi)] %>%
     .[, prob_sr_scale := scale(prob_sr, center = TRUE, scale = TRUE), by = .(id, roi)] %>%
-    .[, sequence_detected := ifelse(sequence_detected == "yes", "conscious knowledge", "no conscious knowledge")] %>%
+    .[, sequence_detected := ifelse(sequence_detected == "yes", "explicit awareness", "no explicit awareness")] %>%
     setcolorder(., c(
       "id", "run", "run_half", "trial_run", "trial_index", "graph", "node", "prob_graph", "dist_graph", "roi", "node_classifier", "interval_tr"
     )) %>%
@@ -548,7 +548,7 @@ get_decoding_main_model_betas_id <- function(cfg, paths) {
 get_decoding_main_model_betas_behav <- function(cfg, paths) {
   dt_sr_fits <- load_data(paths$source$behavior_sr_fit_parameter_distribution) %>%
     .[process == "Model Fitting", ] %>%
-    .[model_name == "SR + 1-step", ] %>%
+    .[model_name == "SR", ] %>%
     .[, c("id", "variable", "value")] %>%
     verify(.[, by = .(id), num_var := length(unique(variable))]$num_var == 2) %>%
     pivot_wider(id_cols = c("id"), names_from = variable, values_from = value)
@@ -573,11 +573,11 @@ get_decoding_main_model_betas_behav <- function(cfg, paths) {
     verify(num_subs == cfg$num_subs) %>%
     unnest(cor) %>%
     setDT(.) %>%
-    .[predictor == "SR" & beta == "estimate" & roi == "visual", ] %>%
+    .[predictor == "SR" & beta == "estimate" & roi == "visual" & sr_parameter == "gamma" & graph == "uni", ] %>%
     get_pvalue_adjust(., list(adjust_method = "fdr")) %>%
     setorder(roi, graph, interval_tr) %>%
     save_data(paths$source$decoding_main_model_betas_behav_cor)
-    # .[p.value_adjust_round <= 0.05, ] %>%
+    .[p.value_adjust_round <= 0.05, ] %>%
 }
 
 get_decoding_main_model_betas_behav_cor_mean <- function(cfg, paths) {

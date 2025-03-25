@@ -309,10 +309,11 @@ plot_decoding_main_model_betas_behav <- function(cfg, paths, roi_input) {
 
 plot_decoding_main_model_betas_behav_cor <- function(cfg, paths, roi_input) {
   dt_input <- load_data(paths$source$decoding_main_model_betas_behav_cor) %>%
-    .[roi == "visual", ] %>%
+    .[roi == roi_input, ] %>%
     .[beta == "estimate"] %>%
     .[predictor == "SR"] %>%
-    .[graph == "uni", ]
+    .[graph == "uni", ] %>%
+    .[sr_parameter == "gamma"]
   figure <- ggplot(dt_input, aes(x = as.factor(interval_tr), y = as.numeric(estimate))) +
     geom_hline(yintercept = 0, color = "black") +
     geom_line(aes(color = as.factor(predictor), group = as.factor(predictor))) +
@@ -320,7 +321,7 @@ plot_decoding_main_model_betas_behav_cor <- function(cfg, paths, roi_input) {
                    shape = as.factor(predictor))) +
     # geom_point(data = dt_input, aes(fill = significance, y = estimate), color = "black", pch = 21) +
     # geom_text(data = dt_input, aes(label = as.factor(significance), y = as.numeric(estimate)), vjust = -3) +
-    facet_wrap(~ sr_parameter) +
+    # facet_wrap(~ sr_parameter) +
     ylab("Correlation (Pearson's r)") +
     xlab("Time from inter-trial interval onset") +
     theme_zoo() +
@@ -329,7 +330,7 @@ plot_decoding_main_model_betas_behav_cor <- function(cfg, paths, roi_input) {
     scale_color_manual(name = "Predictor", values = cfg$colors_predictors) +
     scale_fill_manual(name = "Predictor", values = cfg$colors_predictors) +
     scale_shape_manual(name = "Predictor", values = cfg$shapes_predictors) +
-    ggtitle("Correlation between SR fits\nand betas of SR + 1-step model") +
+    ggtitle(sprintf("Correlation between fitted %s and\n beta of SR in SR + 1-step model", cfg$gamma_utf)) +
     # ggtitle("Betas of SR + 1-step model\n(bidirectional graph)") +
     theme(plot.title = element_text(hjust = 0.5, face = "bold")) +
     theme(legend.position = "none")
@@ -376,7 +377,7 @@ plot_decoding_main_model_betas_behav_cor_mean <- function(cfg, paths, roi_input,
     scale_x_continuous(labels = label_fill(seq(0, 1, 0.25), mod = 2), breaks = seq(0, 1, 0.25)) +
     scale_fill_manual(name = "Predictor", values = cfg$colors_predictors) +
     scale_shape_manual(name = "Predictor", values = cfg$shapes_predictors) +
-    ggtitle(sprintf("Relationship between SR parameters\nand absolute %s of %s (SR + 1-step model)", cfg$beta_utf, predictor_input)) +
+    ggtitle(sprintf("Relationship between SR parameters and\nabsolute %s of %s (SR + 1-step model)", cfg$beta_utf, predictor_input)) +
     theme(plot.title = element_text(hjust = 0.5, face = "bold")) +
     theme(legend.position = "none")
   return(figure)

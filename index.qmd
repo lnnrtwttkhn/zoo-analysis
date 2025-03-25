@@ -49,6 +49,8 @@ plot_behavior_sequence_run_accuracy(cfg, paths)
 plot_behavior_sequence_run_response_time(cfg, paths)
 get_behavior_sequence_onestep(cfg, paths)
 get_behavior_sequence_onestep_stat(cfg, paths)
+get_behavior_sequence_dist_run(cfg, paths)
+get_behavior_sequence_dist_run_glm(cfg, paths)
 get_behavior_sequence_graph(cfg, paths)
 plot_behavior_sequence_response_time_distance(cfg, paths)
 ```
@@ -366,6 +368,10 @@ get_decoding_main_model_results_diff(cfg, paths, group = c("roi", "run"))
 get_decoding_main_model_results_diff(cfg, paths, group = c("roi", "run", "sequence_detected"))
 get_decoding_main_model_results_diff(cfg, paths, group = c("roi", "session_half", "sequence_detected"))
 get_decoding_main_model_results_diff(cfg, paths, group = c("roi", "run_half"))
+```
+
+
+```{r}
 get_decoding_main_model_results_diff_mean(cfg, paths, group = c("roi", "run"))
 get_decoding_main_model_results_diff_mean(cfg, paths, group = c("roi", "run", "sequence_detected"))
 get_decoding_main_model_results_diff_mean(cfg, paths, group = c("roi", "run_half"))
@@ -418,10 +424,17 @@ plot_decoding_main_model_no_evoked(cfg, paths)
 
 ```{r}
 get_decoding_main_model_betas_id(cfg, paths)
-get_decoding_main_model_betas_behav(cfg, paths)
+la = get_decoding_main_model_betas_behav(cfg, paths) %>%
+  .[sr_parameter == "gamma", ] %>%
+  .[graph == "uni", ]
 get_decoding_main_model_betas_behav_cor_mean(cfg, paths)
 get_decoding_main_model_betas_behav_cor_mean_stat(cfg, paths)
 ```
+
+```{r}
+plot_decoding_main_model_betas_behav_cor(cfg, paths, roi_input = "visual")
+```
+
 
 ```{r}
 plot_decoding_main_model_betas_behav_cor_mean(cfg, paths, roi_input = "visual", graph_input = "uni", predictor_input = "SR")
@@ -447,4 +460,5 @@ plot_decoding_main_model(cfg, paths, roi_input = "motor", graph_input = "uni")
 plot_decoding_main_model(cfg, paths, roi_input = "motor", graph_input = "bi")
 plot_decoding_main_residuals_slope_alpha_gamma(cfg, paths, roi_input = "visual", graph_input = "uni")
 plot_decoding_main_residuals_slope_awareness(cfg, paths, roi_input = "visual", graph_input = "uni")
+plot_brain_behavior(cfg, paths, roi_input = "visual")
 ```
