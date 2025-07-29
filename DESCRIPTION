@@ -1,0 +1,19 @@
+Type: project
+Description: Zoo Analysis.
+Depends:
+  here,
+  data.table,
+  magrittr,
+  assertr,
+  tidyr,
+  dplyr,
+  purrr,
+  ggplot2,
+  ggbeeswarm
+  lemon,
+  broom,
+  rstatix,
+  broom.mixed,
+  lmerTest,
+  tibble,
+  cowplot

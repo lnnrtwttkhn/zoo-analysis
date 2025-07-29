@@ -1,0 +1,258 @@
+A:
+  A:
+    prob_flat: .NAN
+    prob_uni: .NAN
+    prob_bi: .NAN
+    dist_flat: .NAN
+    dist_uni: .NAN
+    dist_bi: .NAN
+  B:
+    prob_flat: 0.2
+    prob_uni: 0.7
+    prob_bi: 0.35
+    dist_flat: 1
+    dist_uni: 1
+    dist_bi: 1
+  C:
+    prob_flat: 0.2
+    prob_uni: 0.1
+    prob_bi: 0.1
+    dist_flat: 1
+    dist_uni: 2
+    dist_bi: 2
+  D:
+    prob_flat: 0.2
+    prob_uni: 0.1
+    prob_bi: 0.1
+    dist_flat: 1
+    dist_uni: 3
+    dist_bi: 3
+  E:
+    prob_flat: 0.2
+    prob_uni: 0.1
+    prob_bi: 0.1
+    dist_flat: 1
+    dist_uni: 4
+    dist_bi: 2
+  F:
+    prob_flat: 0.2
+    prob_uni: 0.0
+    prob_bi: 0.35
+    dist_flat: 1
+    dist_uni: 5
+    dist_bi: 1
+B:
+  A:
+    prob_flat: 0.2
+    prob_uni: 0.0
+    prob_bi: 0.35
+    dist_flat: 1
+    dist_uni: 5
+    dist_bi: 1
+  B:
+    prob_flat: .NAN
+    prob_uni: .NAN
+    prob_bi: .NAN
+    dist_flat: .NAN
+    dist_uni: .NAN
+    dist_bi: .NAN
+  C:
+    prob_flat: 0.2
+    prob_uni: 0.7
+    prob_bi: 0.35
+    dist_flat: 1
+    dist_uni: 1
+    dist_bi: 1
+  D:
+    prob_flat: 0.2
+    prob_uni: 0.1
+    prob_bi: 0.1
+    dist_flat: 1
+    dist_uni: 2
+    dist_bi: 2
+  E:
+    prob_flat: 0.2
+    prob_uni: 0.1
+    prob_bi: 0.1
+    dist_flat: 1
+    dist_uni: 3
+    dist_bi: 3
+  F:
+    prob_flat: 0.2
+    prob_uni: 0.1
+    prob_bi: 0.1
+    dist_flat: 1
+    dist_uni: 4
+    dist_bi: 2
+C:
+  A:
+    prob_flat: 0.2
+    prob_uni: 0.1
+    prob_bi: 0.1
+    dist_flat: 1
+    dist_uni: 4
+    dist_bi: 2
+  B:
+    prob_flat: 0.2
+    prob_uni: 0.0
+    prob_bi: 0.35
+    dist_flat: 1
+    dist_uni: 5
+    dist_bi: 1
+  C:
+    prob_flat: .NAN
+    prob_uni: .NAN
+    prob_bi: .NAN
+    dist_flat: .NAN
+    dist_uni: .NAN
+    dist_bi: .NAN
+  D:
+    prob_flat: 0.2
+    prob_uni: 0.7
+    prob_bi: 0.35
+    dist_flat: 1
+    dist_uni: 1
+    dist_bi: 1
+  E:
+    prob_flat: 0.2
+    prob_uni: 0.1
+    prob_bi: 0.1
+    dist_flat: 1
+    dist_uni: 2
+    dist_bi: 2
+  F:
+    prob_flat: 0.2
+    prob_uni: 0.1
+    prob_bi: 0.1
+    dist_flat: 1
+    dist_uni: 3
+    dist_bi: 3
+D:
+  A:
+    prob_flat: 0.2
+    prob_uni: 0.1
+    prob_bi: 0.1
+    dist_flat: 1
+    dist_uni: 3
+    dist_bi: 3
+  B:
+    prob_flat: 0.2
+    prob_uni: 0.1
+    prob_bi: 0.1
+    dist_flat: 1
+    dist_uni: 4
+    dist_bi: 2
+  C:
+    prob_flat: 0.2
+    prob_uni: 0.0
+    prob_bi: 0.35
+    dist_flat: 1
+    dist_uni: 5
+    dist_bi: 1
+  D:
+    prob_flat: .NAN
+    prob_uni: .NAN
+    prob_bi: .NAN
+    dist_flat: .NAN
+    dist_uni: .NAN
+    dist_bi: .NAN
+  E:
+    prob_flat: 0.2
+    prob_uni: 0.7
+    prob_bi: 0.35
+    dist_flat: 1
+    dist_uni: 1
+    dist_bi: 1
+  F:
+    prob_flat: 0.2
+    prob_uni: 0.1
+    prob_bi: 0.1
+    dist_flat: 1
+    dist_uni: 2
+    dist_bi: 2
+E:
+  A:
+    prob_flat: 0.2
+    prob_uni: 0.1
+    prob_bi: 0.1
+    dist_flat: 1
+    dist_uni: 2
+    dist_bi: 2
+  B:
+    prob_flat: 0.2
+    prob_uni: 0.1
+    prob_bi: 0.1
+    dist_flat: 1
+    dist_uni: 3
+    dist_bi: 3
+  C:
+    prob_flat: 0.2
+    prob_uni: 0.1
+    prob_bi: 0.1
+    dist_flat: 1
+    dist_uni: 4
+    dist_bi: 2
+  D:
+    prob_flat: 0.2
+    prob_uni: 0.0
+    prob_bi: 0.35
+    dist_flat: 1
+    dist_uni: 5
+    dist_bi: 1
+  E:
+    prob_flat: .NAN
+    prob_uni: .NAN
+    prob_bi: .NAN
+    dist_flat: .NAN
+    dist_uni: .NAN
+    dist_bi: .NAN
+  F:
+    prob_flat: 0.2
+    prob_uni: 0.7
+    prob_bi: 0.35
+    dist_flat: 1
+    dist_uni: 1
+    dist_bi: 1
+F:
+  A:
+    prob_flat: 0.2
+    prob_uni: 0.7
+    prob_bi: 0.35
+    dist_flat: 1
+    dist_uni: 1
+    dist_bi: 1
+  B:
+    prob_flat: 0.2
+    prob_uni: 0.1
+    prob_bi: 0.1
+    dist_flat: 1
+    dist_uni: 2
+    dist_bi: 2
+  C:
+    prob_flat: 0.2
+    prob_uni: 0.1
+    prob_bi: 0.1
+    dist_flat: 1
+    dist_uni: 3
+    dist_bi: 3
+  D:
+    prob_flat: 0.2
+    prob_uni: 0.1
+    prob_bi: 0.1
+    dist_flat: 1
+    dist_uni: 4
+    dist_bi: 2
+  E:
+    prob_flat: 0.2
+    prob_uni: 0.0
+    prob_bi: 0.35
+    dist_flat: 1
+    dist_uni: 5
+    dist_bi: 1
+  F:
+    prob_flat: .NAN
+    prob_uni: .NAN
+    prob_bi: .NAN
+    dist_flat: .NAN
+    dist_uni: .NAN
+    dist_bi: .NAN
