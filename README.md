@@ -1,9 +1,3 @@
-# Project <insert name>
+# Zoo Analysis
 
-[![Codespell](https://github.com/lnnrtwttkhn/zoo-analysis/actions/workflows/codespell.yml/badge.svg)](https://github.com/lnnrtwttkhn/zoo-analysis/actions/workflows/codespell.yml)
-
-## Dataset structure
-
-- All inputs (i.e. building blocks from other sources) are located in
-  `inputs/`.
-- All custom code is located in `code/`.
+Code for statistical analyses in Wittkuhn et al. 2025
