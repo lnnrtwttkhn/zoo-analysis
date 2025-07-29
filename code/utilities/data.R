@@ -113,6 +113,8 @@ prepare_data_behavior <- function(cfg, paths) {
     )] %>%
     .[, onestep := factor(as.factor(onestep), levels = c("Low\n(0.1)", "High\n(0.35)", "High\n(0.7)"))] %>%
     merge.data.table(x = ., y = dt_demographics, by = c("id", "order")) %>%
+    # add whether the trial is a long interval trial or not:
+    .[, by = .(id, run, trial_run), ":="(long_interval = any(event_type == "iti" & duration == 10))] %>%
     setcolorder(., c(
       "id", "session", "condition", "run", "trial_run", "event_type",
       "node", "node_previous", "node_next",
@@ -126,7 +128,10 @@ prepare_data_behavior <- function(cfg, paths) {
 
 prep_demographics_data <- function(cfg, paths) {
   # create a data table with the graph order for each participant:
-  data_task <- load_data(paths$source$behavior_task)
+  data_task <- load_data(paths$input_behavior) %>%
+    .[, by = .(id), order := factor(
+      as.factor(ifelse(any(run == "run-01" & graph == "uni"), "uni - bi", "bi - uni")),
+      levels = c("uni - bi", "bi - uni"))]
   data_order <- unique(data_task[, c("id", "order")])
   # prepare the demographics data:
   dt_output <- load_data(paths$input_demographics) %>%
@@ -191,11 +196,16 @@ prepare_questionnaire_data <- function(cfg, paths) {
 }
 
 prep_sr_modeling <- function(cfg, paths) {
+  get_data(paths$input_sr_modeling)
+  get_data(paths$input_sr_base_modeling)
+  get_data(paths$input_sr_onestep_modeling)
   dt_input_sr <- load_data(paths$input_sr_modeling) %>%
     .[, model_name := "sr" ]
   dt_input_sr_base <- load_data(paths$input_sr_base_modeling) %>%
     .[, model_name := "sr_base" ]
-  dt_input <- rbindlist(list(dt_input_sr, dt_input_sr_base), fill = TRUE)
+  dt_input_sr_onestep <- load_data(paths$input_sr_onestep_modeling) %>%
+    .[, model_name := "sr_onestep" ]
+  dt_input <- rbindlist(list(dt_input_sr, dt_input_sr_base, dt_input_sr_onestep), fill = TRUE)
   dt_demographics <- load_data(paths$source$demographics) %>%
     .[!(id %in% cfg$sub_exclude), ]
   parameter_names <- c("alpha", "gamma")
@@ -206,18 +216,25 @@ prep_sr_modeling <- function(cfg, paths) {
     .[, id := as.factor(as.character(id))] %>%
     .[, neg_ll := as.numeric(neg_ll)] %>%
     .[, model_name := dplyr::case_when(
-      model_name == "sr" ~ "Full",
-      model_name == "sr_base" ~ "Base"
+      model_name == "sr_onestep" ~ "SR + 1-step",
+      model_name == "sr" ~ "SR",
+      model_name == "sr_base" ~ "1-step"
     )] %>%
-    .[, model_name := factor(as.factor(model_name), levels = c("Base", "Full"))] %>%
+    .[, model_name := factor(as.factor(model_name), levels = c("1-step", "SR", "SR + 1-step"))] %>%
     .[, process := dplyr::case_when(
       process == "model_fitting" ~ "Model Fitting",
       process == "parameter_recovery" ~ "Parameter Recovery"
+    )] %>%
+    .[, variable_label := dplyr::case_when(
+      variable == "alpha" ~ cfg$alpha_utf,
+      variable == "gamma" ~ cfg$gamma_utf
     )] %>%
     # check if there are the expected number of parameter for each model:
     verify(.[mod == "model" & variable %in% parameter_names, by = .(id, process, model_name, iter), .(
       num_params = length(unique(variable))
     )]$num_params <= num_params) %>%
+    # .[, by = .(process), .(num_subs = length(unique(id)))]
+    verify(.[, by = .(process), .(num_subs = length(unique(id)))]$num_subs == cfg$num_subs) %>%
     save_data(paths$source$behavior_sr_fit_parameters)
 }
 
@@ -225,7 +242,7 @@ prep_sr_matrices <- function(cfg, paths) {
   dt_behav_task <- load_data(paths$source$behavior_task)
   dt_sr_params <- load_data(paths$source$behavior_sr_fit_parameters) %>%
     .[process == "Model Fitting", ] %>%
-    .[model_name == "Full", ] %>%
+    .[model_name == "SR + 1-step", ] %>%
     .[mod == "model", ] %>%
     .[iter == 1, ] %>%
     .[variable %in% c("alpha", "gamma"), ] %>%
@@ -254,6 +271,49 @@ prep_sr_matrices <- function(cfg, paths) {
     # .[, dist_prob := paste(dist_current, prob_current)] %>%
     save_data(paths$source$behavior_sr_fit_sr_matrices)
   
+}
+
+prep_sr_modeling_data <- function(cfg, paths) {
+  get_data(paths$input_sr_modeling_data)
+  get_data(paths$input_sr_base_modeling_data)
+  get_data(paths$input_sr_onestep_modeling_data)
+  dt_input_sr <- load_data(paths$input_sr_modeling_data) %>%
+    .[iter == 1, ] %>%
+    .[process == "model_fitting", ]
+  dt_input_sr_base <- load_data(paths$input_sr_base_modeling_data) %>%
+    .[iter == 1, ] %>%
+    .[process == "model_fitting", ]
+  dt_input_sr_onestep <- load_data(paths$input_sr_onestep_modeling_data) %>%
+    .[iter == 1, ] %>%
+    .[process == "model_fitting", ]
+  dt_input <- rbindlist(list(dt_input_sr, dt_input_sr_base, dt_input_sr_onestep), fill = TRUE)
+  dt_demographics <- load_data(paths$source$demographics) %>%
+    .[!(id %in% cfg$sub_exclude), ]
+  dt_sr_params <- load_data(paths$source$behavior_sr_fit_parameters) %>%
+    .[variable %in% c("alpha", "gamma"), ] %>%
+    .[, c("id", "variable", "value", "model_name", "process")] %>%
+    pivot_wider(id_cols = c("id", "model_name", "process"), names_from = "variable")
+  parameter_names <- c("alpha", "gamma")
+  num_params <- length(parameter_names)
+  dt_output <- dt_input %>%
+    .[!(id %in% cfg$sub_exclude), ] %>%
+    .[, model_name := dplyr::case_when(
+      model_name == "sr_onestep" ~ "SR + 1-step",
+      model_name == "sr" ~ "SR",
+      model_name == "sr_base" ~ "1-step"
+    )] %>%
+    .[, model_name := factor(as.factor(model_name), levels = c("SR + 1-step", "SR", "1-step"))] %>%
+    .[, process := dplyr::case_when(
+      process == "model_fitting" ~ "Model Fitting",
+      process == "parameter_recovery" ~ "Parameter Recovery"
+    )] %>%
+    merge.data.table(x = ., y = dt_demographics, by = c("id", "order")) %>%
+    merge.data.table(x = ., y = dt_sr_params, by = c("id", "model_name", "process")) %>%
+    .[, id := as.factor(as.character(id))] %>%
+    # .[, by = .(process), .(num_subs = length(unique(id)))]
+    .[, by = .(process, model_name, id), mean_surprise_last_5 := sapply(seq_len(.N), function(i) mean(shannon_surprise[max(1, i-4):i]))] %>%
+    verify(.[, by = .(process, model_name), .(num_subs = length(unique(id)))]$num_subs == cfg$num_subs) %>%
+    save_data(paths$source$behavior_sr_fit_data)
 }
 
 prepare_data_mri_rest <- function(cfg, paths) {
@@ -414,6 +474,33 @@ prepare_data_decoding <- function(dt_input) {
   return(dt_output)
 }
 
+prepare_data_decoding_single_peak <- function(cfg, paths) {
+  get_data(paths$input_mri_single_peak)
+  dt_input <- load_data(paths$input_mri_single_peak)
+  dt_output <- dt_input %>%
+    .[!(id %in% cfg$sub_exclude), ] %>%
+    .[classification == "ensemble", ] %>%
+    .[class != "other", ] %>%
+    .[stringr::str_detect(test_set, "decode-peak"), ] %>%
+    prepare_data_decoding(.) %>%
+    verify(run_index %in% seq(1, 9)) %>%
+    save_data(paths$source$decoding_single_peak)
+}
+
+prepare_data_decoding_single_hpc_peak <- function(cfg, paths) {
+  get_data(paths$input_mri_single_hpc)
+  dt_input <- load_data(paths$input_mri_single_hpc)
+  dt_output <- dt_input %>%
+    .[!(id %in% cfg$sub_exclude), ] %>%
+    .[classification == "ensemble", ] %>%
+    # .[classifier == stim_file, ] %>%
+    .[class != "other", ] %>%
+    .[test_set == "condition-recall_event-stimulus_accuracy-correct", ] %>%
+    # prepare_data_decoding(.) %>%
+    # verify(run_index %in% seq(1, 9)) %>%
+    save_data(paths$source$decoding_single_hpc_peak)
+}
+
 prepare_data_decoding_single_interval <- function(cfg, paths) {
   get_data(paths$input_mri_single_interval)
   dt_input <- load_data(paths$input_mri_single_interval)
@@ -430,6 +517,93 @@ prepare_data_decoding_single_interval <- function(cfg, paths) {
       num_unique_trs = length(unique(interval_tr))
     )]$num_unique_trs == num_trial_trs) %>%
     save_data(paths$source$decoding_single_interval)
-  return(dt_output)
 }
 
+prepare_data_behavior_sequence_previous <- function(cfg, paths) {
+  dt_input <- load_data(paths$source$behavior_task)
+  num_prev <- cfg$decoding_sequence$num_prev
+  num_next <- cfg$decoding_sequence$num_next
+  dt_output <- dt_input %>%
+    .[!(id %in% cfg$sub_exclude), ] %>%
+    .[condition == "Sequence", ] %>%
+    .[event_type == "response", ] %>%
+    .[, c("id", "run", "graph", "trial_run", "node", "onset")] %>%
+    verify(.[, by = .(id, run), .(num_trials = length(trial_run))]$num_trials == cfg$sequence$num_trials_run) %>%
+    .[, by = .(id, run, node), node_dist_trial := c(0, diff(trial_run))] %>%
+    .[, by = .(id, run, node), node_dist_time := c(0, diff(onset))] %>%
+    .[, by = .(id, run), seq_prev := apply(mapply(paste, lapply(seq(num_prev, 1), function(x) lag(node, x))), 1, paste, collapse = "-")] %>%
+    .[, by = .(id, run), seq_next := apply(mapply(paste, lapply(seq(1, num_next), function(x) lead(node, x))), 1, paste, collapse = "-")] %>%
+    .[, by = .(id, run), seq_prev_onsets := apply(mapply(paste, lapply(seq(num_prev, 1), function(x) lag(onset, x))), 1, paste, collapse = "-")] %>%
+    .[, by = .(id, run), seq_next_onsets := apply(mapply(paste, lapply(seq(1, num_next), function(x) lead(onset, x))), 1, paste, collapse = "-")] %>%
+    .[, by = .(id, run, trial_run, graph), seq_total := paste(c(seq_prev, as.character(node), seq_next), collapse = "-")] %>%
+    .[, by = .(id, run, trial_run, graph), seq_total_onsets := paste(c(seq_prev_onsets, as.numeric(onset), seq_next_onsets), collapse = "-")] %>%
+    .[, -c("onset")] %>%
+    setorder(., id, run, graph, trial_run, node) %>%
+    save_data(paths$source$behavior_sequence_previous)
+}
+
+prepare_data_behavior_sequence_dist_prev <- function(cfg, paths) {
+  dt_input <- load_data(paths$source$behavior_task)
+  dt_output <- dt_input  %>%
+    .[!(id %in% cfg$sub_exclude), ] %>%
+    .[condition == "Sequence", ] %>%
+    .[event_type == "response", ] %>%
+    .[, c("id", "run", "node", "trial_run", "onset")] %>%
+    .[, by = .(id, run), .(dt = list(get_class_dist(trial_run, onset, node)))] %>%
+    unnest(., dt) %>%
+    save_data(paths$source$behavior_sequence_previous_dist)
+}
+
+prepare_data_decoding_main <- function(cfg, paths) {
+  get_data(paths$input_mri_sequence)
+  dt_input <- load_data(paths$input_mri_sequence)
+  dt_behav_prev_seq <- load_data(paths$source$behavior_sequence_previous)
+  dt_behav_prev_dist <- load_data(paths$source$behavior_sequence_previous_dist)
+  dt_output <- dt_input %>%
+    .[!(id %in% cfg$sub_exclude), ] %>%
+    .[classification == "ensemble", ] %>%
+    .[class != "other", ] %>%
+    .[test_set == "condition-main_event-iti_duration-long", ] %>%
+    # select distinct rows to avoid duplication due to motor responses in ITIs:
+    distinct(id, classification, mask_test, train_set, session, run, trial_run, interval_tr, node, class, .keep_all = TRUE) %>%
+    .[interval_tr %in% seq(cfg$decoding_sequence$num_trs), ] %>%
+    prepare_data_decoding(.) %>%
+    verify(.[, by = .(id, mask_test, session, run, trial_run, node, class), .(
+      num_trs = .N
+    )]$num_trs == cfg$decoding_sequence$num_trs) %>%
+    # check number of trials per class per run:
+    verify(.[, by = .(id, mask_test, run, node, interval_tr), .(
+      num_trials_run = .N
+    )]$num_trials_run <= cfg$decoding_single_interval$max_trials_run) %>%
+    # check number of trials per class per run:
+    verify(.[, by = .(id, mask_test, run, node, class, interval_tr), .(
+      num_trials_run_node = .N
+    )]$num_trials_run_node <= cfg$decoding_sequence_interval$max_trials_run_node) %>%
+    # check the number of classes per node:
+    verify(.[, by = .(id, mask_test, run, trial_run, interval_tr, node), .(
+      num_classes = .N
+    )]$num_classes == cfg$num_nodes) %>%
+    verify(classifier == class) %>%
+    merge.data.table(x = ., y = graphs, by.x = c("node", "class"), by.y = c("node_previous", "node")) %>%
+    .[, prob_graph := ifelse(graph == "uni", prob_uni, prob_bi)] %>%
+    .[, dist_graph := ifelse(graph == "uni", dist_uni, dist_bi)] %>%
+    setnames(., old = "node", new = "node_current") %>%
+    setnames(., old = "class", new = "node_classifier") %>%
+    .[, node_current := as.factor(node_current)] %>%
+    .[, node_classifier := as.factor(node_classifier)] %>%
+    verify(.[, by = .(id, mask_test, run), .(
+      trial_indices = unique(trial_index_run)
+    )]$trial_indices %in% seq(1, cfg$decoding_sequence_interval$max_trials_run)) %>%
+    verify(.[, by = .(id, mask_test), .(
+      trial_indices = unique(trial_index)
+    )]$trial_indices %in% seq(1, cfg$decoding_sequence$max_trials)) %>%
+    merge.data.table(x = ., y = dt_behav_prev_seq, by = c("id", "run", "trial_run", "graph")) %>%
+    merge.data.table(x = ., y = dt_behav_prev_dist,
+                     by.x = c("id", "run", "trial_run", "node_current", "node_classifier"),
+                     by.y = c("id", "run", "trial_run", "node", "class")) %>%
+    .[, class_dist_time := onset_interval - class_dist_onset] %>%
+    setorder(id, mask_test, run, run_index, trial_index, interval_tr, node_current, node_classifier) %>%
+    setcolorder(., c("id", "mask_test", "run", "run_index", "trial_index", "trial_index_run", "trial_run", "interval_tr", "node_current", "node_classifier",
+                     "onset", "onset_tr", "onset_interval", "onset_interval_tr")) %>%
+    save_data(paths$source$decoding_main)
+}

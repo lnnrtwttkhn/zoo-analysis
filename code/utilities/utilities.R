@@ -25,6 +25,7 @@ load_packages <- function() {
   library("broom.mixed")
   library("tibble")
   library("cowplot")
+  library("scales")
 }
 
 load_config <- function() {
@@ -51,11 +52,20 @@ load_config <- function() {
   cfg$hand_levels <- c("left", "right", "n/a")
   cfg$condition_levels <- c("Training", "Single", "Sequence")
   cfg$graph_levels <- c("uni", "bi", "flat")
+  cfg$alpha_utf <- "\u03B1"
+  cfg$gamma_utf <- "\u03B3"
+  cfg$beta_utf <- "\u03B2"
   # set plotting colors:
   cfg$colors_probability = hcl.colors(4, "Dark Mint")
+  cfg$colors_class <- rev(hcl.colors(6, "Zissou 1"))
+  cfg$colors_dist <- hcl.colors(5, "Viridis")
   cfg$colors_graph <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")[c(6,7)]
   cfg$colors_sr <- hcl.colors(20, "Inferno")
   cfg$colors_conscious <- hcl.colors(5, "Plasma")[c(1, 4)]
+  cfg$colors_decoding_current <- rev(hcl.colors(5, "Inferno")[c(1,3)])
+  cfg$colors_predictors <- c("darkblue", "darkred", "darkgray")
+  cfg$shapes_predictors <- c(15, 16, 17)
+  cfg$colors_models <- rev(gg_color_hue(3))
   # configuration parameters for questionnaire data:
   cfg$questionnaire$num_trials <- 30
   # configuration parameters for sequence trial behavioral data:
@@ -63,9 +73,24 @@ load_config <- function() {
   cfg$sequence$num_trials_run <- 240
   # configuration parameters for resting-state decoding data:
   cfg$rest$num_trs <- c(233, 137)
+  # configuration parameters for decoding data on single trials:
+  cfg$single$num_runs <- 9
+  cfg$single$max_trials_run <- 60
+  cfg$single$max_trials <- cfg$single$num_runs * cfg$single$max_trials_run
+  cfg$single$num_trs <- 15
   # configuration parameters for single-trial interval decoding data:
   cfg$decoding_single_interval$num_trs <- 15
   cfg$decoding_single_interval$max_trials_run <- 80
+  # configuration parameters for decoding data on sequence trials:
+  cfg$decoding_sequence$num_trs <- 8
+  cfg$decoding_sequence$num_prev <- 9
+  cfg$decoding_sequence$num_next <- 10
+  cfg$decoding_sequence$max_stim_evoked <- cfg$decoding_sequence$num_prev + 1 + cfg$decoding_sequence$num_next
+  cfg$decoding_sequence$max_trials <- 120
+  cfg$decoding_sequence$max_trials_graph <- cfg$decoding_sequence$max_trials / cfg$num_graphs
+  cfg$decoding_sequence_interval$max_trials_run <- 24
+  cfg$decoding_sequence_interval$max_trials_run_node <- 4
+  cfg$decoding_sequence$cor_method <- "pearson"
   # parameters for modeling of the sine-based response function:
   cfg$sine_params$names <- c("frequency", "amplitude", "shift", "baseline")
   cfg$sine_params$default_params <- c(0.2, 0.6, 0, 0.1)
@@ -75,9 +100,69 @@ load_config <- function() {
   cfg$sine_params$time <- seq(1, cfg$sine_params$num_trs, 1) - 1
   cfg$sine_params$time_eval = seq(1, cfg$sine_params$num_trs, 0.1) - 1
   cfg$sine_params$opts <- list("algorithm" = "NLOPT_LN_COBYLA", "xtol_rel" = 1.0e-8, "maxeval" = 1.0e+5)
-  # colors for plotting:
-  cfg$colors$class <- rev(hcl.colors(6, "Zissou 1"))
-  
+  # model configuration for decoding LME models:
+  cfg$decoding_sequence$models <- list()
+  cfg$decoding_sequence$models$suite1 <- c(
+    "prob_class ~ prob_stim + (1 | id)",
+    "prob_class ~ prob_stim + prob_graph + (1 | id)",
+    "prob_class ~ prob_stim + dist_graph + (1 | id)",
+    "prob_class ~ prob_stim + prob_graph + dist_graph + (1 | id)",
+    "prob_class ~ prob_stim + prob_sr + (1 | id)",
+    "prob_class ~ prob_stim + prob_sr + prob_graph + (1 | id)"
+  )
+  cfg$decoding_sequence$models$suite2 <- c(
+    "prob_class_scale ~ prob_stim_scale + (1 | id)",
+    "prob_class_scale ~ prob_stim_scale + prob_graph + (1 | id)",
+    "prob_class_scale ~ prob_stim_scale + dist_graph + (1 | id)",
+    "prob_class_scale ~ prob_stim_scale + prob_graph + dist_graph + (1 | id)",
+    "prob_class_scale ~ prob_stim_scale + prob_sr_scale + (1 | id)",
+    "prob_class_scale ~ prob_stim_scale + prob_sr_scale + prob_graph + (1 | id)"
+  )
+  cfg$decoding_sequence$models$suite3 <- c(
+    "prob_class_scale ~ prob_stim_scale + (1 | id)",
+    "prob_class_scale ~ prob_stim_scale + prob_graph + sequence_detected + (1 | id)",
+    "prob_class_scale ~ prob_stim_scale + dist_graph + sequence_detected + (1 | id)",
+    "prob_class_scale ~ prob_stim_scale + prob_graph + sequence_detected + dist_graph + (1 | id)",
+    "prob_class_scale ~ prob_stim_scale + prob_sr_scale + sequence_detected + (1 | id)",
+    "prob_class_scale ~ prob_stim_scale + prob_sr_scale + prob_graph + sequence_detected + (1 | id)"
+  )
+  cfg$decoding_sequence$models$suite4 <- c(
+    "logit(prob_class) ~ prob_stim_norm + (1 | id)",
+    "logit(prob_class) ~ prob_stim_norm + prob_graph + (1 | id)",
+    "logit(prob_class) ~ prob_stim_norm + prob_sr + (1 | id)",
+    "logit(prob_class) ~ prob_stim_norm + prob_sr + prob_graph + (1 | id)"
+  )
+  cfg$decoding_sequence$models$suite5 <- c(
+    "prob_class_scale ~ prob_stim_scale + (1 | id)",
+    "prob_class_scale ~ prob_stim_scale + prob_graph + (1 | id)",
+    "prob_class_scale ~ prob_stim_scale + prob_sr_scale + (1 | id)",
+    "prob_class_scale ~ prob_stim_scale + prob_sr_scale + prob_graph + (1 | id)"
+  )
+  cfg$decoding_sequence$models$suite6 <- c(
+    "prob_class ~ prob_stim + (1 | id)",
+    "prob_class ~ prob_stim + prob_graph + (1 | id)",
+    "prob_class ~ prob_stim + prob_sr + (1 | id)",
+    "prob_class ~ prob_stim + prob_sr + prob_graph + (1 | id)"
+  )
+  cfg$decoding_sequence$models$suite7 <- c(
+    # "prob_class ~ prob_stim + (prob_stim | id)",
+    # "prob_class ~ prob_stim + prob_graph + (prob_stim + prob_graph | id)",
+    # "prob_class ~ prob_stim + prob_sr + (prob_stim + prob_sr | id)",
+    "prob_class ~ prob_stim + prob_sr + prob_graph + (prob_sr | id)"
+  )
+  cfg$decoding_sequence$models$suite8 <- c(
+    "prob_class ~ prob_stim",
+    "prob_class ~ prob_stim + prob_graph",
+    "prob_class ~ prob_stim + prob_sr",
+    "prob_class ~ prob_stim + prob_sr + prob_graph"
+  )
+  cfg$decoding_sequence$models$model_names <- c(
+    "Stimulus",
+    "1-step",
+    "SR (multi-step)",
+    "SR + 1-step"
+  )
+  cfg$decoding_sequence$models$model_formulas <- cfg$decoding_sequence$models$suite6
   return(cfg)
 }
 
@@ -93,10 +178,27 @@ create_paths <- function() {
   paths$input_questionnaire <- file.path(paths$input, "bids", "*", "ses-02", "beh", "*beh.tsv")
   paths$input_sr_modeling <- file.path(path_root, "input", "sr-modeling", "modeling", "sub-*-sr.csv")
   paths$input_sr_base_modeling <- file.path(path_root, "input", "sr-modeling", "modeling", "sub-*-sr_base.csv")
+  paths$input_sr_onestep_modeling <- file.path(path_root, "input", "sr-modeling", "modeling", "sub-*-sr_onestep.csv")
+  paths$input_sr_modeling_data <- file.path(path_root, "input", "sr-modeling", "modeling", "sub-*-sr_fit-data.csv")
+  paths$input_sr_base_modeling_data <- file.path(path_root, "input", "sr-modeling", "modeling", "sub-*-sr_base*-data.csv")
+  paths$input_sr_onestep_modeling_data <- file.path(path_root, "input", "sr-modeling", "modeling", "sub-*-sr_onestep*-data.csv")
   paths$input_mri_rest <- file.path(paths$input, "decoding", "sub-*", "decoding", "*scheme-7*_time_shift-4*decoding*")
+  paths$input_mri_single_peak <- c(
+    file.path(paths$input, "decoding", "sub-*", "decoding", "*scheme-0*_time_shift-4*decoding*"),
+    file.path(paths$input, "decoding", "sub-*", "decoding", "*scheme-2*_time_shift-4*decoding*"),
+    file.path(paths$input, "decoding", "sub-*", "decoding", "*scheme-4*_time_shift-4*decoding*"),
+    file.path(paths$input, "decoding", "sub-*", "decoding", "*scheme-5*_time_shift-4*decoding*")
+  )
   paths$input_mri_single_interval <- c(
     file.path(path_root, "input", "decoding", "sub-*", "decoding", "*mask-vis_masking-anatomical_scheme-1*_time_shift-4*"),
     file.path(path_root, "input", "decoding", "sub-*", "decoding", "*mask-mot_masking-anatomical_scheme-3*_time_shift-4*")
+  )
+  paths$input_mri_sequence <- c(
+    file.path(paths$input, "decoding", "sub-*", "decoding", "*scheme-6*_time_shift-4*decoding*"),
+    file.path(paths$input, "decoding", "sub-*", "decoding", "*scheme-8*_time_shift-4*decoding*")
+  )
+  paths$input_mri_single_hpc <- c(
+    file.path(paths$input, "decoding-hpc", "sub-*", "decoding", "sub-*_mask-hpc-anatomical_task_decoding.csv")
   )
   paths$graphs <- file.path(paths$code, "utilities", "graphs.yml")
   # outputs:
@@ -117,6 +219,8 @@ create_paths <- function() {
   paths$source$behavior_sequence_onestep_stat <- sprintf(source_path, "behavior_sequence_onestep_stat")
   paths$source$behavior_sequence_onestep_run <- sprintf(source_path, "behavior_sequence_onestep_run")
   paths$source$behavior_sequence_onestep_run_glm <- sprintf(source_path, "behavior_sequence_onestep_run_glm")
+  paths$source$behavior_sequence_dist_run <- sprintf(source_path, "behavior_sequence_dist_run")
+  paths$source$behavior_sequence_dist_run_glm <- sprintf(source_path, "behavior_sequence_dist_run_glm")
   paths$source$behavior_sequence_graph <- sprintf(source_path, "behavior_sequence_graph")
   paths$source$behavior_sequence_graph_run <- sprintf(source_path, "behavior_sequence_graph_run")
   paths$source$behavior_sequence_previous <- sprintf(source_path, "behavior_sequence_previous")
@@ -133,6 +237,8 @@ create_paths <- function() {
   paths$source$questionnaire_prob_ratings_onestep <- sprintf(source_path, "questionnaire_prob_ratings_onestep")
   paths$source$questionnaire_prob_ratings_correlation <- sprintf(source_path, "questionnaire_prob_ratings_correlation")
   paths$source$questionnaire_prob_ratings_correlation_stat <- sprintf(source_path, "questionnaire_prob_ratings_correlation_stat")
+  paths$source$questionnaire_prob_ratings_cor_random <- sprintf(source_path, "questionnaire_prob_ratings_cor_random")
+  paths$source$questionnaire_prob_ratings_cor_sub <- sprintf(source_path, "questionnaire_prob_ratings_cor_sub")
   # paths: analysis of behavioral data from successor representation modeling (grid search):
   paths$source$behavior_sr_grid <- sprintf(source_path, "behavior_sr_grid")
   paths$source$behavior_sr_grid_seq <- sprintf(source_path, "behavior_sr_grid_seq")
@@ -144,6 +250,7 @@ create_paths <- function() {
   paths$source$behavior_sr_grid_seq_mean_lme <- sprintf(source_path, "behavior_sr_seq_mean_lme")
   # paths: analysis of behavioral data from successor representation model fitting:
   paths$source$behavior_sr_fit_parameters <- sprintf(source_path, "behavior_sr_fit_parameters")
+  paths$source$behavior_sr_fit_data <- sprintf(source_path, "behavior_sr_fit_data")
   paths$source$behavior_sr_fit_starting_values <- sprintf(source_path, "behavior_sr_fit_starting_values")
   paths$source$behavior_sr_fit_parameter_dispersion <- sprintf(source_path, "behavior_sr_fit_parameter_dispersion")
   paths$source$behavior_sr_fit_parameter_distribution <- sprintf(source_path, "behavior_sr_fit_parameter_distribution")
@@ -152,9 +259,9 @@ create_paths <- function() {
   paths$source$behavior_sr_fit_parameter_conscious <- sprintf(source_path, "behavior_sr_fit_parameter_conscious")
   paths$source$behavior_sr_fit_parameter_order <- sprintf(source_path, "behavior_sr_fit_parameter_order")
   paths$source$behavior_sr_fit_suprise_effect <- sprintf(source_path, "behavior_sr_fit_suprise_effect")
+  paths$source$behavior_sr_fit_suprise_effect_num <- sprintf(source_path, "behavior_sr_fit_suprise_effect_num")
   paths$source$behavior_sr_fit_sr_matrices <- sprintf(source_path, "behavior_sr_fit_sr_matrices")
   paths$source$behavior_sr_fit_sr_matrices_plot <- sprintf(source_path, "behavior_sr_fit_sr_matrices_plot")
-  paths$source$behavior_sr_fit_sr_matrices
   paths$source$behavior_sr_fit_response_time_alpha <- sprintf(source_path, "behavior_sr_fit_response_time_alpha")
   paths$source$behavior_sr_fit_response_time_alpha_stat <- sprintf(source_path, "behavior_sr_fit_response_time_alpha_stat")
   paths$source$behavior_sr_fit_response_time_glm <- sprintf(source_path, "behavior_sr_fit_response_time_glm")
@@ -167,7 +274,14 @@ create_paths <- function() {
   paths$source$behavior_sr_fit_parameter_recovery_corr_stat <- sprintf(source_path, "behavior_sr_fit_parameter_recovery_corr_stat")
   
   paths$decoding_rest <- sprintf(source_path, "decoding-rest")
-  
+  # source data for decoding on single trials (peaks):
+  paths$source$decoding_single_peak <- sprintf(source_path, "decoding_single_peak")
+  paths$source$decoding_single_peak_accuracy <- sprintf(source_path, "decoding_single_peak_accuracy")
+  paths$source$decoding_single_peak_accuracy_mean <- sprintf(source_path, "decoding_single_peak_accuracy_mean")
+  paths$source$decoding_single_peak_accuracy_run <- sprintf(source_path, "decoding_single_peak_accuracy_run")
+  # source data for decoding on single trials in hippocampus:
+  paths$source$decoding_single_hpc_peak <- sprintf(source_path, "decoding_single_hpc_peak")
+  paths$source$decoding_single_hpc_peak_accuracy_mean <- sprintf(source_path, "decoding_single_hpc_peak_accuracy_mean")
   # source data for decoding on single trials (interval):
   paths$source$decoding_single_interval <- sprintf(source_path, "decoding_single_interval")
   paths$source$decoding_single_interval_trial <- sprintf(source_path, "decoding_recall_interval_trial")
@@ -180,6 +294,43 @@ create_paths <- function() {
   paths$source$decoding_single_interval_sine_fit_eval <- sprintf(source_path, "decoding_recall_interval_sine_fit_eval")
   paths$source$decoding_single_interval_sine_fit_eval_mean <- sprintf(source_path, "decoding_recall_interval_sine_fit_eval_mean")
   paths$source$decoding_single_interval_sine_fit_sub <- sprintf(source_path, "decoding_recall_interval_sine_fit_sub")
+  # source data for decoding on sequence trials:
+  paths$source$decoding_main <- sprintf(source_path, "decoding_main")
+  paths$source$decoding_main_current_mean <- sprintf(source_path, "decoding_main_current_mean")
+  paths$source$decoding_main_current_stat <- sprintf(source_path, "decoding_main_current_stat")
+  paths$source$decoding_main_current_interval <- sprintf(source_path, "decoding_main_current_interval")
+  paths$source$decoding_main_sine <- sprintf(source_path, "decoding_main_sine")
+  paths$source$decoding_main_sine_mean <- sprintf(source_path, "decoding_main_sine_mean")
+  paths$source$decoding_main_seq_prev <- sprintf(source_path, "decoding_main_seq_prev")
+  paths$source$decoding_main_stim_modeled <- sprintf(source_path, "decoding_main_stim_modeled")
+  paths$source$decoding_main_model_input <- sprintf(source_path, "decoding_main_model_input")
+  paths$source$decoding_main_model_raw_prob <- sprintf(source_path, "decoding_main_model_raw_prob")
+  paths$source$decoding_main_model_results <- sprintf(source_path, "decoding_main_model_results")
+  paths$source$decoding_main_model_results_diff <- sprintf(source_path, "decoding_main_model_results_diff")
+  paths$source$decoding_main_model_results_diff_mean <- sprintf(source_path, "decoding_main_model_results_diff_mean")
+  paths$source$decoding_main_model_residuals <- sprintf(source_path, "decoding_main_model_residuals")
+  paths$source$decoding_main_model_betas <- sprintf(source_path, "decoding_main_model_betas")
+  paths$source$decoding_main_model_betas_id <- sprintf(source_path, "decoding_main_model_betas_id")
+  paths$source$decoding_main_model_betas_behav <- sprintf(source_path, "decoding_main_model_betas_behav")
+  paths$source$decoding_main_model_betas_behav_cor <- sprintf(source_path, "decoding_main_model_betas_behav_cor")
+  paths$source$decoding_main_model_betas_behav_cor_mean <- sprintf(source_path, "decoding_main_model_betas_behav_cor_mean")
+  paths$source$decoding_main_model_betas_behav_cor_mean_stat <- sprintf(source_path, "decoding_main_model_betas_behav_cor_mean_stat")
+  paths$source$decoding_main_model_betas_behav_cor_mean_stat_rt <- sprintf(source_path, "decoding_main_model_betas_behav_cor_mean_stat_rt")
+  paths$source$decoding_main_model_prediction <- sprintf(source_path, "decoding_main_model_prediction")
+  paths$source$decoding_main_model_residuals_mean <- sprintf(source_path, "decoding_main_model_residuals_mean")
+  paths$source$decoding_main_model_residuals_slope <- sprintf(source_path, "decoding_main_model_residuals_slope")
+  paths$source$decoding_main_model_residuals_slope_mean <- sprintf(source_path, "decoding_main_model_residuals_slope_mean")
+  paths$source$decoding_main_model_residuals_slope_stat <- sprintf(source_path, "decoding_main_model_residuals_slope_stat")
+  paths$source$decoding_main_model_residuals_rt_cor <- sprintf(source_path, "decoding_main_model_residuals_rt_cor")
+  paths$source$decoding_main_model_residuals_rt_cor_stat <- sprintf(source_path, "decoding_main_model_residuals_rt_cor_stat")
+  paths$source$decoding_main_model_diff <- sprintf(source_path, "decoding_main_model_diff")
+  paths$source$decoding_main_model_no_evoked <- sprintf(source_path, "decoding_main_model_no_evoked")
+  paths$source$decoding_main_model_no_evoked_phase <- sprintf(source_path, "decoding_main_model_no_evoked_phase")
+  paths$source$decoding_main_model_no_evoked_late_trs <- sprintf(source_path, "decoding_main_model_no_evoked_late_trs")
+  paths$source$decoding_main_model_no_evoked_num_class_trials <- sprintf(source_path, "decoding_main_model_no_evoked_num_class_trials")
+  paths$source$decoding_main_model_no_evoked_num_dist_trials <- sprintf(source_path, "decoding_main_model_no_evoked_num_dist_trials")
+  paths$source$decoding_main_model_no_evoked_slope <- sprintf(source_path, "decoding_main_model_no_evoked_slope")
+  paths$source$decoding_main_model_no_evoked_slope_stat <- sprintf(source_path, "decoding_main_model_no_evoked_slope_stat")
   return(paths)
 }
 
@@ -359,9 +510,14 @@ theme_zoo <- function() {
 
 get_ttest <- function(dt_input, ttest_cfg) {
   if (ttest_cfg$paired == TRUE) {
+    pair_factors <- unique(droplevels(dt_input[[ttest_cfg$rhs]]))
+    stopifnot(length(pair_factors) == 2)
+    lhs <- as.numeric(dt_input[[ttest_cfg$lhs]])
+    rhs <- dt_input[[ttest_cfg$rhs]]
     ttest <- broom::tidy(stats::t.test(
-      as.formula(sprintf("Pair(%s, %s) ~ 1", ttest_cfg$lhs, ttest_cfg$rhs)),
-      data = droplevels(dt_input),
+      lhs[rhs == pair_factors[1]],
+      lhs[rhs == pair_factors[2]],
+      paired = TRUE,
       alternative = ttest_cfg$alternative
     ))
   } else if (ttest_cfg$paired == FALSE) {
@@ -391,7 +547,9 @@ get_pvalue_adjust <- function(dt_input, ttest_cfg = NA) {
     .[, estimate_round := round(estimate, 2)] %>%
     .[, statistic_round := round(statistic, 2)] %>%
     .[, conf.low_round := round(conf.low, 2)] %>%
+    .[, conf.low_latex := ifelse(conf.low == -Inf, "-\\infty", as.character(conf.low_round))] %>%
     .[, conf.high_round := round(conf.high, 2)] %>%
+    .[, conf.high_latex := ifelse(conf.high == Inf, "+\\infty", as.character(conf.high_round))] %>%
     .[, effsize_round := tryCatch(round(effsize, 2), error=function(err) NA)] %>%
     .[, p.value_round := round(p.value, 2)] %>%
     .[, p.value_round_label := format_pvalue(p.value_round)] %>%
@@ -400,7 +558,31 @@ get_pvalue_adjust <- function(dt_input, ttest_cfg = NA) {
     .[, p.value_adjust_round := as.numeric(round(p.value_adjust, 2))] %>%
     .[, p.value_adjust_round_label := format_pvalue(p.value_adjust_round)] %>%
     .[, p.value_adjust_significance := ifelse(p.value_adjust < 0.05, "*", "n.s.")] %>%
-    .[, adjust_method := ttest_cfg$adjust_method]
+    .[, adjust_method := ttest_cfg$adjust_method] %>%
+    .[, adjust_method := dplyr::case_when(
+      adjust_method == "fdr" ~ "FDR",
+      adjust_method == "bonferroni" ~ "Bonferroni"
+    )] %>%
+    .[, alternative := dplyr::case_when(
+      alternative == "two.sided" ~ "two-sided"
+    )] %>%
+    # adjust latex reporting depending on the type of test:
+    .[grepl("correlation", method), report_latex := paste(
+      sprintf("$r(%.0f) = %.2f$,", parameter, estimate),
+      sprintf("$p %s$,", p.value_adjust_round_label),
+      sprintf("%s %s,", alternative, method),
+      sprintf("$p$-values %s-corrected", adjust_method)
+    )] %>%
+    .[grepl("t-test", method), report_latex := paste(
+      sprintf("$M = %.2f$,", estimate),
+      sprintf("$SD = %.2f$,", std_value),
+      sprintf("$t_{%.0f} = %.2f$,", parameter, statistic),
+      sprintf("CI [$%s$, $%s$],", conf.low_latex, conf.high_latex),
+      sprintf("$p %s$", p.value_adjust_round_label),
+      sprintf("$d = %.2f,$", effsize),
+      sprintf("%s %s,", alternative, method),
+      sprintf("$p$-values %s-corrected", adjust_method)
+    )]
   return(dt_output)
 }
 
@@ -462,6 +644,24 @@ get_lme <- function(formulas, data, cfg) {
   })
   results_df <- bind_rows(models_output)
   return(results_df)
+}
+
+run_lmer <- function(formula, data, cfg, tidy = TRUE) {
+  model <- lmerTest::lmer(
+    formula = as.formula(formula),
+    data = data,
+    subset = NULL,
+    weights = NULL,
+    REML = FALSE,
+    na.action = na.omit,
+    offset = NULL,
+    control = cfg$lcctrl
+  )
+  # return a tidy model if TRUE
+  if (tidy == TRUE) {
+    model <- broom::tidy(model)
+  }
+  return(model)
 }
 
 calc_bits = function(probability) {
@@ -542,6 +742,11 @@ sr_mat_fun = function(node_previous, node, alpha, gamma){
   return(list(sr_mat))
 }
 
+gg_color_hue <- function(n) {
+  hues <- seq(15, 375, length = n + 1)
+  hcl(h = hues, l = 65, c = 100)[1:n]
+}
+
 label_fill <- function(original, offset = 0, mod = 2, fill = "") {
   # this function can be used to generate axis labels that omit e.g.,
   # every second label. Solution was taken from [here](https://bit.ly/2VycSy0).
@@ -609,4 +814,57 @@ sine_truncated_eval <- function(params, time, data) {
   y <- sine_truncated(params, time)
   SSE <- sum((data - y)^2)
   return(SSE)
+}
+
+get_class_dist <- function(trial_run, onset, node) {
+  num_letters <- 6
+  dist_time <- matrix(NA, length(node), num_letters, dimnames = list(node, LETTERS[1:num_letters]))
+  dist_trial <- matrix(NA, length(node), num_letters, dimnames = list(node, LETTERS[1:num_letters]))
+  for (i in seq_along(node)) {
+    element <- node[i]
+    prev_seq <- node[1:i]
+    for (j in seq(num_letters)) {
+      letter_pos <- which(prev_seq == LETTERS[j])
+      if (length(letter_pos) != 0) {
+        dist_trial[i, j] <- max(letter_pos - i)
+        # dist_time[i, j] <- onset[i] - onset[max(letter_pos)]
+        dist_time[i, j] <- onset[max(letter_pos)]
+      }
+    }
+  }
+  dt_trial <- data.table(node = rownames(dist_trial), dist_trial) %>%
+    .[, trial_run := trial_run] %>%
+    melt(id.vars = c("trial_run", "node"), variable.name = "class", value.name = "class_dist_trial")
+  dt_time <- data.table(node = rownames(dist_time), dist_time) %>%
+    .[, trial_run := trial_run] %>%
+    melt(id.vars = c("trial_run", "node"), variable.name = "class", value.name = "class_dist_onset")
+  dt <- merge.data.table(x = dt_trial, y = dt_time, by = c("trial_run", "node", "class")) %>%
+    setorder(trial_run, node, class)
+  return(dt)
+}
+
+add_arrows <- function(figure) {
+  ybreaks <- ggplot_build(figure)$layout$panel_params[[1]]$y.sec$breaks
+  arrow_xpos <- 0.75
+  figure <- figure +
+    annotate(geom = "segment",
+             x = arrow_xpos, xend = arrow_xpos, y = 0, yend = max(ybreaks),
+             arrow = arrow(length = unit(3, "pt"), type = "closed"), color = "black") +
+    annotate(geom = "segment",
+             x = arrow_xpos, xend = arrow_xpos, y = 0, yend = min(ybreaks),
+             arrow = arrow(length = unit(3, "pt"), type = "closed"), color = "black") +
+    annotate(geom = "text", x = 0.25, y = max(ybreaks) / 2, label = "Stimulus model\nbetter",
+             color = "black", angle = 90, fontface = "italic", size = rel(2.5)) +
+    annotate(geom = "text", x = 0.25, y = min(ybreaks) / 2, label = "Replay model\nbetter",
+             color = "black", angle = 90, fontface = "italic", size = rel(2.5))
+  return(figure)
+}
+
+set_yaxis <- function(figure) {
+  yrange <- ggplot_build(figure)$layout$panel_params[[1]]$y.range
+  ybreaks <- ggplot_build(figure)$layout$panel_params[[1]]$y.sec$breaks
+  ybreaks_max <- max(abs(yrange), na.rm = TRUE)
+  figure <- figure +
+    ylim(c(-ybreaks_max, ybreaks_max))
+  return(figure)
 }

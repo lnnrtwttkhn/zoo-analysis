@@ -375,6 +375,121 @@ get_questionnaire_prob_ratings_model <- function(cfg, paths) {
   dt_output <- get_lme(model_formulas, dt_input, cfg)
 }
 
+get_questionnaire_random_transitions <- function(cfg, paths, graphs) {
+  
+  set.seed(3690)
+  dt_input <- load_data(paths$source$questionnaire)
+  
+  generate_transition_matrix <- function() {
+    # mat <- matrix(rbeta(36, 2, 2), nrow = 6, ncol = 6)
+    # mat <- matrix(rbeta(36, 3, 3), nrow = 6, ncol = 6)
+    mat <- matrix(runif(36, 0, 1), nrow = 6, ncol = 6)
+    diag(mat) <- NA
+    return(mat)
+  }
+  
+  dt_graphs <- graphs %>%
+    .[, c("node_previous", "node", "prob_uni", "prob_bi")] %>%
+    .[, prob_uni := ifelse(is.nan(prob_uni), NA, prob_uni)] %>%
+    .[, prob_bi := ifelse(is.nan(prob_bi), NA, prob_bi)] %>%
+    setorder(., node_previous, node)
+  
+  mat_uni <- matrix(dt_graphs$prob_uni, nrow = 6, byrow = TRUE)
+  mat_bi <- matrix(dt_graphs$prob_bi, nrow = 6, byrow = TRUE)
+  
+  n <- 100000
+  correlation_distribution <- numeric(n)
+  message("Simulating ...")
+  for (i in 1:n) {
+    mat <- generate_transition_matrix()
+    cor_uni <- cor.test(as.vector(mat), as.vector(mat_uni))$estimate
+    cor_bi <- cor.test(as.vector(mat), as.vector(mat_bi))$estimate
+    mean_cor <- mean(c(cor_uni, cor_bi))
+    correlation_distribution[i] <- mean_cor
+  }
+  
+  cutoff <- quantile(correlation_distribution, 0.95)
+  dt_cor_random <- data.table(correlation = correlation_distribution) %>%
+    save_data(paths$source$questionnaire_prob_ratings_cor_random)
+  
+  dt_cor_sub <- dt_input %>%
+    .[, by = .(id, sequence_detected), .(
+      prob_cor_uni = cor.test(probability_rating, prob_uni)$estimate,
+      prob_cor_bi = cor.test(probability_rating, prob_bi)$estimate
+    )] %>%
+    .[, by = .(id, sequence_detected), prob_cor_mean := mean(c(prob_cor_uni, prob_cor_bi))] %>%
+    .[, rating_group := ifelse(prob_cor_mean <= cutoff, "Random", "Non-Random")] %>%
+    .[, knowledge_group := ifelse(rating_group == "Random" & sequence_detected == "no", "Unaware & Random", "Others")] %>%
+    save_data(paths$source$questionnaire_prob_ratings_cor_sub)
+}
+
+plot_questionnaire_prob_ratings_cor <- function(cfg, paths) {
+  dt1 <- load_data(paths$source$questionnaire_prob_ratings_cor_random)
+  dt2 <- load_data(paths$source$questionnaire_prob_ratings_cor_sub)
+  cutoff <- quantile(dt1$correlation, 0.95)
+  xmax <- 1
+  ymax <- 11000
+  figure <- ggplot(data = dt1, aes(x = correlation)) +
+    geom_segment(data = dt2, aes(x = prob_cor_mean, xend = prob_cor_mean, y = 0, yend = -1000, color = id)) +
+    geom_histogram(, bins = 50, fill = "lightgray", color = "black") +
+    annotate("text", x = cutoff + 0.75, y = ymax - 2000, label = paste0("Cutoff (95%): r = ", round(cutoff, 2)), color = "red", hjust = 1) +
+    annotate("segment", x = -xmax, xend = cutoff, y = ymax, yend = ymax, color = "black") +
+    annotate("segment", x = xmax, xend = cutoff, y = ymax, yend = ymax, color = "black") +
+    annotate("label", x = cutoff + (xmax - cutoff) / 2, y = ymax, label = "Non-Random", color = "black", hjust = 0.5) +
+    annotate("label", x = (-xmax + cutoff) / 2, y = ymax, label = "Random", color = "black", hjust = 0.5) +
+    geom_vline(xintercept = cutoff, color = "red", linetype = "solid", linewidth = 1) +
+    xlab("Mean correlation (Pearson's r)") +
+    ylab("Count") +
+    ggtitle("Distribution of mean correlation coefficients") +
+    theme_zoo() +
+    theme(plot.title = element_text(hjust = 0.5, face = "bold")) +
+    theme(legend.position = "none") +
+    coord_capped_cart(left = "both", bottom = "both", expand = TRUE, xlim = c(-xmax, xmax), ylim = c(-100, ymax)) +
+    # scale_y_continuous(labels = label_fill(seq(-1, 1, 0.25), mod = 4), breaks = seq(-1, 1, 0.25)) +
+    scale_x_continuous(labels = label_fill(seq(-xmax, xmax, 0.25), mod = 4), breaks = seq(-xmax, xmax, 0.25))
+  return(figure)
+}
+
+plot_questionnaire_seq_prob_cor <- function(cfg, paths) {
+  dt_input <- load_data(paths$source$questionnaire_prob_ratings_cor_sub)
+  figure <- ggplot(data = dt_input, aes(x = rating_group)) +
+    geom_bar(width = 0.5) +
+    geom_text(stat = "count", aes(label = after_stat(count), y = after_stat(count) + 1)) +
+    ylab("Number of participants") +
+    # ggtitle("Classification of\ntransition probabilites") +
+    theme_zoo() +
+    theme(axis.line.x = element_blank()) +
+    theme(axis.ticks.x = element_blank()) +
+    theme(axis.title.x = element_blank()) +
+    theme(axis.text.x = element_text(colour = "black")) +
+    coord_capped_cart(left = "both", expand = TRUE) +
+    scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
+    theme(plot.title = element_text(hjust = 0.5)) +
+    ylim(c(0, 30))
+  return(figure)
+}
+
+plot_questionnaire_seq_prob_cor_seq_detect <- function(cfg, paths) {
+  dt_input <- load_data(paths$source$questionnaire_prob_ratings_cor_sub)
+  figure <- ggplot(data = dt_input, aes(x = rating_group)) +
+    facet_wrap(~ sequence_detected) +
+    geom_bar(width = 0.5) +
+    geom_text(stat = "count", aes(label = after_stat(count), y = after_stat(count) + 1)) +
+    ggtitle('"Did you notice any\nsequential structure?"') +
+    ylab("Number of participants") +
+    xlab("Category based on\nrandom guessing model") +
+    theme_zoo() +
+    theme(axis.line.x = element_blank()) +
+    theme(axis.ticks.x = element_blank()) +
+    theme(axis.title.x = element_blank()) +
+    theme(axis.text.x = element_text(colour = "black")) +
+    coord_capped_cart(left = "both", expand = TRUE) +
+    scale_x_discrete(guide = guide_axis(n.dodge = 2)) +
+    theme(plot.title = element_text(hjust = 0.5)) +
+    ylim(c(0, 20))
+  return(figure)
+}
+
 plot_questionnaire_all <- function(cfg, paths) {
   figure <- plot_grid(
     plot_grid(
@@ -392,5 +507,16 @@ plot_questionnaire_all <- function(cfg, paths) {
     nrow = 2, ncol = 1, rel_heights = c(1, 1)
   )
   save_figure(plot = figure, "questionnaire", width = 9, height = 7)
+  return(figure)
+}
+
+plot_questionnaire_prob_model <-  function(cfg, paths) {
+  figure <- plot_grid(
+    plot_questionnaire_prob_ratings_cor(cfg, paths),
+    plot_questionnaire_seq_prob_cor(cfg, paths),
+    plot_questionnaire_seq_prob_cor_seq_detect(cfg, paths),
+    nrow = 1, ncol = 3, rel_widths = c(0.55, 0.15, 0.3), labels = letters[1:3]
+  )
+  save_figure(plot = figure, "questionnaire_prob_model", width = 10, height = 4)
   return(figure)
 }

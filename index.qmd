@@ -8,6 +8,7 @@ title: "Zoo Analysis"
 #| warning: false
 #| message: false
 source(here::here("code", "utilities", "utilities.R"))
+source(here::here("code", "utilities", "data.R"))
 load_packages()
 paths <- create_paths()
 cfg <- load_config()
@@ -17,16 +18,25 @@ graphs <- load_graphs(paths)
 ## Data
 
 ```{r}
-source(here::here("code", "utilities", "data.R"))
-prepare_data_behavior(cfg, paths)
-prepare_data_mri_rest(cfg, paths)
 prep_demographics_data(cfg, paths)
+prepare_data_behavior(cfg, paths)
+# prepare_data_mri_rest(cfg, paths)
 prepare_questionnaire_data(cfg, paths)
 prep_sr_modeling(cfg, paths)
-prep_sr_matrices(paths)
+prep_sr_matrices(cfg, paths)
+prep_sr_modeling_data(cfg, paths)
+prepare_data_behavior_sequence_previous(cfg, paths)
+prepare_data_behavior_sequence_dist_prev(cfg, paths)
+prepare_data_decoding_main(cfg, paths)
 ```
 
 ## Behavior
+
+### Single trials
+
+```{r}
+source(here::here("code", "behavior", "zoo-analysis-behavior-single.R"))
+```
 
 ### Sequence Condition
 
@@ -39,6 +49,8 @@ plot_behavior_sequence_run_accuracy(cfg, paths)
 plot_behavior_sequence_run_response_time(cfg, paths)
 get_behavior_sequence_onestep(cfg, paths)
 get_behavior_sequence_onestep_stat(cfg, paths)
+get_behavior_sequence_dist_run(cfg, paths)
+get_behavior_sequence_dist_run_glm(cfg, paths)
 get_behavior_sequence_graph(cfg, paths)
 plot_behavior_sequence_response_time_distance(cfg, paths)
 ```
@@ -64,11 +76,19 @@ get_questionnaire_prob_ratings_accuracy_stat(cfg, paths)
 plot_questionnaire_prob_ratings_accuracy(cfg, paths)
 get_questionnaire_prob_ratings_onestep(cfg, paths)
 plot_questionnaire_prob_ratings_onestep(cfg, paths)
-get_questionnaire_prob_ratings_correlation(cfg, paths)
-get_questionnaire_prob_ratings_correlation_stat(cfg, paths)
+# get_questionnaire_prob_ratings_correlation(cfg, paths)
+# get_questionnaire_prob_ratings_correlation_stat(cfg, paths)
 plot_questionnaire_prob_ratings_correlation(cfg, paths)
 get_questionnaire_prob_ratings_model(cfg, paths)
 plot_questionnaire_all(cfg, paths)
+```
+
+```{r}
+get_questionnaire_random_transitions(cfg, paths, graphs)
+plot_questionnaire_prob_ratings_cor(cfg, paths)
+plot_questionnaire_seq_prob_cor(cfg, paths)
+plot_questionnaire_seq_prob_cor_seq_detect(cfg, paths)
+plot_questionnaire_prob_model(cfg, paths)
 ```
 
 ### Successor Representation Model Fitting
@@ -115,11 +135,14 @@ plot_behavior_sr_fit_suprise_effect(cfg, paths)
 get_sr_matrices(cfg, paths)
 plot_sr_matrices(cfg, paths)
 plot_sr_matrices_select(cfg, paths)
+plot_sr_matrices_select_extreme(cfg, paths)
 ```
 
 ```{r}
 get_behavior_sequence_onestep_run(cfg, paths)
 get_behavior_sequence_onestep_run_glm(cfg, paths)
+get_behavior_sr_fit_response_time_onestep(cfg, paths)
+get_behavior_sr_fit_response_time_onestep_diff(cfg, paths)
 plot_behavior_sequence_response_time_onestep_run(cfg, paths)
 plot_behavior_sr_fit_response_time_onestep_diff(cfg, paths)
 ```
@@ -130,11 +153,309 @@ plot_behavior_sr_fit_parameter_recovery(cfg, paths)
 get_behavior_sr_fit_parameter_recovery_corr(cfg, paths)
 plot_behavior_sr_fit_parameter_recovery_corr(cfg, paths)
 get_behavior_sr_fit_parameter_recovery_corr_stat(cfg, paths)
-plot_sr_modeling_parameter_receovery(cfg, paths)
 ```
 
 ```{r}
 plot_sr_modeling(cfg, paths)
 plot_sr_modeling_supplement(cfg, paths)
 plot_sr_fit_check(cfg, paths)
+plot_sr_modeling_parameter_recovery(cfg, paths)
+```
+
+## fMRI
+
+### Single Trials
+
+```{r}
+source(here::here("code", "utilities", "data.R"))
+source(file.path(paths$code, "decoding", "zoo-analysis-decoding-single-peak.R"))
+source(file.path(paths$code, "decoding", "zoo-analysis-decoding-single-interval.R"))
+source(file.path(paths$code, "figures", "zoo-analysis-figures-decoding-single.R"))
+prepare_data_decoding_single_peak(cfg, paths)
+prepare_data_decoding_single_interval(cfg, paths)
+```
+
+#### Peak
+
+```{r}
+get_single_decoding_peak_accuracy(cfg, paths)
+get_single_decoding_peak_accuracy_mean(cfg, paths)
+get_single_decoding_peak_accuracy_stat(cfg, paths)
+get_single_decoding_peak_run(cfg, paths)
+get_single_decoding_peak_run_lme(cfg, paths, mask_input = "visual")
+get_single_decoding_peak_run_lme(cfg, paths, mask_input = "motor")
+dt_output <- get_single_decoding_peak_run_stat(cfg, paths)
+```
+
+```{r}
+plot_decoding_single_accuracy_mean(cfg, paths)
+plot_decoding_single_accuracy_run(cfg, paths)
+```
+
+#### Interval
+
+```{r}
+get_decoding_single_interval_trial(cfg, paths)
+dt_output <- get_decoding_single_interval_stat(cfg, paths)
+get_decoding_single_interval_trial_mean(cfg, paths)
+plot_decoding_single_interval(cfg, paths)
+```
+
+
+```{r}
+get_decoding_single_interval_node(cfg, paths)
+plot_decoding_single_interval_node(cfg, paths)
+```
+
+```{r}
+get_decoding_single_fit(cfg, paths)
+get_decoding_single_fit_eval(cfg, paths)
+get_decoding_single_fit_eval_mean(cfg, paths)
+get_decoding_single_fit_sub(cfg, paths)
+get_decoding_single_fit_mean(cfg, paths)
+get_decoding_single_fit_mean_eval(cfg, paths)
+```
+
+```{r}
+plot_decoding_single_fit(cfg, paths)
+plot_decoding_single_fit_mean(cfg, paths)
+plot_decoding_single_fit_sub(cfg, paths)
+plot_decoding_single(cfg, paths)
+plot_sequentiality_illustration(cfg, paths)
+```
+
+### Sequence Trials
+
+```{r}
+source(file.path(paths$code, "decoding", "zoo-analysis-decoding-sequence-current.R"))
+source(file.path(paths$code, "figures", "zoo-analysis-figures-decoding-sequence.R"))
+```
+
+#### Current
+
+```{r}
+get_decoding_main_current_mean(cfg, paths)
+dt_output <- get_decoding_main_current_stat(cfg, paths)
+plot_decoding_main_current_mean(cfg, paths)
+```
+
+```{r}
+get_decoding_main_current_interval(cfg, paths)
+plot_decoding_main_current_interval(cfg, paths)
+```
+
+#### Modeling
+
+```{r}
+source(file.path(paths$code, "decoding", "zoo-analysis-decoding-sequence-modeling.R"))
+source(file.path(paths$code, "figures", "zoo-analysis-figures-decoding-sequence-modeling.R"))
+```
+
+```{r}
+get_decoding_main_sine(cfg, paths)
+get_decoding_main_sine_mean(cfg, paths)
+get_decoding_main_modeled(cfg, paths)
+```
+
+```{r}
+get_decoding_main_model_input(cfg, paths)
+```
+
+```{r}
+get_decoding_main_model_raw_prob(cfg, paths)
+plot_decoding_main_model_raw_prob(cfg, paths)
+plot_decoding_main_model_raw_prob_all(cfg, paths)
+```
+
+##### Residuals of stimulus model
+
+```{r}
+get_decoding_main_model_residuals(cfg, paths)
+get_decoding_main_model_residuals_mean(cfg, paths)
+plot_decoding_main_model_residuals(cfg, paths, roi_input = "visual", graph_input = "uni")
+plot_decoding_main_model_residuals(cfg, paths, roi_input = "visual", graph_input = "bi")
+```
+
+##### Sequentiality in residuals
+
+```{r}
+get_decoding_main_model_residuals_slope(cfg, paths)
+get_decoding_main_model_residuals_slope_mean(cfg, paths)
+get_decoding_main_model_residuals_slope_stat(cfg, paths)
+dt_output <- get_decoding_main_model_residuals_slope_stat(cfg, paths) %>%
+  .[p.value < 0.05] %>%
+  .[roi == "visual"] %>%
+  .[graph == "uni"]
+dt_output <- get_decoding_main_model_residuals_slope_stat(cfg, paths) %>%
+  .[p.value < 0.05] %>%
+  .[roi == "visual"] %>%
+  .[graph == "bi"]
+plot_decoding_main_model_residuals_slope(cfg, paths, roi_input = "visual", graph_input = "uni")
+plot_decoding_main_model_residuals_slope(cfg, paths, roi_input = "visual", graph_input = "bi")
+```
+
+##### Residuals in subgroups
+
+```{r}
+get_decoding_main_model_residuals_mean(cfg, paths, group = "alpha_group")
+get_decoding_main_model_residuals_mean(cfg, paths, group = "gamma_group")
+get_decoding_main_model_residuals_mean(cfg, paths, group = "sequence_detected")
+get_decoding_main_model_residuals_mean(cfg, paths, group = "surprise_group")
+get_decoding_main_model_residuals_mean(cfg, paths, group = "rating_group")
+get_decoding_main_model_residuals_mean(cfg, paths, group = "knowledge_group")
+```
+
+```{r}
+plot_decoding_main_model_residuals(cfg, paths, roi_input = "visual", graph_input = "uni", group = "alpha_group")
+plot_decoding_main_model_residuals(cfg, paths, roi_input = "visual", graph_input = "uni", group = "gamma_group")
+plot_decoding_main_model_residuals(cfg, paths, roi_input = "visual", graph_input = "uni", group = "sequence_detected")
+plot_decoding_main_model_residuals(cfg, paths, roi_input = "visual", graph_input = "uni", group = "surprise_group")
+plot_decoding_main_model_residuals(cfg, paths, roi_input = "visual", graph_input = "uni", group = "rating_group")
+plot_decoding_main_model_residuals(cfg, paths, roi_input = "visual", graph_input = "uni", group = "knowledge_group")
+```
+
+```{r}
+get_decoding_main_model_residuals_slope_mean_group(cfg, paths, group = "alpha_group")
+get_decoding_main_model_residuals_slope_mean_group(cfg, paths, group = "gamma_group")
+get_decoding_main_model_residuals_slope_mean_group(cfg, paths, group = "sequence_detected")
+get_decoding_main_model_residuals_slope_mean_group(cfg, paths, group = "surprise_group")
+get_decoding_main_model_residuals_slope_mean_group(cfg, paths, group = "rating_group")
+get_decoding_main_model_residuals_slope_mean_group(cfg, paths, group = "knowledge_group")
+get_decoding_main_model_residuals_slope_stat_group(cfg, paths, group = "alpha_group")
+get_decoding_main_model_residuals_slope_stat_group(cfg, paths, group = "gamma_group")
+get_decoding_main_model_residuals_slope_stat_group(cfg, paths, group = "sequence_detected")
+get_decoding_main_model_residuals_slope_stat_group(cfg, paths, group = "rating_group")
+get_decoding_main_model_residuals_slope_stat_group(cfg, paths, group = "knowledge_group")
+dt_output <- get_decoding_main_model_residuals_slope_stat_group(cfg, paths, group = "surprise_group") %>%
+  .[roi == "visual", ] %>%
+  .[graph == "uni"] %>%
+  .[p.value < 0.05] %>%
+  .$report_latex
+plot_decoding_main_model_residuals_slope(cfg, paths, roi_input = "visual", graph_input = "uni", group = "alpha_group")
+plot_decoding_main_model_residuals_slope(cfg, paths, roi_input = "visual", graph_input = "uni", group = "gamma_group")
+plot_decoding_main_model_residuals_slope(cfg, paths, roi_input = "visual", graph_input = "uni", group = "sequence_detected")
+plot_decoding_main_model_residuals_slope(cfg, paths, roi_input = "visual", graph_input = "uni", group = "surprise_group")
+plot_decoding_main_model_residuals_slope(cfg, paths, roi_input = "visual", graph_input = "uni", group = "rating_group")
+plot_decoding_main_model_residuals_slope(cfg, paths, roi_input = "visual", graph_input = "uni", group = "knowledge_group")
+```
+
+```{r}
+get_decoding_main_model_prediction(cfg, paths)
+plot_decoding_main_model_prediction(cfg, paths, roi_input = "visual", graph_input = "uni")
+```
+
+```{r}
+get_decoding_main_model_betas(cfg, paths)
+plot_decoding_main_model_betas(cfg, paths, roi_input = "visual", graph_input = "uni")
+plot_decoding_main_model_betas(cfg, paths, roi_input = "motor", graph_input = "uni")
+```
+
+```{r}
+plot_decoding_main_model_results_stim(cfg, paths, roi_input = "visual")
+plot_decoding_main_model_results_stim(cfg, paths, roi_input = "motor")
+```
+
+```{r}
+get_decoding_main_model_results(cfg, paths, group = c("roi"))
+get_decoding_main_model_results(cfg, paths, group = c("roi", "graph"))
+get_decoding_main_model_results(cfg, paths, group = c("roi", "run"))
+get_decoding_main_model_results(cfg, paths, group = c("roi", "run_half"))
+get_decoding_main_model_results(cfg, paths, group = c("roi", "run", "sequence_detected"))
+get_decoding_main_model_results(cfg, paths, group = c("roi", "session_half", "sequence_detected"))
+get_decoding_main_model_results_diff(cfg, paths, group = c("roi"))
+get_decoding_main_model_results_diff(cfg, paths, group = c("roi", "graph"))
+get_decoding_main_model_results_diff(cfg, paths, group = c("roi", "run"))
+get_decoding_main_model_results_diff(cfg, paths, group = c("roi", "run", "sequence_detected"))
+get_decoding_main_model_results_diff(cfg, paths, group = c("roi", "session_half", "sequence_detected"))
+get_decoding_main_model_results_diff(cfg, paths, group = c("roi", "run_half"))
+```
+
+
+```{r}
+get_decoding_main_model_results_diff_mean(cfg, paths, group = c("roi", "run"))
+get_decoding_main_model_results_diff_mean(cfg, paths, group = c("roi", "run", "sequence_detected"))
+get_decoding_main_model_results_diff_mean(cfg, paths, group = c("roi", "run_half"))
+```
+
+```{r}
+plot_decoding_main_model_results_diff(cfg, paths, group = c("roi"), roi_input = "visual")
+plot_decoding_main_model_results_diff(cfg, paths, group = c("roi"), roi_input = "motor")
+plot_decoding_main_model_results_diff(cfg, paths, group = c("roi"))
+plot_decoding_main_model_results_diff(cfg, paths, group = c("roi", "graph"), roi_input = "visual")
+plot_decoding_main_model_results_diff(cfg, paths, group = c("roi", "run"), roi_input = "visual")
+plot_decoding_main_model_results_diff(cfg, paths, group = c("roi", "run", "sequence_detected"), roi_input = "visual")
+plot_decoding_main_model_results_diff(cfg, paths, group = c("roi", "session_half", "sequence_detected"), roi_input = "visual")
+plot_decoding_main_model_results_diff(cfg, paths, group = c("roi", "run_half"), roi_input = "visual")
+```
+
+```{r}
+plot_decoding_main_model_results_diff_run_half(cfg, paths, group = c("roi", "run_half"), roi_input = "visual")
+plot_decoding_main_model_results_diff_run_half(cfg, paths, group = c("roi", "run_half"), roi_input = "motor")
+plot_decoding_main_model_results_diff_run(cfg, paths, group = c("roi", "run"), roi_input = "visual")
+plot_decoding_main_model_results_diff_run_consciousness(cfg, paths, group = c("roi", "run", "sequence_detected"), roi_input = "visual")
+```
+
+```{r}
+get_decoding_main_model_no_evoked(cfg, paths)
+plot_decoding_main_model_no_evoked_prob(cfg, paths, mask_input = "visual", graph_input = "uni")
+plot_decoding_main_model_no_evoked_prob(cfg, paths, mask_input = "visual", graph_input = "bi")
+plot_decoding_main_model_no_evoked_all(cfg, paths)
+```
+
+```{r}
+get_decoding_main_model_no_evoked_slope(cfg, paths)
+get_decoding_main_model_no_evoked_slope_stat(cfg, paths)
+dt_output <- get_decoding_main_model_no_evoked_slope_stat_select(cfg, paths)
+plot_decoding_main_model_no_evoked_slope(cfg, paths, mask_input = "visual", graph_input = "uni")
+plot_decoding_main_model_no_evoked_slope(cfg, paths, mask_input = "visual", graph_input = "bi")
+plot_decoding_main_model_no_evoked_slope(cfg, paths, mask_input = "motor", graph_input = "uni")
+plot_decoding_main_model_no_evoked_slope(cfg, paths, mask_input = "motor", graph_input = "bi")
+plot_decoding_main_model_no_evoked_slope_all(cfg, paths, mask_input = "visual")
+plot_decoding_main_model_no_evoked_slope_all(cfg, paths, mask_input = "motor")
+```
+
+```{r}
+get_decoding_main_model_no_evoked_num_class_trials(cfg, paths)
+plot_decoding_main_model_no_evoked_num_class_trials(cfg, paths)
+get_decoding_main_model_no_evoked_num_dist_trials(cfg, paths)
+plot_decoding_main_model_no_evoked_num_dist_trials(cfg, paths)
+plot_decoding_main_model_no_evoked(cfg, paths)
+```
+
+```{r}
+get_decoding_main_model_betas_id(cfg, paths)
+get_decoding_main_model_betas_behav(cfg, paths)
+get_decoding_main_model_betas_behav_cor_mean(cfg, paths)
+get_decoding_main_model_betas_behav_cor_mean_stat(cfg, paths)
+```
+
+```{r}
+plot_decoding_main_model_betas_behav_cor(cfg, paths, roi_input = "visual")
+```
+
+```{r}
+plot_decoding_main_model_betas_behav_cor_mean(cfg, paths, roi_input = "visual", graph_input = "uni", predictor_input = "SR")
+plot_decoding_main_model_betas_behav_cor_mean(cfg, paths, roi_input = "visual", graph_input = "uni", predictor_input = "1-step")
+plot_decoding_main_model_betas_behav_cor_mean(cfg, paths, roi_input = "visual", graph_input = "uni", sr_input = "alpha", predictor_input = "SR")
+plot_decoding_main_model_betas_behav_cor_mean(cfg, paths, roi_input = "visual", graph_input = "uni", sr_input = "gamma", predictor_input = "SR")
+```
+
+```{r}
+get_decoding_main_model_residuals_rt_cor(cfg, paths)
+get_decoding_main_model_residuals_rt_cor_stat(cfg, paths)
+plot_decoding_main_model_residuals_rt_cor(cfg, paths)
+```
+
+## Figures
+
+```{r}
+source(here::here("code", "figures", "zoo-analysis-figures.R"))
+figure4 <- plot_decoding_current(cfg, paths)
+plot_decoding_main_model(cfg, paths, roi_input = "visual", graph_input = "uni")
+plot_decoding_main_model(cfg, paths, roi_input = "visual", graph_input = "bi")
+plot_decoding_main_model(cfg, paths, roi_input = "motor", graph_input = "uni")
+plot_decoding_main_model(cfg, paths, roi_input = "motor", graph_input = "bi")
+plot_decoding_main_residuals_slope_alpha_gamma(cfg, paths, roi_input = "visual", graph_input = "uni")
+plot_decoding_main_residuals_slope_awareness(cfg, paths, roi_input = "visual", graph_input = "uni")
+plot_brain_behavior(cfg, paths, roi_input = "visual")
 ```

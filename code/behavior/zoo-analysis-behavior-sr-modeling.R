@@ -163,6 +163,16 @@ get_behavior_sr_fit_parameter_distribution <- function(cfg, paths) {
     save_data(paths$source$behavior_sr_fit_parameter_distribution)
 }
 
+get_behavior_sr_fit_parameter_num <- function(cfg, paths) {
+  dt_input <- load_data(paths$source$behavior_sr_fit_parameter_distribution)
+  dt_output <- dt_input %>%
+    .[process == "Model Fitting", ] %>%
+    .[model_name == "SR + 1-step", ] %>%
+    verify(length(unique(id)) == cfg$num_subs) %>%
+    .[variable == cfg$gamma_utf, ] %>%
+    .[round(value, 2) > 0.01, ]
+}
+
 get_behavior_sr_fit_model_comparison <- function(cfg, paths) {
   dt_input <- load_data(paths$source$behavior_sr_fit_parameters)
   variables = c("aic", "bic")
@@ -177,7 +187,9 @@ get_behavior_sr_fit_model_comparison <- function(cfg, paths) {
     verify(.[, by = .(id, model_name, iter), .(num_values = .N)]$num_values == length(variables)) %>%
     verify(length(unique(id)) == cfg$num_subs) %>%
     .[, by = .(id, variable, iter), num_models := .N] %>%
-    .[num_models == 2, ] %>%
+    .[num_models == 3, ] %>%
+    # .[, .(num_subs = length(unique(id)))]
+    verify(.[, .(num_subs = length(unique(id)))]$num_subs == cfg$num_subs) %>%
     save_data(paths$source$behavior_sr_fit_model_comparison)
 }
 
@@ -185,16 +197,17 @@ get_behavior_sr_fit_model_comparison_stat <- function(cfg, paths) {
   dt_input <- load_data(paths$source$behavior_sr_fit_model_comparison)
   dt_output <-  dt_input %>%
     .[, by = .(id, process, variable, iter), num_models := .N] %>%
-    .[num_models == 2, ] %>%
-    .[, num_params := ifelse(model_name == "Full", 2, NA)] %>%
-    .[, num_params := ifelse(model_name == "Base", 1, num_params)] %>%
+    .[num_models == 3, ] %>%
+    .[, num_params := ifelse(model_name == "SR", 2, NA)] %>%
+    .[, num_params := ifelse(model_name == "SR + 1-step", 2, num_params)] %>%
+    .[, num_params := ifelse(model_name == "1-step", 1, num_params)] %>%
     .[variable == "aic", value := value + 2 * num_params] %>%
     .[, by = .(model_name, variable, iter), .(
       num_subs = .N,
       sum_value = sum(value)
     )] %>%
     # TODO: FIX FOR SAME NUMBER OF PARTICIPANTS!
-    # verify(num_subs == cfg$num_subs) %>%
+    verify(num_subs == cfg$num_subs) %>%
     verify(length(unique(num_subs)) == 1)
   # ttest_cfg <- list(
   #   formula = "value ~ model_name",
@@ -210,6 +223,17 @@ get_behavior_sr_fit_model_comparison_stat <- function(cfg, paths) {
   #   save_data(paths$source$behavior_sr_fit_model_comparison_stat)
 }
 
+get_behavior_sr_fit_parameter_mean <- function(cfg, paths) {
+  dt_input <- load_data(paths$source$behavior_sr_fit_parameter_distribution)
+  dt_output <- dt_input %>%
+    .[, by = .(process, model_name, variable), .(
+      mean_value = round(mean(value), 2),
+      sd_value = round(sd(value), 2),
+      num_subs = .N
+    )] %>% 
+    verify(num_subs == cfg$num_subs)
+}
+
 get_behavior_sr_fit_parameter_conscious <- function(cfg, paths) {
   dt_input <- load_data(paths$source$behavior_sr_fit_parameter_distribution)
   ttest_cfg <- list(
@@ -221,9 +245,10 @@ get_behavior_sr_fit_parameter_conscious <- function(cfg, paths) {
     alternative = "two.sided"
   )
   dt_output <- dt_input %>%
-    .[, by = .(process, model_name, variable), .(ttest = list(get_ttest(.SD, ttest_cfg)))] %>%
+    .[, by = .(process, model_name, variable, variable_label), .(ttest = list(get_ttest(.SD, ttest_cfg)))] %>%
     unnest(ttest) %>%
     get_pvalue_adjust(., ttest_cfg) %>%
+    # .[model_name == "SR + 1-step", ]
     save_data(paths$source$behavior_sr_fit_parameter_conscious)
 }
 
@@ -238,9 +263,10 @@ get_behavior_sr_fit_parameter_order <- function(cfg, paths) {
     alternative = "two.sided"
   )
   dt_output <- dt_input %>%
-    .[, by = .(process, model_name, variable), .(ttest = list(get_ttest(.SD, ttest_cfg)))] %>%
+    .[, by = .(process, model_name, variable, variable_label), .(ttest = list(get_ttest(.SD, ttest_cfg)))] %>%
     unnest(ttest) %>%
     get_pvalue_adjust(., ttest_cfg) %>%
+    # .[model_name == "SR + 1-step", ] %>%
     save_data(paths$source$behavior_sr_fit_parameter_order)
 }
 
@@ -263,11 +289,13 @@ get_behavior_sr_fit_suprise_effect <- function(cfg, paths) {
   dt_input <- load_data(paths$source$behavior_sr_fit_parameters)
   dt_output <- dt_input %>%
     .[iter == 1, ] %>%
+    .[process == "Model Fitting",] %>%
     .[mod == "reg_model",] %>%
     .[substr(variable, start = 0, stop = 2) == "p_",] %>%
     .[, variable := factor(variable, levels = c(
       'p_Intercept',
       'p_shannon_surprise',
+      'p_prob_current',
       'p_trial_ses',
       'p_block',
       'p_hand_finger_pressedleft_middle',
@@ -275,6 +303,10 @@ get_behavior_sr_fit_suprise_effect <- function(cfg, paths) {
       'p_hand_finger_pressedright_index',
       'p_hand_finger_pressedright_middle',
       'p_hand_finger_pressedright_ring')
+    )] %>%
+    .[, variable := dplyr::case_when(
+      variable == "p_shannon_surprise" ~ "SR-based\nsurprise",
+      variable == "p_prob_current" ~ "1-step\nprobability"
     )] %>%
     .[, value_log_20 := log(value, base = 20)] %>%
     save_data(paths$source$behavior_sr_fit_suprise_effect)
@@ -284,12 +316,16 @@ get_behavior_sr_fit_suprise_effect_num <- function(cfg, paths) {
   alpha_level <- 0.05
   dt_input <- load_data(paths$source$behavior_sr_fit_suprise_effect)
   dt_output <- dt_input %>%
-    .[variable == "p_shannon_surprise", ] %>%
-    .[model_name == "Full",] %>%
+    .[variable %in% c("SR-based\nsurprise", "1-step\nprobability"), ] %>%
+    .[model_name %in% c("SR", "SR + 1-step"),] %>%
     .[, significance := ifelse(value < alpha_level, "yes", "no")] %>%
-    .[, by = .(significance), .(
+    .[, by = .(model_name, variable, significance), .(
       num_subs = .N
-    )]
+    )] %>%
+    .[, ratio_subs := round(num_subs / cfg$num_subs * 100, 0)] %>%
+    .[, text_label := paste0(sprintf("n = %.0f", ratio_subs), "%\np < .05")] %>%
+    verify(.[, by = .(model_name, variable), .(num_subs = sum(num_subs))]$num_subs == cfg$num_subs) %>%
+    save_data(paths$source$behavior_sr_fit_suprise_effect_num)
 }
 
 get_behavior_sr_fit_response_time_alpha <- function(cfg, paths) {
@@ -380,8 +416,8 @@ get_behavior_sr_fit_response_time_hafrun_glm <- function(cfg, paths) {
 get_behavior_sr_fit_response_time_onestep <- function(cfg, paths) {
   dt1 <- load_data(paths$source$behavior_sequence_onestep)
   dt2 <- load_data(paths$source$behavior_sr_fit_parameters) %>%
-    .[process == "model_fitting", ] %>%
-    .[model_name == "Full", ] %>%
+    .[process == "Model Fitting", ] %>%
+    .[model_name == "SR + 1-step", ] %>%
     .[iter %in% 1] %>%
     .[variable %in% c("gamma"), ]
   dt_output <- merge(dt1, dt2) %>%
@@ -400,12 +436,12 @@ get_behavior_sr_fit_response_time_onestep_diff <- function(cfg, paths) {
   dt1 <- load_data(paths$source$behavior_sequence_onestep_run_glm)
   dt2 <- load_data(paths$source$behavior_sr_fit_parameters) %>%
     .[process == "Model Fitting", ] %>%
-    .[model_name == "Full", ] %>%
+    .[model_name == "SR + 1-step", ] %>%
     .[iter %in% 1] %>%
     .[variable %in% c("alpha", "gamma"), ]
   dt_output <- merge(dt1, dt2) %>%
     save_data(paths$source$behavior_sr_fit_response_time_onestep_diff) %>%
-    .[, by = .(variable), .(
+    .[, by = .(variable, variable_label), .(
       num_subs = .N,
       cor = list(broom::tidy(cor.test(slope_diff, value, method = "pearson")))
     )] %>%
@@ -413,7 +449,7 @@ get_behavior_sr_fit_response_time_onestep_diff <- function(cfg, paths) {
     unnest(cor) %>%
     setDT(.) %>%
     get_pvalue_adjust(., list(adjust_method = "fdr")) %>%
-    .[, result := sprintf("r = %.2f, p = %.2f", estimate, p.value)] %>%
+    .[, result := sprintf("r = %.2f, p %s", estimate, p.value_round_label)] %>%
     save_data(paths$source$behavior_sr_fit_response_time_onestep_run_stat)
 }
 
@@ -422,13 +458,13 @@ get_behavior_sr_fit_parameter_recovery <- function(cfg, paths) {
   dt_output <- dt_input %>%
     .[iter == 1, ] %>%
     .[, iter := paste("Iteration:", iter)] %>%
-    # .[model_name == "Full", ] %>%
+    # .[model_name == "SR", ] %>%
     .[!is.na(process), ] %>%
     .[mod == "model", ] %>%
     .[variable %in% c("alpha", "gamma"), ] %>%
-    .[, variable := ifelse(variable == "alpha", "\u03B1", variable)] %>%
-    .[, variable := ifelse(variable == "gamma", "\u0263", variable)] %>%
-    .[, variable := factor(as.factor(variable), levels = c("\u03B1", "\u0263"))] %>%
+    .[, variable := ifelse(variable == "alpha", cfg$alpha_utf, variable)] %>%
+    .[, variable := ifelse(variable == "gamma", cfg$gamma_utf, variable)] %>%
+    .[, variable := factor(as.factor(variable), levels = c(cfg$alpha_utf, cfg$gamma_utf))] %>%
     .[, c("id", "iter", "process", "model_name", "variable", "value")] %>%
     verify(length(unique(id)) == cfg$num_subs) %>%
     save_data(paths$source$behavior_sr_fit_parameter_recovery)
@@ -454,7 +490,36 @@ get_behavior_sr_fit_parameter_recovery_corr_stat <- function(cfg, paths) {
       broom::tidy(cor.test(.$model_fitting, .$parameter_recovery, method = "pearson")),
       data.table(num_subs = nrow(.)))) %>%
     setDT(.) %>%
-    # TODO: FIX NUMBER OF PARTICIPANTS
-    # verify(num_subs == cfg$num_subs)
+    verify(num_subs == cfg$num_subs) %>%
+    get_pvalue_adjust(., list(adjust_method = "fdr")) %>%
+    .[, result := sprintf("r = %.2f, p %s", estimate, p.value_round_label)] %>%
     save_data(paths$source$behavior_sr_fit_parameter_recovery_corr_stat)
 }
+
+get_behavior_sr_fit_behav_cor <- function(cfg, paths) {
+  dt_input <- load_data(paths$source$behavior_sr_fit_data)
+  dt_output <- dt_input %>%
+    .[, by = .(model_name, process, id, gamma, alpha), .(
+      num_trials = .N,
+      cor = list(broom::tidy(cor.test(shannon_surprise, as.numeric(log_response_time), method = "pearson")))
+    )] %>%
+    unnest(cor) %>%
+    setDT(.) %>%
+    get_pvalue_adjust(., list(adjust_method = "bonferroni")) %>%
+    .[process == "Model Fitting", ] %>%
+    .[model_name != "1-step", ] %>%
+    .[, c("id", "model_name", "alpha", "gamma", "estimate")] %>%
+    melt(measure.vars = c("alpha", "gamma"))
+      
+  
+  ggplot(dt_output, aes(x = as.numeric(value), y = as.numeric(estimate))) +
+    facet_grid(vars(variable), vars(model_name)) +
+    geom_point() +
+    geom_smooth(method = "lm") +
+    ylab("Correlation between surprise and response times") +
+    xlab("Parameter estimate") +
+    theme_zoo() +
+    coord_capped_cart(left = "both", bottom = "both", expand = TRUE)
+}
+
+

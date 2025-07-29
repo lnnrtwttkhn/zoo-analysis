@@ -161,6 +161,34 @@ plot_behavior_sequence_response_time_onestep_run <- function(cfg, paths) {
   return(figure)
 }
 
+plot_behavior_sequence_response_time_onestep_glm <- function(cfg, paths) {
+  dt_input <- load_data(paths$source$behavior_sequence_onestep_run)
+  figure <- ggplot(dt_input, aes(x = run_index, y = mean_log_response_time)) +
+    geom_smooth(aes(group = interaction(id, onestep), color = onestep), method = "lm", se = FALSE) +
+    geom_smooth(aes(color = onestep), method = "lm") +
+    facet_wrap(~ onestep) +
+    theme_zoo() +
+    ylab("Response time (log ms)") +
+    xlab("Run") +
+    coord_capped_cart(left = "both", bottom = "both", expand = TRUE) +
+    scale_color_manual(values = cfg$colors_probability[c(1, 4)], name = "Probability")
+  return(figure)
+}
+
+plot_behavior_sequence_dist_run <- function(cfg, paths) {
+  dt_input <- load_data(paths$source$behavior_sequence_dist_run)
+  figure <- ggplot(dt_input, aes(x = run_index, y = as.numeric(value))) +
+    # geom_line(group = 1, aes(fill = interaction(id, onestep)), color = "black", alpha = 0.1) +
+    geom_smooth(aes(color = as.factor(dist_bi)), method = "lm") +
+    ylab("Response time (log ms)") +
+    facet_wrap(~ variable, scales = "free_y") +
+    xlab("Run") +
+    theme_zoo() +
+    coord_capped_cart(left = "both", bottom = "both", expand = TRUE)
+  figure
+  return(figure)
+}
+
 plot_behavior_sequence_response_time_distance <- function(cfg, paths) {
   dt <- load_data(paths$source$behavior_sequence_graph)
   figure <- ggplot(data = dt, aes(x = dist_dir_label, y = mean_log_rt)) +

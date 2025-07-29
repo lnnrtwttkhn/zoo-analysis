@@ -114,26 +114,31 @@ plot_behavior_sr_fit_model_comparison_sum_aic <- function(cfg, paths) {
   dt_input <- load_data(paths$source$behavior_sr_fit_model_comparison) %>%
     .[iter == 1, ] %>%
     .[variable == "aic", ]
-  ymax <- -102000
-  figure <- ggplot(data = dt_input, aes(x = model_name, y = value)) +
+  ymax <- -111850
+  # ymax <- -93000
+  figure <- ggplot(data = dt_input, aes(x = model_name, y = value, fill = model_name)) +
     # facet_wrap(~ iter, scales = "free_y") +
     stat_summary(geom = "bar", fun = "sum") +
     ylab("AIC") +
-    xlab("SR model") +
+    xlab("Model") +
     theme_zoo() +
+    scale_x_discrete(labels = label_wrap(10)) +
+    scale_fill_manual(values = cfg$colors_models) +
     coord_capped_cart(left = "both", bottom = "both", ylim = c(NA, ymax)) +
     theme(axis.line.x = element_line(color = "white")) +
     theme(axis.ticks.x = element_line(color = "white")) +
     theme(axis.title.x = element_text(colour = "black")) +
     theme(axis.text.x = element_text(colour = "black")) +
-    theme(plot.title = element_text(hjust = 0.5))
+    theme(plot.title = element_text(hjust = 0.5)) +
+    theme(legend.position = "none")
+  save_figure(plot = figure, "behavior_sr_fit_model_comparison_sum_aic", width = 3, height = 5)
   return(figure)
 }
 
 plot_behavior_sr_fit_model_comparison_sum_bic <- function(cfg, paths) {
   dt_input <- load_data(paths$source$behavior_sr_fit_model_comparison) %>%
     .[variable == "bic", ]
-  ymax <- -100300
+  ymax <- -111850
   figure <- ggplot(data = dt_input, aes(x = model_name, y = value)) +
     stat_summary(geom = "bar", fun = "sum") +
     ylab("BIC") +
@@ -255,7 +260,9 @@ plot_sr_timecourse <- function() {
 plot_behavior_sr_fit_parameter_mean <- function(cfg, paths) {
   dt_input <- load_data(paths$source$behavior_sr_fit_parameter_distribution) %>%
     .[process == "Model Fitting", ] %>%
-    .[model_name == "Full", ] %>%
+    .[model_name == "SR + 1-step", ] %>%
+    .[, variable := ifelse(variable == "alpha", cfg$alpha_utf, variable)] %>%
+    .[, variable := ifelse(variable == "gamma", cfg$gamma_utf, variable)] %>%
     verify(length(unique(id)) == cfg$num_subs)
   figure <- ggplot(data = dt_input, aes(x = variable, y = value)) +
     geom_boxplot(outlier.shape = NA, width = 0.5, color = "black") +
@@ -266,6 +273,7 @@ plot_behavior_sr_fit_parameter_mean <- function(cfg, paths) {
     ylab("Parameter estimate") +
     theme_zoo() +
     coord_capped_cart(left = "both", bottom = "both", expand = TRUE) +
+    scale_y_continuous(labels = c(0.01, seq(0.25, 1.0, 0.25)), breaks = c(0.01, seq(0.25, 1.0, 0.25))) +
     theme(axis.line.x = element_line(color = "white")) +
     theme(axis.ticks.x = element_line(color = "white")) +
     theme(axis.title.x = element_text(colour = "black")) +
@@ -277,10 +285,10 @@ plot_behavior_sr_fit_parameter_mean <- function(cfg, paths) {
 plot_behavior_sr_fit_parameter_order <- function(cfg, paths) {
   dt1 <- load_data(paths$source$behavior_sr_fit_parameter_distribution) %>%
     .[process == "Model Fitting", ] %>%
-    .[model_name == "Full", ]
+    .[model_name == "SR + 1-step", ]
   dt2 <- load_data(paths$source$behavior_sr_fit_parameter_order) %>%
     .[process == "Model Fitting", ] %>%
-    .[model_name == "Full", ]
+    .[model_name == "SR + 1-step", ]
   figure <- ggplot(data = dt1, aes(x = order, y = value)) +
     geom_boxplot(outlier.shape = NA, width = 0.5, color = "black") +
     geom_beeswarm(alpha = 0.3) +
@@ -290,7 +298,8 @@ plot_behavior_sr_fit_parameter_order <- function(cfg, paths) {
     geom_text(data = dt2,
               aes(x = 1.5, y = 1.3, label = paste("p", p.value_adjust_round_label)),
               color = "black", parse = FALSE, size = rel(2.5)) +
-    facet_wrap(~ variable) +
+    scale_y_continuous(labels = c(0.01, seq(0.25, 1.0, 0.25)), breaks = c(0.01, seq(0.25, 1.0, 0.25))) +
+    facet_wrap(~ variable_label) +
     ylab("Parameter estimate") +
     xlab("Graph order") +
     theme_zoo() +
@@ -307,10 +316,10 @@ plot_behavior_sr_fit_parameter_order <- function(cfg, paths) {
 plot_behavior_sr_fit_parameter_conscious <- function(cfg, paths) {
   dt1 <- load_data(paths$source$behavior_sr_fit_parameter_distribution) %>%
     .[process == "Model Fitting", ] %>%
-    .[model_name == "Full", ]
+    .[model_name == "SR + 1-step", ]
   dt2 <- load_data(paths$source$behavior_sr_fit_parameter_conscious) %>%
     .[process == "Model Fitting", ] %>%
-    .[model_name == "Full", ]
+    .[model_name == "SR + 1-step", ]
   figure <- ggplot(data = dt1, aes(x = sequence_detected, y = value)) +
     geom_boxplot(outlier.shape = NA, width = 0.5, color = "black") +
     geom_beeswarm(alpha = 0.3) +
@@ -320,11 +329,12 @@ plot_behavior_sr_fit_parameter_conscious <- function(cfg, paths) {
     geom_text(data = dt2,
               aes(x = 1.5, y = 1.3, label = paste("p", p.value_adjust_round_label)),
               color = "black", parse = FALSE, size = rel(2.5)) +
-    facet_wrap(~ variable) +
+    facet_wrap(~ variable_label) +
     ylab("Parameter estimate") +
     xlab('"Did you notice any\nsequential structure?"') +
     theme_zoo() +
     coord_capped_cart(left = "both", bottom = "both", expand = TRUE) +
+    scale_y_continuous(labels = c(0.01, seq(0.25, 1.0, 0.25)), breaks = c(0.01, seq(0.25, 1.0, 0.25))) +
     theme(axis.line.x = element_line(color = "white")) +
     theme(axis.ticks.x = element_line(color = "white")) +
     theme(axis.title.x = element_text(colour = "black")) +
@@ -335,21 +345,27 @@ plot_behavior_sr_fit_parameter_conscious <- function(cfg, paths) {
 }
 
 plot_behavior_sr_fit_suprise_effect <- function(cfg, paths) {
-  dt_input <- load_data(paths$source$behavior_sr_fit_suprise_effect) %>%
-    .[variable == "p_shannon_surprise", ] %>%
-    .[model_name == "Full", ] %>%
-    .[process == "Model Fitting", ]
-  figure <- ggplot(data = dt_input, aes(x = variable, y = value_log_20)) +
+  dt1 <- load_data(paths$source$behavior_sr_fit_suprise_effect) %>%
+    .[process == "Model Fitting", ] %>%
+    .[variable %in% c("SR-based\nsurprise", "1-step\nprobability"), ] %>%
+    # .[model_name %in% c("SR", "SR + 1-step"), ]
+    .[model_name %in% c("SR + 1-step"), ]
+  dt2 <- load_data(paths$source$behavior_sr_fit_suprise_effect_num) %>%
+    .[significance == "yes", ] %>%
+    # .[model_name %in% c("SR", "SR + 1-step"), ]
+  .[model_name %in% c("SR + 1-step"), ]
+  figure <- ggplot(data = dt1, aes(x = variable, y = value_log_20)) +
     geom_hline(yintercept = log(0.05, base = 20), linetype = "dashed", color = "black") +
     geom_boxplot(outlier.shape = NA, width = 0.5, color = "black") +
     geom_beeswarm(alpha = 0.3) +
+    geom_text(data = dt2, aes(label = text_label, y = Inf, vjust = 1)) +
     ylab("p-value\n(base-20 log-transformed)") +
+    xlab("Model regressors") +
     theme_zoo() +
-    coord_capped_cart(left = "both", expand = TRUE) +
+    # facet_wrap(~ model_name) +
+    coord_capped_cart(left = "both", expand = TRUE, ylim = c(-20, 4)) +
     scale_y_continuous(limits = c(-20, 0)) +
     theme(axis.ticks.x = element_blank()) +
-    theme(axis.text.x = element_blank()) +
-    theme(axis.title.x = element_blank()) +
     theme(axis.line.x = element_blank())
   return(figure)
 }
@@ -369,7 +385,6 @@ plot_behavior_sr_fit_response_time_alpha <- function(cfg, paths) {
     ggtitle("Correlation between alpha and response time") +
     # ggtitle("Betas of SR + 1-step model\n(bidirectional graph)") +
     theme(plot.title = element_text(hjust = 0.5, face = "bold"))
-  figure
   return(figure)
 }
 
@@ -377,10 +392,10 @@ plot_behavior_sr_fit_response_time_onestep_diff <- function(cfg, paths) {
   dt1 <- load_data(paths$source$behavior_sr_fit_response_time_onestep_diff)
   dt2 <- load_data(paths$source$behavior_sr_fit_response_time_onestep_run_stat)
   figure <- ggplot(dt1, aes(x = as.numeric(value), y = as.numeric(slope_diff))) +
-    facet_wrap(~ variable) +
+    facet_wrap(~ variable_label) +
     geom_point(aes(color = as.factor(id))) +
     geom_smooth(method = "lm", color = "black") +
-    geom_text(data = dt2, aes(y = Inf, x = 0.65, label = result, vjust = 2)) +
+    geom_text(data = dt2, aes(y = Inf, x = Inf, label = result), vjust = 2, size = 4, hjust = 1) +
     xlab("Parameter estimates") +
     ylab("Difference in learning slopes\nfor high vs. low probability transitions") +
     theme_zoo() +
@@ -388,7 +403,7 @@ plot_behavior_sr_fit_response_time_onestep_diff <- function(cfg, paths) {
     # scale_color_manual(values = cfg$dist_colors, name = "Predictor") +
     # scale_fill_manual(values = cfg$dist_colors, name = "Predictor") +
     # scale_shape_manual(name = "Predictor") +
-    ggtitle("Correlation between decrease in response time\n for high vs. low probability transitions\nand model parameter estimates") +
+    ggtitle("Correlation between decrease in response times\n for high vs. low probability transitions\nand model parameter estimates") +
     # ggtitle("Betas of SR + 1-step model\n(bidirectional graph)") +
     theme(plot.title = element_text(hjust = 0.5, face = "bold")) +
     theme(legend.position = "none") +
@@ -457,7 +472,7 @@ plot_sr_matrices <- function(cfg, paths) {
 
 plot_sr_matrices_select <- function(cfg, paths) {
   dt_input <- load_data(paths$source$behavior_sr_fit_sr_matrices_plot) %>%
-    .[id %in% c("sub-04", "sub-42")]
+    .[id %in% c("sub-16", "sub-25")]
   order_factor <- list()
   order_factor["uni - bi"] <- list(c("run-01 (uni)", "run-02 (uni)", "run-03 (uni)", "run-03 (bi)", "run-04 (bi)", "run-05 (bi)"))
   order_factor["bi - uni"] <- list(c("run-01 (bi)", "run-02 (bi)", "run-03 (bi)", "run-03 (uni)", "run-04 (uni)", "run-05 (uni)"))
@@ -478,6 +493,39 @@ plot_sr_matrices_select <- function(cfg, paths) {
   return(figure)
 }
 
+plot_sr_matrices_select_extreme <- function(cfg, paths) {
+  sub_order <- c("sub-02", "sub-34", "sub-07", "sub-33", "sub-15", "sub-38")
+  dt_input <- load_data(paths$source$behavior_sr_fit_sr_matrices_plot)
+  order_factor <- list()
+  order_factor["uni - bi"] <- list(c("run-01 (uni)", "run-02 (uni)", "run-03 (uni)", "run-03 (bi)", "run-04 (bi)", "run-05 (bi)"))
+  order_factor["bi - uni"] <- list(c("run-01 (bi)", "run-02 (bi)", "run-03 (bi)", "run-03 (uni)", "run-04 (uni)", "run-05 (uni)"))
+  figures_all <- list()
+  i <- 0
+  for (sub in sub_order) {
+    i <- i + 1
+    dt_sub <- dt_input %>%
+      .[id == sub]
+    order_index <- unique(dt_sub$order)
+    dt_order <- dt_sub %>%
+      .[, run_cond := factor(run_cond, levels = order_factor[order_index][[1]])]
+    figures_all[[i]] <- plot_sr_mat(dt_order)
+  }
+  title1 <- ggdraw() + draw_label("Low \u03B1 and medium to high \u03B3 yield SR matrices that reflect multi-step transitions", fontface = "bold")
+  title2 <- ggdraw() + draw_label("Low \u03B3 yields SR matrices that emphasize one-step transitions", fontface = "bold")
+  title3 <- ggdraw() + draw_label("\u03B1 = 1 yields SR matrices that mainly reflect the last observed transition", fontface = "bold")
+  figure <- plot_grid(
+    plot_grid(title1, plot_grid(figures_all[[1]], figures_all[[2]], ncol = 2),
+              nrow = 2, ncol = 1, labels = "a", rel_heights = c(0.1, 0.9)),
+    plot_grid(title2, plot_grid(figures_all[[3]], figures_all[[4]], ncol = 2),
+              nrow = 2, ncol = 1, labels = "b", rel_heights = c(0.1, 0.9)),
+    plot_grid(title3, plot_grid(figures_all[[5]], figures_all[[6]], ncol = 2),
+              nrow = 2, ncol = 1, labels = "c", rel_heights = c(0.1, 0.9)),
+    nrow = 3, ncol = 1
+  )
+  save_figure(plot = figure, filename = "behavior_sr_matrices_extreme", width = 15, height = 8)
+  return(figure)
+}
+
 plot_behavior_sr_fit_parameter_recovery <- function(cfg, paths) {
   dt_input <- load_data(paths$source$behavior_sr_fit_parameter_recovery)
   figure <- ggplot(data = dt_input) +
@@ -489,20 +537,25 @@ plot_behavior_sr_fit_parameter_recovery <- function(cfg, paths) {
     ylab("Parameter estimate") +
     theme_zoo() +
     coord_capped_cart(left = "both", bottom = "both", expand = TRUE) +
+    scale_y_continuous(labels = label_fill(seq(0, 1, 0.25), mod = 4), breaks = seq(0, 1, 0.25)) +
     theme(axis.title.x = element_blank())
    return(figure)
 }
 
 plot_behavior_sr_fit_parameter_recovery_corr <- function(cfg, paths) {
-  dt_input <- load_data(paths$source$behavior_sr_fit_parameter_recovery_corr)
-  figure <- ggplot(data = dt_input, aes(x = model_fitting, y = parameter_recovery)) +
+  dt1 <- load_data(paths$source$behavior_sr_fit_parameter_recovery_corr)
+  dt2 <- load_data(paths$source$behavior_sr_fit_parameter_recovery_corr_stat)
+  figure <- ggplot(data = dt1, aes(x = model_fitting, y = parameter_recovery)) +
     facet_grid(vars(variable), vars(model_name)) +
     # geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "gray") +
+    geom_text(data = dt2, aes(y = Inf, x = 0, label = result), vjust = 2, hjust = 0, size = 4) +
     geom_smooth(method = "lm", fullrange = TRUE, color = "black") +
     geom_point(aes(color = id)) +
     theme(legend.position = "none") +
-    xlab("Parameter Recovery") +
-    ylab("Model fitting") +
+    xlab("Parameter estimate (Parameter Recovery)") +
+    ylab("Parameter estimate (Model Fitting)") +
+    # ggtitle("Parameter Recovery") +
+    theme(plot.title = element_text(hjust = 0.5, face = "bold")) +
     theme_zoo() +
     coord_capped_cart(left = "both", bottom = "both", expand = TRUE) +
     scale_y_continuous(labels = label_fill(seq(0, 1, 0.25), mod = 4), breaks = seq(0, 1, 0.25)) +

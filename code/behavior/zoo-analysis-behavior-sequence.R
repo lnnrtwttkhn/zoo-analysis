@@ -199,7 +199,7 @@ get_behavior_sequence_onestep_run <- function(cfg, paths) {
 }
   
 get_behavior_sequence_onestep_run_glm <- function(cfg, paths) {
-  model_formulas <- c("mean_log_response_time ~ run_index")
+  model_formulas <- c("mean_accuracy ~ run_index")
   dt_input <- load_data(paths$source$behavior_sequence_onestep_run)
   dt_output <- dt_input %>%
     .[, by = .(id, onestep), {
@@ -219,6 +219,47 @@ get_behavior_sequence_onestep_run_glm <- function(cfg, paths) {
     setDT(.) %>%
     .[, slope_diff := Low - High] %>%
     save_data(paths$source$behavior_sequence_onestep_run_glm)
+}
+
+get_behavior_sequence_dist_run <- function(cfg, paths) {
+  dt_input <- load_data(paths$source$behavior_task)
+  dt_output <- dt_input %>%
+    .[!(id %in% cfg$sub_exclude)] %>%
+    .[condition == "Sequence", ] %>%
+    .[event_type == "response", ] %>%
+    .[!(run == "run-03" & trial_run == 121), ] %>%
+    .[trial_run != 1, ] %>%
+    .[, by = .(id, run, dist_bi), .(
+      num_trials = .N,
+      mean_accuracy = mean(accuracy) * 100,
+      mean_log_response_time = mean(log_response_time[accuracy == 1], na.rm = TRUE)
+    )] %>%
+    .[, by = .(id, dist_bi), run_index := data.table::rleid(run)] %>%
+    melt(measure.vars = c("mean_log_response_time", "mean_accuracy")) %>%
+    save_data(paths$source$behavior_sequence_dist_run)
+}
+
+get_behavior_sequence_dist_run_glm <- function(cfg, paths) {
+  model_formulas <- c("value ~ run_index")
+  dt_input <- load_data(paths$source$behavior_sequence_dist_run)
+  dt_output <- dt_input %>%
+    .[, by = .(id, dist_bi, variable), {
+      model = lapply(model_formulas, run_glm, data = .SD, cfg = cfg, tidy = TRUE)
+      model_formula = model_formulas
+      model_number = seq_len(length(model_formulas))
+      num_runs = .N
+      list(model, model_formula, model_number, num_runs)
+    }] %>%
+    unnest(model) %>%
+    setDT(.) %>%
+    verify(num_runs == cfg$sequence$num_runs) %>%
+    setnames(., old = "term", new = "predictor") %>%
+    .[predictor == "run_index", ] %>%
+    .[, dist_bi := paste0("dist", dist_bi) ] %>%
+    .[, c("id", "dist_bi", "variable", "estimate")] %>%
+    pivot_wider(names_from = dist_bi, values_from = estimate) %>%
+    setDT(.) %>%
+    save_data(paths$source$behavior_sequence_dist_run_glm)
 }
 
 get_behavior_sequence_graph <- function(cfg, paths) {
