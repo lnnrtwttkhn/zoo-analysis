@@ -573,11 +573,11 @@ get_decoding_main_model_betas_behav <- function(cfg, paths) {
     verify(num_subs == cfg$num_subs) %>%
     unnest(cor) %>%
     setDT(.) %>%
-    .[predictor == "SR" & beta == "estimate" & roi == "visual" & sr_parameter == "gamma" & graph == "uni", ] %>%
+    # .[predictor == "SR" & beta == "estimate" & roi == "visual" & sr_parameter == "gamma" & graph == "uni", ] %>%
     get_pvalue_adjust(., list(adjust_method = "fdr")) %>%
     setorder(roi, graph, interval_tr) %>%
     save_data(paths$source$decoding_main_model_betas_behav_cor)
-    .[p.value_adjust_round <= 0.05, ] %>%
+    # .[p.value_adjust_round <= 0.05, ]
 }
 
 get_decoding_main_model_betas_behav_cor_mean <- function(cfg, paths) {

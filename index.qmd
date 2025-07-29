@@ -76,8 +76,8 @@ get_questionnaire_prob_ratings_accuracy_stat(cfg, paths)
 plot_questionnaire_prob_ratings_accuracy(cfg, paths)
 get_questionnaire_prob_ratings_onestep(cfg, paths)
 plot_questionnaire_prob_ratings_onestep(cfg, paths)
-get_questionnaire_prob_ratings_correlation(cfg, paths)
-get_questionnaire_prob_ratings_correlation_stat(cfg, paths)
+# get_questionnaire_prob_ratings_correlation(cfg, paths)
+# get_questionnaire_prob_ratings_correlation_stat(cfg, paths)
 plot_questionnaire_prob_ratings_correlation(cfg, paths)
 get_questionnaire_prob_ratings_model(cfg, paths)
 plot_questionnaire_all(cfg, paths)
@@ -424,9 +424,7 @@ plot_decoding_main_model_no_evoked(cfg, paths)
 
 ```{r}
 get_decoding_main_model_betas_id(cfg, paths)
-la = get_decoding_main_model_betas_behav(cfg, paths) %>%
-  .[sr_parameter == "gamma", ] %>%
-  .[graph == "uni", ]
+get_decoding_main_model_betas_behav(cfg, paths)
 get_decoding_main_model_betas_behav_cor_mean(cfg, paths)
 get_decoding_main_model_betas_behav_cor_mean_stat(cfg, paths)
 ```
@@ -434,7 +432,6 @@ get_decoding_main_model_betas_behav_cor_mean_stat(cfg, paths)
 ```{r}
 plot_decoding_main_model_betas_behav_cor(cfg, paths, roi_input = "visual")
 ```
-
 
 ```{r}
 plot_decoding_main_model_betas_behav_cor_mean(cfg, paths, roi_input = "visual", graph_input = "uni", predictor_input = "SR")

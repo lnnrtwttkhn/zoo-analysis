@@ -51,3 +51,56 @@ get_decoding_main_current_interval <- function(cfg, paths) {
     )] %>%
     save_data(paths$source$decoding_main_current_interval)
 }
+
+analyze_decoding_main_current_interval = function() {
+  dt_input = load_data(paths$source$decoding_main)
+  dt_output = dt_input %>%
+    .[, phase := data.table::fcase(
+      (interval_tr %in% seq(1, 4)), "TRs 1 - 4\n(early)",
+      (interval_tr %in% seq(5, 8)), "TRs 5 - 8\n(late)",
+      (interval_tr > 8), "out"
+    )] %>%
+    .[interval_tr %in% seq(1, 8)] %>%
+    .[, by = .(id, mask_test, order, graph, phase, dist_uni, dist_bi), .(
+      mean_prob = mean(probability_norm * 100)
+    )] %>%
+    .[, dist_uni := ifelse(is.na(dist_uni), 0, dist_uni)] %>%
+    .[, dist_bi := ifelse(is.na(dist_bi), 0, dist_bi)] %>%
+    .[, dist_bi := ifelse(dist_bi == 1 & dist_uni == 5, -1, dist_bi)] %>%
+    .[, dist_bi := ifelse(dist_bi == 2 & dist_uni == 4, -2, dist_bi)] %>%
+    .[, dist_combined := paste0(dist_uni, " | ", dist_bi)] %>%
+    .[, predictor := data.table::fcase(
+      dist_uni == 0, NaN,
+      dist_uni == 1, -2,
+      dist_uni == 2, -1,
+      dist_uni == 3, 0,
+      dist_uni == 4, 1,
+      dist_uni == 5, 2
+    )] %>%
+    .[, predictor_squared := predictor ^ 2] %>%
+    .[, dist_uni := as.factor(dist_uni)] %>%
+    .[, dist_bi := as.factor(abs(dist_bi))]
+    # save_data(df = ., filename = "decoding_main_graph_probabilities", check = FALSE)
+  return(dt_output)
+}
+
+analyze_decoding_main_current_interval = function() {
+  # probability excluding the current node
+  dt_input = load_data(file.path(paths$sourcedata, "zoo_sourcedata_decoding_main.csv"))
+  dt_output = dt_input %>%
+    # remove data of the current node:
+    .[!(node_current == node_classifier),] %>%
+    .[, dist_uni := ifelse(is.na(dist_uni), 0, dist_uni)] %>%
+    .[, dist_bi := ifelse(is.na(dist_bi), 0, dist_bi)] %>%
+    .[, dist_bi := ifelse(dist_bi == 1 & dist_uni == 5, -1, dist_bi)] %>%
+    .[, dist_bi := ifelse(dist_bi == 2 & dist_uni == 4, -2, dist_bi)] %>%
+    .[, dist_combined := paste0(dist_uni, " | ", dist_bi)] %>%
+    .[, by = .(id, mask_test, graph, interval_tr, dist_combined), .(
+      num_trials = .N,
+      mean_prob = mean(probability_norm * 100)
+    )] %>%
+    verify(num_trials <= 120) %>%
+    .[, num_trials := NULL] %>%
+    save_data(df = ., filename = "decoding_main_graph_probabilities_distance", check = FALSE)
+  return(dt_output)
+}
